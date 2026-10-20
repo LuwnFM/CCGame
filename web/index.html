@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Firewell CCG — тестовый матч</title>
+<style>
+:root{font-family:system-ui,sans-serif;background:#181724;color:#f4eef0}*{box-sizing:border-box}body{margin:0}main{max-width:1100px;margin:auto;padding:16px}h1{font-size:1.45rem;margin:0 0 8px}h2{font-size:1rem}.top,.row,.actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.top{justify-content:space-between}.pane{background:#292638;border:1px solid #494152;border-radius:12px;padding:13px;margin:11px 0}.board{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;min-height:92px}.hand{display:flex;gap:7px;overflow-x:auto;padding-bottom:8px}.card{flex:1 0 94px;min-height:82px;text-align:left;padding:8px;background:#473348;border:1px solid #916875;border-radius:8px;color:#fff;font:inherit;overflow-wrap:anywhere}.board .card{min-width:0;font-size:.8rem}.card small{display:block;opacity:.8}.card.active{outline:3px solid #f4c862}button{font:inherit;border:0;border-radius:8px;padding:11px 14px;min-height:44px;background:#a64265;color:white;cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}input{min-height:44px;border-radius:7px;border:1px solid #887c93;background:#211e2c;color:white;padding:9px;font:inherit;max-width:100%}.notice{color:#e9cf97}#status{min-height:24px;color:#f3cf7a}.hidden{display:none}.section-label{margin:0 0 7px}.muted{opacity:.75}@media(max-width:600px){.board{grid-template-columns:repeat(4,minmax(0,1fr))}.card{flex-basis:115px}.top{display:block}.actions button{flex:1}}
+</style>
+<main>
+  <div class="top"><div><h1>Firewell CCG</h1><div class="muted">Тестовый PvP-срез · правила v0.9.12</div></div><div id="connection"></div></div>
+  <section id="gate" class="pane"><h2>Доступ к альфе</h2><div class="row"><input id="password" type="password" placeholder="Пароль альфы" autocomplete="off"><button id="enter">Войти</button></div></section>
+  <section id="lobby" class="pane hidden"><h2>Комната</h2><div class="row"><button id="create">Создать матч</button><input id="code" maxlength="8" placeholder="Код комнаты"><button id="join">Присоединиться</button></div><p class="muted">Передай код второму игроку. Рука соперника скрыта.</p></section>
+  <section id="match" class="hidden"><div class="pane top"><strong id="roomLabel"></strong><span id="turnLabel"></span></div>
+    <section class="pane"><h2>Соперник <span id="enemyHp"></span></h2><p id="enemyInfo" class="muted"></p><div class="section-label">Существа</div><div id="enemyBoard" class="board"></div><div class="section-label">Владения</div><div id="enemyDomains" class="row"></div></section>
+    <section class="pane"><h2>Ты <span id="myHp"></span></h2><p id="myInfo" class="muted"></p><div class="section-label">Существа (основное поле 8)</div><div id="myBoard" class="board"></div><div class="section-label">Владения</div><div id="myDomains" class="row"></div></section>
+    <section class="pane"><h2>Рука</h2><div id="hand" class="hand"></div><div class="actions"><button id="hero">Атаковать Владетеля</button><button id="skip">Пропустить перехват</button><button id="end">Завершить ход</button></div></section>
+    <p class="notice">Сейчас доступны базовые карты, Энергия, атаки, Страж и Щит. Ритуал пока только проверяет условия и предложение: награда не выдаётся без безопасной очереди гибели.</p>
+  </section><p id="status" role="status"></p>
+</main>
+<script type="module">
+const $=id=>document.getElementById(id);let room=localStorage.getItem('firewell_room')||'',game=null,selected=null,busy=false;
+async function api(path, data){const response=await fetch(path,{method:data?'POST':'GET',headers:{'content-type':'application/json'},credentials:'same-origin',body:data?JSON.stringify(data):undefined});const result=await response.json();if(!response.ok)throw Error(result.error||'Ошибка');return result}
+function status(message){$('status').textContent=message}
+function show(authorized){$('gate').classList.toggle('hidden',authorized);$('lobby').classList.toggle('hidden',!authorized);$('match').classList.toggle('hidden',!authorized||!room)}
+async function refresh(){if(!room)return;try{const data=await api('/api/rooms/'+room);game=data.game;show(true);render(data.ready)}catch(e){if(e.message==='Нужен пароль альфы'){show(false)}else status(e.message)}}
+async function send(payload){if(busy||!game)return;busy=true;try{await api('/api/rooms/'+room+'/commands',{...payload,expectedRevision:game.revision,key:crypto.randomUUID()});selected=null;await refresh();status('Действие принято')}catch(e){status(e.message);await refresh()}finally{busy=false}}
+function button(label,click,disabled=false,className=''){const b=document.createElement('button');b.textContent=label;b.disabled=disabled;b.className=className;b.onclick=click;return b}
+function cardLabel(p){return `${p.card.name} · ${p.card.attack??0}/${(p.card.health??0)-p.damage}${p.shield?' · Щит '+p.shield:''}`}
+function render(ready){const seat=game.seat,me=game.players[seat],enemy=game.players[1-seat],mine=game.active===seat&&game.phase==='main'&&ready,defense=game.phase==='intercept'&&game.pendingAttack?.defender===seat;
+  $('connection').textContent=ready?'Два игрока подключены':'Ожидание соперника';$('roomLabel').textContent='Комната '+room+' · Игрок '+(seat+1);
+  $('turnLabel').textContent=game.winner!==null?'Матч окончен: '+(game.winner==='draw'?'ничья':'победил игрок '+(game.winner+1)):`Ход ${game.turn} · игрок ${game.active+1}`;
+  $('myHp').textContent='· '+me.hp+' HP';$('enemyHp').textContent='· '+enemy.hp+' HP';
+  $('myInfo').textContent=`Колода ${me.deckCount} · Рука ${me.handCount} · Сброс ${me.discardCount} · Энергия ${Object.entries(me.energy).filter(([,n])=>n).map(([c,n])=>c+':'+n).join(', ')||'0'}`;
+  $('enemyInfo').textContent=`Колода ${enemy.deckCount} · Рука ${enemy.handCount} · Сброс ${enemy.discardCount}`;
+  $('myBoard').replaceChildren();for(const p of me.main){const b=button(cardLabel(p),()=>{if(defense)send({type:'intercept',interceptorId:p.objectId});else if(mine){selected=p.objectId;render(ready)}},!defense&&!mine,'card'+(selected===p.objectId?' active':''));const x=document.createElement('small');x.textContent=p.exhausted?'Истощён':'Готов';b.append(x);$('myBoard').append(b)}
+  $('enemyBoard').replaceChildren();for(const p of enemy.main)$('enemyBoard').append(button(cardLabel(p),()=>send({type:'attack',attackerId:selected,target:{kind:'creature',objectId:p.objectId}}),!mine||selected===null,'card'));
+  $('myDomains').replaceChildren();for(const p of me.domains)$('myDomains').append(button(p.card.name+(p.exhausted?' · истощено':' · готово'),()=>send({type:'tapDomain',objectId:p.objectId}),!mine||p.exhausted));
+  $('enemyDomains').textContent=enemy.domains.length+' Владений';$('hand').replaceChildren();(me.hand||[]).forEach((c,i)=>{$('hand').append(button(c.name+' · '+c.kind+(c.abilities?.length?' · способность пока не действует':''),()=>send(game.phase==='discard'?{type:'discard',handIndex:i}:{type:c.kind==='domain'?'playDomain':'playCreature',handIndex:i}),!(mine||game.phase==='discard'&&game.active===seat),'card'))});
+  $('hero').disabled=!mine||selected===null;$('skip').disabled=!defense;$('end').disabled=!mine;
+}
+$('enter').onclick=async()=>{try{await api('/api/access',{password:$('password').value});$('password').value='';show(true);status('Доступ открыт');await refresh()}catch(e){status(e.message)}};
+$('create').onclick=async()=>{try{const data=await api('/api/rooms',{});room=data.code;localStorage.setItem('firewell_room',room);await refresh()}catch(e){status(e.message)}};
+$('join').onclick=async()=>{try{const code=$('code').value.trim().toUpperCase();await api('/api/rooms/'+code+'/join',{});room=code;localStorage.setItem('firewell_room',room);await refresh()}catch(e){status(e.message)}};
+$('hero').onclick=()=>send({type:'attack',attackerId:selected,target:{kind:'player'}});$('skip').onclick=()=>send({type:'intercept',interceptorId:null});$('end').onclick=()=>send({type:'endTurn'});
+show(false);refresh();setInterval(refresh,1800);
+</script></html>
