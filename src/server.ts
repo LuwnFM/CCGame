@@ -1,6 +1,8 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { randomBytes, createHash, timingSafeEqual } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
+import { existsSync, statSync, mkdirSync, readdirSync, unlinkSync } from 'node:fs';
+import { dirname, join, basename } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { apply, openingGame, RuleError, type Command, type Game, type PlayerId } from './core.ts';
 import { openingHand } from './setup.ts';
@@ -117,7 +119,19 @@ function view(game: Game, seat: PlayerId, row?: Room) {
 }
 export function createApp(options: { databasePath: string; accessPassword: string; clientOrigin?: string }) {
   if (!options.accessPassword || options.accessPassword.length < 12) throw new Error('FIREWELL_ALPHA_PASSWORD должен содержать не менее 12 символов');
+  const existingFile = options.databasePath !== ':memory:' && existsSync(options.databasePath) && statSync(options.databasePath).size > 0;
   const db = new DatabaseSync(options.databasePath);
+  // SQLite VACUUM INTO produces a transactionally consistent backup, including
+  // writes held in the WAL. Keep seven snapshots before applying migrations.
+  if (existingFile) {
+    const folder = join(dirname(options.databasePath), 'backups');
+    mkdirSync(folder, { recursive: true });
+    const filename = basename(options.databasePath) + '.' + new Date().toISOString().replace(/[:.]/g, '-') + '-' +
+      randomBytes(2).toString('hex') + '.sqlite';
+    db.prepare('VACUUM INTO ?').run(join(folder, filename));
+    const files = readdirSync(folder).filter(file => file.startsWith(basename(options.databasePath) + '.') && file.endsWith('.sqlite')).sort();
+    for (const old of files.slice(0, Math.max(0, files.length - 7))) unlinkSync(join(folder, old));
+  }
   db.exec(`PRAGMA journal_mode=WAL;
     CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, expires INTEGER NOT NULL, user_id TEXT);
     CREATE TABLE IF NOT EXISTS rooms (code TEXT PRIMARY KEY, host TEXT NOT NULL, guest TEXT, game TEXT NOT NULL,

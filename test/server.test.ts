@@ -1,6 +1,10 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { createApp } from '../src/server.ts';
+import { mkdtemp, readdir, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 
 async function fixture() {
   const app=createApp({databasePath:':memory:',accessPassword:'shared-alpha-password',clientOrigin:'https://ccgame-omega.vercel.app'});
@@ -105,4 +109,20 @@ test('expiry makes deterministic legal auto choices; CORS only permits configure
     assert.equal(game.turn,2);
     assert.equal(game.timeoutStreak[0],1);
   } finally {app.close()}
+});
+
+test('SQLite startup creates a consistent retained backup with game data',async()=>{
+  const dir=await mkdtemp(join(tmpdir(),'firewell-backup-'));
+  const file=join(dir,'firewell.sqlite');
+  try {
+    const first=createApp({databasePath:file,accessPassword:'backup-test-password'});
+    first.db.prepare("INSERT INTO feedback (account_id,category,body,created_at) VALUES ('backup-user','idea','backup checked',1)").run();
+    first.db.close();
+    const second=createApp({databasePath:file,accessPassword:'backup-test-password'});
+    const files=await readdir(join(dir,'backups'));
+    assert.equal(files.length,1);
+    const snapshot=new DatabaseSync(join(dir,'backups',files[0]));
+    assert.equal(snapshot.prepare("SELECT COUNT(*) AS total FROM feedback").get()?.total,1);
+    snapshot.close();second.db.close();
+  } finally {await rm(dir,{recursive:true,force:true})}
 });

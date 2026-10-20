@@ -1,5 +1,6 @@
 import { strict as assert } from 'node:assert';
-import { mkdtemp, mkdir, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, rm, readFile } from 'node:fs/promises';
+import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
@@ -117,8 +118,37 @@ try {
   assert.equal(afterCombat.players[1].hp,30);
   await b.screenshot({ path: join(artifacts, 'alpha-match-mobile.png'), fullPage: true });
   await a.screenshot({ path: join(artifacts, 'alpha-match-desktop.png'), fullPage: true });
+  // Vercel-like static client on a separate origin: browser CORS and bearer auth.
+  const staticSite=createServer(async (req,res)=>{
+    const file=req.url==='/'?'index.html':req.url==='/app.js'?'app.js':req.url==='/style.css'?'style.css':null;
+    if(!file){res.writeHead(404);res.end();return}
+    res.writeHead(200,{'content-type':file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html'});
+    res.end(await readFile(new URL('../web/'+file,import.meta.url)));
+  });
+  await new Promise(resolve=>staticSite.listen(0,'127.0.0.1',resolve));
+  const externalOrigin='http://127.0.0.1:'+staticSite.address().port;
+  let crossApp;
+  try {
+    crossApp=createApp({databasePath:join(temp,'cross.sqlite'),accessPassword:'test-access-password-123',clientOrigin:externalOrigin});
+    await new Promise(resolve=>crossApp.server.listen(0,'127.0.0.1',resolve));
+    const backend='http://127.0.0.1:'+crossApp.server.address().port;
+    const crossPage=await browser.newPage();pages.push(crossPage);
+    crossPage.on('pageerror',error=>errors.push(error.message));
+    await crossPage.goto(externalOrigin);
+    await crossPage.locator('#apiUrl').fill(backend);
+    await crossPage.locator('#login').fill('CrossOriginTester');
+    await crossPage.locator('#password').fill('cross-origin-password-123');
+    await crossPage.locator('#accessPassword').fill('test-access-password-123');
+    await crossPage.locator('#register').click();
+    await crossPage.locator('#home').waitFor({state:'visible',timeout:15000});
+    await crossPage.waitForFunction(()=>document.querySelector('#deck')?.options.length===6);
+    await crossPage.screenshot({path:join(artifacts,'alpha-separate-client-origin.png'),fullPage:true});
+  } finally {
+    if(crossApp){await new Promise(resolve=>crossApp.server.close(resolve));crossApp.db.close()}
+    await new Promise(resolve=>staticSite.close(resolve));
+  }
   assert.deepEqual(errors, []);
-  console.log('BROWSER PASS: two registrations, chat, feedback, custom 70-card deck, private hands, PvP room, mulligan, energy, 2 turns and client-triggered combat with stunned interception');
+  console.log('BROWSER PASS: two registrations, chat, feedback, custom 70-card deck, private hands, PvP room, mulligan, energy, 2 turns and client-triggered combat with stunned interception and separate-origin CORS');
 } catch (error) {
   for (let index=0; index<pages.length;index++) {
     try { await pages[index].screenshot({ path: join(artifacts, 'failure-'+index+'.png'), fullPage: true, timeout: 5000 }); } catch {}
