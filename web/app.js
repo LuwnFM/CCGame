@@ -5,7 +5,7 @@ let apiBase = localStorage.getItem(serverKey) || '';
 let room = localStorage.getItem(roomKey) || '';
 let account = null, catalog = [], presets = [], savedDecks = [], deckIds = [], game = null;
 let selected = null, selectedMulligan = new Set(), selectedVictims = new Set(), selectedRitual = null;
-let selectedReward = null, selectedArtifactIndex = null, busy = false, loading = false;
+let selectedReward = null, selectedRewardKeepExisting = undefined, selectedArtifactIndex = null, busy = false, loading = false;
 function status(value) { $('status').textContent = value || ''; }
 function show(id) { for (const pane of ['auth','home','builder','match']) $(pane).classList.toggle('hidden', pane !== id); }
 function serverAddress() {
@@ -133,7 +133,7 @@ async function send(command) {
   busy=true;
   try {
     await api('/api/rooms/'+room+'/commands',{...command,expectedRevision:game.revision,key:crypto.randomUUID()});
-    selected=null;selectedReward=null;selectedArtifactIndex=null;await refresh();status('Действие принято');
+    selected=null;selectedReward=null;selectedRewardKeepExisting=undefined;selectedArtifactIndex=null;await refresh();status('Действие принято');
   } catch(error){status(error.message);await refresh()}
   finally{busy=false}
 }
@@ -177,13 +177,21 @@ function renderGame(ready) {
   if(game.phase==='reward') {
     const offers=game.pendingReward||[];
     $('rewardCards').replaceChildren(...offers.map(c=>cardButton(c,(c.attack??0)+'/'+(c.health??0),()=>{
-      const zone=c.createdToken?me.auxiliary:me.main,limit=c.createdToken?4:8,choices=zone.filter(p=>!p.card.majestic);
-      if(zone.length<limit||!choices.length)send({type:'chooseReward',rewardId:c.id});
-      else{selectedReward=c.id;renderGame(ready)}
+      const zone=c.createdToken?me.auxiliary:me.main,limit=c.createdToken?4:8;
+      const existing=c.unique?[...me.main,...me.auxiliary].find(p=>p.card.name===c.name):undefined;
+      const keepExisting=existing?confirm('Оставить уже находящееся на поле Уникальное Существо?'):undefined;
+      if(keepExisting===true){send({type:'chooseReward',rewardId:c.id,keepExisting});return}
+      const remaining=existing?zone.filter(p=>p.objectId!==existing.objectId):zone;
+      const choices=remaining.filter(p=>!p.card.majestic);
+      if(remaining.length<limit||!choices.length)send({type:'chooseReward',rewardId:c.id,keepExisting});
+      else{selectedReward=c.id;selectedRewardKeepExisting=keepExisting;renderGame(ready)}
     },false,selectedReward===c.id)));
     const reward=offers.find(c=>c.id===selectedReward),zone=reward?.createdToken?me.auxiliary:me.main;
-    $('rewardReplacements').replaceChildren(...(reward&&zone.length>=(reward.createdToken?4:8)
-      ?zone.filter(p=>!p.card.majestic).map(p=>cardButton(p.card,'Заменить · '+cardLabel(p),()=>send({type:'chooseReward',rewardId:reward.id,replaceId:p.objectId}))):[]));
+    const existing=reward?.unique?[...me.main,...me.auxiliary].find(p=>p.card.name===reward.name):undefined;
+    const remaining=existing&&selectedRewardKeepExisting===false?zone.filter(p=>p.objectId!==existing.objectId):zone;
+    $('rewardReplacements').replaceChildren(...(reward&&remaining.length>=(reward.createdToken?4:8)
+      ?remaining.filter(p=>!p.card.majestic).map(p=>cardButton(p.card,'Заменить · '+cardLabel(p),
+         ()=>send({type:'chooseReward',rewardId:reward.id,replaceId:p.objectId,keepExisting:selectedRewardKeepExisting}))):[]));
     return;
   }
   if(game.phase==='paused')status(game.pauseReason||'Матч приостановлен');

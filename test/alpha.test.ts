@@ -190,3 +190,28 @@ test('Stasis does not suppress Poison permanently after its own counter expires'
   assert.equal(g.players[1].main[0].damage,2);
   assert.equal(g.players[1].main[0].poison?.ticks,1);
 });
+
+test('duplicate Unique ritual reward requires survivor choice, never fakes a death or reroll', () => {
+  const initial=ready();
+  const ritual=step(initial,{type:'chooseRitual',actor:0,effectId:effect.id,objectIds:[1,2,3]},'unique-ritual');
+  const rewardId=ritual.pendingReward!.offeredIds[0];
+  const target=ritual.pendingReward!.pool.find(card=>card.id===rewardId)!;
+  target.unique=true;
+  ritual.players[0].main.push({
+    ...victim(100,{kind:'damageController',amount:9}),
+    card:{...structuredClone(target),onDeath:{kind:'damageController',amount:9}},
+    sacrifice:false,ritualReward:false
+  });
+  assert.throws(()=>step(ritual,{type:'chooseReward',actor:0,rewardId},'no-survivor'),/Уникальную/);
+  const kept=step(ritual,{type:'chooseReward',actor:0,rewardId,keepExisting:true},'keep-old');
+  assert.equal(kept.players[0].main.find(x=>x.card.id===rewardId)?.objectId,100);
+  assert.equal(kept.players[0].erased.length,1);
+  assert.equal(kept.players[0].hp,28);
+  assert.equal(kept.phase,'main');
+  const replaced=step(ritual,{type:'chooseReward',actor:0,rewardId,keepExisting:false},'use-new');
+  assert.equal(replaced.players[0].main.filter(x=>x.card.id===rewardId).length,1);
+  assert.notEqual(replaced.players[0].main.find(x=>x.card.id===rewardId)?.objectId,100);
+  assert.equal(replaced.players[0].hp,28);
+  assert.equal(replaced.players[0].discard.some(c=>c.id===rewardId),true);
+  assert.equal(replaced.phase,'main');
+});

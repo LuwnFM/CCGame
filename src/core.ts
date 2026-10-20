@@ -77,7 +77,7 @@ export type Command =
   | { type: 'activateLegend'; actor: PlayerId; expectedRevision: number; key: string; objectId: number }
   | { type: 'playArtifact'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number; replaceId?: number; keepExisting?: boolean }
   | { type: 'chooseRitual'; actor: PlayerId; expectedRevision: number; key: string; effectId: string; objectIds: number[] }
-  | { type: 'chooseReward'; actor: PlayerId; expectedRevision: number; key: string; rewardId: string; replaceId?: number }
+  | { type: 'chooseReward'; actor: PlayerId; expectedRevision: number; key: string; rewardId: string; replaceId?: number; keepExisting?: boolean }
   | { type: 'attack'; actor: PlayerId; expectedRevision: number; key: string; attackerId: number; target: { kind: 'player' } | { kind: 'creature' | 'legend'; objectId: number } }
   | { type: 'intercept'; actor: PlayerId; expectedRevision: number; key: string; interceptorId: number | null }
   | { type: 'endTurn'; actor: PlayerId; expectedRevision: number; key: string }
@@ -306,8 +306,20 @@ export function apply(game: Game, command: Command): Game {
       reward.ritualReward = true;
       const zone = reward.createdToken ? p.auxiliary : p.main;
       const limit = reward.createdToken ? 4 : 8;
-      const uniqueBlocked = !!reward.unique && [...p.main, ...p.auxiliary].some(unit => unit.card.id === reward.id);
-      if (!uniqueBlocked && zone.length >= limit) {
+      // Unique-name collisions follow the ordinary explicit-survivor rule.
+      // This is not a failed placement and must not cause a five-card reroll.
+      const sameUnique = reward.unique ? [...p.main, ...p.auxiliary].find(unit => unit.card.name === reward.name) : undefined;
+      if (sameUnique) {
+        requireRule(typeof command.keepExisting === 'boolean', 'Выберите, какую Уникальную оставить');
+        if (command.keepExisting) {
+          sendToDiscard(p, reward, true);
+          next.pendingReward = null; next.phase = 'main';
+          break;
+        }
+        const removed = removePermanents(p, [sameUnique.objectId]);
+        for (const unit of removed) sendToDiscard(p, unit.card, unit.ritualReward);
+      }
+      if (zone.length >= limit) {
         const replacement = zone.find(unit => unit.objectId === command.replaceId && !unit.card.majestic);
         if (replacement) {
           const removed = removePermanents(p, [replacement.objectId]);
@@ -318,7 +330,7 @@ export function apply(game: Game, command: Command): Game {
         } else if (zone.some(unit => !unit.card.majestic)) throw new RuleError('Выберите заменяемое Существо');
       }
       if (finishIfLethal(next)) { next.pendingReward = null; break; }
-      if (uniqueBlocked || zone.length >= limit) {
+      if (zone.length >= limit) {
         const roll = nextRandom(next.seed ?? 1, pending.pool.length); next.seed = roll.seed;
         reward = { ...structuredClone(pending.pool[roll.value]), ritualReward: true };
         // An unplaceable reward goes to hand as a playable card, including temporary token cards.
