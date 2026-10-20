@@ -1,0 +1,131 @@
+import { test } from 'node:test';
+import { strict as assert } from 'node:assert';
+import { apply, initialGame, MAX_EFFECT_OPERATIONS, player, validateDeck, type Card, type Command, type Game, type Permanent } from '../src/core.ts';
+import { testDeck, ARCHETYPES } from '../src/decks.ts';
+
+const land: Card = { id: 'violet-land', name: 'Владение', kind: 'domain', produces: 'violet', basic: true };
+const reward: Card[] = Array.from({ length: 5 }, (_, i) => ({ id: `reward-${i}`, name: `Награда ${i}`, kind: 'creature', aspects: ['violet'], attack: 4, health: 4 }));
+const effect = { id: 'ritual-1', color: 'violet' as const, threshold: 3, rewardPool: reward as [Card, Card, Card, Card, Card], requiresSource: false, remainingStarts: 1 };
+const victim = (id: number, onDeath?: Card['onDeath']): Permanent => ({ objectId: id, card: { id: `victim-${id}`, name: `Жертва ${id}`, kind: 'creature', aspects: ['violet'], attack: 1, health: 1, onDeath }, exhausted: false, damage: 0, shield: 1, interceptions: 0, enteredTurn: 0, sacrifice: true });
+function step(g: Game, cmd: object, key: string): Game { return apply(g, { ...cmd, expectedRevision: g.revision, key } as Command); }
+function ready(): Game {
+  let g = step(initialGame(player([], [land]), player()), { type: 'startTurn', actor: 0 }, 'start');
+  g.players[0].rituals.push(structuredClone(effect));
+  g.players[0].main.push(victim(1, { kind: 'damageController', amount: 2 }), victim(2));
+  g.players[0].auxiliary.push(victim(3));
+  g = step(g, { type: 'endTurn', actor: 0 }, 'end0');
+  return step(g, { type: 'endTurn', actor: 1 }, 'end1');
+}
+
+test('all six alpha decks are legal, with a playable violet Technique', () => {
+  for (const archetype of ARCHETYPES) {
+    const cards = testDeck(archetype.id);
+    assert.equal(cards.length, 70);
+    assert.deepEqual(validateDeck(cards), []);
+    assert.equal(cards.filter(c => c.kind === 'domain').length, 26);
+    assert.equal(cards.filter(c => c.kind === 'creature' && !c.guard && !c.flying && !c.firstStrike && !c.piercing && !c.lifesteal && !c.haste && !c.zeal && !c.extraAttacks && !c.stealth && !c.poisonHit && !c.shield && !c.sacrifice && !c.onDeath).length, 18);
+    assert.equal(cards.filter(c => c.kind === 'legend').length, 2);
+    assert.equal(cards.filter(c => c.kind === 'artifact' && c.unique).length, 1);
+    assert.ok(cards.every(c => c.lore?.organization === archetype.organization));
+  }
+  assert.equal(testDeck('violet').filter(card => card.kind === 'technique').length, 3);
+  assert.ok(testDeck('violet').some(card => card.name === 'Колдрейк Шоу'));
+  assert.ok(testDeck('violet').some(card => card.name === 'Драгнир и Иммельсторн'));
+});
+test('First Strike prevents retaliation, and poison ticks through Stasis', () => {
+  let g = step(initialGame(player(),player()),{type:'startTurn',actor:0},'start');
+  g.players[0].main.push({...victim(1),card:{...victim(1).card,attack:3,health:3,firstStrike:true},enteredTurn:0});
+  g.players[1].main.push({...victim(2),card:{...victim(2).card,attack:5,health:2,poisonHit:{strength:2,ticks:2}},enteredTurn:0});
+  g = step(g,{type:'attack',actor:0,attackerId:1,target:{kind:'creature',objectId:2}},'declare');
+  g = step(g,{type:'intercept',actor:1,interceptorId:null},'answer');
+  assert.equal(g.players[0].main[0].damage,0);
+  assert.equal(g.players[1].main.length,0);
+  const poisoned = {...victim(3),card:{...victim(3).card,health:3},shield:0,stasis:2,poison:{strength:1,ticks:2}};
+  g.players[1].main.push(poisoned);
+  g = step(g,{type:'endTurn',actor:0},'turn');
+  assert.equal(g.players[1].main[0].damage,1);
+  assert.equal(g.players[1].main[0].poison?.ticks,1);
+});
+test('ritual snapshots both zones, resolves a negative death effect before offering reward', () => {
+  let g = ready();
+  assert.equal(g.phase, 'ritual');
+  assert.deepEqual(g.readyRituals?.[0].eligibleIds, [1, 2, 3]);
+  assert.throws(() => step(g, { type: 'chooseRitual', actor: 0, effectId: effect.id, objectIds: [1, 1, 3] }, 'bad'), /разных/);
+  const previous = g;
+  g = step(g, { type: 'chooseRitual', actor: 0, effectId: effect.id, objectIds: [1, 2, 3] }, 'ritual');
+  assert.equal(previous.players[0].hp, 30);
+  assert.equal(g.players[0].hp, 28);
+  assert.equal(g.players[0].main.length, 0);
+  assert.equal(g.players[0].auxiliary.length, 0);
+  assert.equal(g.players[0].discard.length, 3);
+  assert.equal(g.phase, 'reward');
+  assert.equal(g.pendingReward?.offeredIds.length, 3);
+  g = step(g, { type: 'chooseReward', actor: 0, rewardId: g.pendingReward!.offeredIds[0] }, 'reward');
+  assert.equal(g.players[0].main.length, 1);
+  assert.equal(g.players[0].main[0].ritualReward, true);
+  assert.equal(g.phase, 'main');
+});
+test('replacement dies with consequences; a filled all-Majestic field sends reroll to hand', () => {
+  let g = ready();
+  g = step(g, { type: 'chooseRitual', actor: 0, effectId: effect.id, objectIds: [1, 2, 3] }, 'r');
+  for (let i = 0; i < 8; i++) g.players[0].main.push({ ...victim(20 + i), card: { ...victim(20 + i).card, majestic: i !== 0 }, sacrifice: false });
+  const choice = g.pendingReward!.offeredIds[0];
+  assert.throws(() => step(g, { type: 'chooseReward', actor: 0, rewardId: choice }, 'bad'), /заменяемое/);
+  g.players[0].main[0].card.onDeath = { kind: 'damageController', amount: 3 };
+  g = step(g, { type: 'chooseReward', actor: 0, rewardId: choice, replaceId: 20 }, 'replace');
+  assert.equal(g.players[0].hp, 25);
+  assert.equal(g.players[0].main.length, 8);
+  assert.equal(g.players[0].erased.length, 0);
+  const another = ready();
+  let filled = step(another, { type: 'chooseRitual', actor: 0, effectId: effect.id, objectIds: [1, 2, 3] }, 'r');
+  for (let i = 0; i < 8; i++) filled.players[0].main.push({ ...victim(40 + i), card: { ...victim(40 + i).card, majestic: true }, sacrifice: false });
+  filled = step(filled, { type: 'chooseReward', actor: 0, rewardId: filled.pendingReward!.offeredIds[0] }, 'fallback');
+  assert.equal(filled.players[0].hand.length, 2);
+  assert.equal(filled.players[0].hand[1].ritualReward, true);
+  assert.equal(filled.players[0].main.length, 8);
+});
+test('operation overflow pauses and rolls the entire lethal ritual back', () => {
+  const g = ready();
+  g.operationsUsed = MAX_EFFECT_OPERATIONS - 1;
+  const paused = step(g, { type: 'chooseRitual', actor: 0, effectId: effect.id, objectIds: [1, 2, 3] }, 'overflow');
+  assert.equal(paused.phase, 'paused');
+  assert.equal(paused.winner, null);
+  assert.equal(paused.players[0].main.length, 2);
+  assert.equal(paused.players[0].auxiliary.length, 1);
+  assert.equal(paused.players[0].hp, 30);
+  assert.equal(paused.seed, g.seed);
+  assert.equal(paused.pendingReward, undefined);
+});
+test('Legend enters its own zone, can activate immediately, and takes reduced damage after Shield', () => {
+  const legend: Card = { id: 'l1', name: 'Легенда', kind: 'legend', unique: true, cost: { colored: {}, generic: 0 }, loyalty: 4,
+    shield: 1, loyaltyAbility: { delta: 1, kind: 'healRuler', amount: 2 } };
+  let g = step(initialGame(player([], [legend]), player()), { type: 'startTurn', actor: 0 }, 's');
+  g.players[0].hp = 28;
+  g = step(g, { type: 'playLegend', actor: 0, handIndex: 0 }, 'play');
+  assert.equal(g.players[0].legends.length, 1);
+  g = step(g, { type: 'activateLegend', actor: 0, objectId: 1 }, 'activate');
+  assert.equal(g.players[0].hp, 30);
+  assert.equal(g.players[0].legends[0].loyalty, 5);
+  assert.throws(() => step(g, { type: 'activateLegend', actor: 0, objectId: 1 }, 'twice'), /недоступна/);
+  g.players[1].main.push({ ...victim(2), card: { ...victim(2).card, attack: 6 }, enteredTurn: 0 });
+  g = step(g, { type: 'endTurn', actor: 0 }, 'e0');
+  g = step(g, { type: 'attack', actor: 1, attackerId: 2, target: { kind: 'legend', objectId: 1 } }, 'attack');
+  g = step(g, { type: 'intercept', actor: 0, interceptorId: null }, 'skip');
+  assert.equal(g.players[0].legends[0].loyalty, 3);
+  assert.equal(g.players[0].legends[0].shield, 0);
+});
+test('unique auxiliary item boosts combat and can displace a token without death trigger', () => {
+  const artifact: Card = { id: 'art', name: 'Знамя', kind: 'artifact', unique: true, cost: { colored: {}, generic: 0 }, auraAttack: 1 };
+  let g = step(initialGame(player([], [artifact]), player()), { type: 'startTurn', actor: 0 }, 's');
+  g.players[0].auxiliary.push({ ...victim(1, { kind: 'damageController', amount: 5 }), card: { ...victim(1).card, createdToken: true } });
+  for (let i = 2; i <= 4; i++) g.players[0].auxiliary.push(victim(i));
+  assert.throws(() => step(g, { type: 'playArtifact', actor: 0, handIndex: 0 }, 'blocked'), /Вытеснения/);
+  g = step(g, { type: 'playArtifact', actor: 0, handIndex: 0, replaceId: 1 }, 'artifact');
+  assert.equal(g.players[0].hp, 30);
+  assert.equal(g.players[0].erased.length, 1);
+  assert.equal(g.players[0].auxiliary.length, 4);
+  g.players[0].main.push({ ...victim(5), card: { ...victim(5).card, attack: 2 }, enteredTurn: 0 });
+  g = step(g, { type: 'attack', actor: 0, attackerId: 5, target: { kind: 'player' } }, 'a');
+  g = step(g, { type: 'intercept', actor: 1, interceptorId: null }, 'i');
+  assert.equal(g.players[1].hp, 27);
+});
