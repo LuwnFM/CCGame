@@ -258,11 +258,16 @@ export function createApp(options: { databasePath: string; accessPassword: strin
       }
       if (url.pathname === '/api/lobby' && req.method === 'GET') return json(res,200,social.lobby(uid));
       if (url.pathname === '/api/chat' && req.method === 'POST') {
-        social.postChat(uid,(await body(req)).text); return json(res,201,{ok:true});
+        return json(res,201,{ok:true,...social.postChat(uid,(await body(req)).text)});
       }
+      if (url.pathname === '/api/chat/history' && req.method === 'GET')
+        return json(res,200,social.chatHistory(url.searchParams.get('before')??undefined,url.searchParams.get('limit')??50));
       if (url.pathname === '/api/feedback' && req.method === 'POST') {
-        const input=await body(req); social.sendFeedback(uid,input.category,input.text); return json(res,201,{ok:true});
+        const input=await body(req);
+        return json(res,201,{report:social.sendFeedback(uid,input.category,input.text,input.title,input.roomCode)});
       }
+      if (url.pathname === '/api/feedback/mine' && req.method === 'GET')
+        return json(res,200,{reports:social.myFeedback(uid)});
       if (url.pathname === '/api/queue' && req.method === 'DELETE') {
         social.cancel(uid); return json(res,200,{ok:true});
       }

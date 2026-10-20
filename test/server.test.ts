@@ -126,3 +126,33 @@ test('SQLite startup creates a consistent retained backup with game data',async(
     snapshot.close();second.db.close();
   } finally {await rm(dir,{recursive:true,force:true})}
 });
+
+test('chat 5-second throttle, history paging, private feedback and stored ticket fields',async()=>{
+  const {app,request,register}=await fixture();
+  try {
+    const author=await register('ChatArchive'),reader=await register('ChatReader');
+    const first=await request('/api/chat',author.token,{text:'first historical chat'});
+    assert.equal(first.status,201);assert.ok(first.body.nextAllowedAt>Date.now());
+    assert.equal((await request('/api/chat',author.token,{text:'rate limit bypass'})).status,409);
+    app.db.prepare('UPDATE chat_messages SET created_at=created_at-5001 WHERE account_id=?').run(author.account.id);
+    assert.equal((await request('/api/chat',author.token,{text:'second historical chat'})).status,201);
+    const hist=await request('/api/chat/history?limit=1',reader.token);
+    assert.equal(hist.status,200);assert.equal(hist.body.messages.length,1);assert.equal(hist.body.hasMore,true);
+    const older=await request('/api/chat/history?limit=1&before='+hist.body.nextBefore,reader.token);
+    assert.equal(older.body.messages[0].body,'first historical chat');
+    assert.equal((await request('/api/chat/history?limit=200',reader.token)).status,409);
+    const report=await request('/api/feedback',author.token,{
+      category:'problem',title:'Unable to move creature',roomCode:'AABB00CC',
+      text:'After joining the room, cannot select a creature'});
+    assert.equal(report.status,201);assert.ok(Number.isInteger(report.body.report.id));
+    const own=await request('/api/feedback/mine',author.token);
+    assert.equal(own.body.reports[0].title,'Unable to move creature');
+    assert.equal(own.body.reports[0].status,'new');
+    assert.equal((await request('/api/feedback/mine',reader.token)).body.reports.length,0);
+    assert.equal((await request('/api/feedback',reader.token,{
+      category:'bug',title:'Oops',roomCode:'not a room',text:'Some malformed report'})).status,409);
+    const sql=app.db.prepare('SELECT account_id,category,title,room_code,body FROM feedback WHERE id=?')
+      .get(report.body.report.id) as any;
+    assert.equal(sql.account_id,author.account.id);assert.equal(sql.room_code,'AABB00CC');
+  }finally{app.close()}
+});

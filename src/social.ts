@@ -40,6 +40,11 @@ export class Social {
       CREATE TABLE IF NOT EXISTS feedback (
       id INTEGER PRIMARY KEY AUTOINCREMENT, account_id TEXT NOT NULL, category TEXT NOT NULL,
       body TEXT NOT NULL, created_at INTEGER NOT NULL);`);
+    // Backward-compatible migration: preserve all existing reports.
+    const columns=new Set((db.prepare('PRAGMA table_info(feedback)').all() as {name:string}[]).map(x=>x.name));
+    for(const [name,definition] of Object.entries({
+      title:"TEXT NOT NULL DEFAULT 'Без названия'",room_code:'TEXT',status:"TEXT NOT NULL DEFAULT 'new'"
+    }))if(!columns.has(name))db.exec(`ALTER TABLE feedback ADD COLUMN ${name} ${definition}`);
   }
   private row(id: string): AccountRow {
     const row = this.db.prepare('SELECT * FROM accounts WHERE id=?').get(id) as AccountRow | undefined;
@@ -153,12 +158,39 @@ export class Social {
   postChat(id: string, text: unknown) {
     if (typeof text !== 'string' || !text.trim() || text.trim().length > 500) throw new RuleError('Сообщение: 1–500 символов');
     const latest = this.db.prepare('SELECT created_at FROM chat_messages WHERE account_id=? ORDER BY id DESC LIMIT 1').get(id) as {created_at:number}|undefined;
-    if (latest && Date.now()-latest.created_at<2000) throw new RuleError('Подождите две секунды перед следующим сообщением');
-    this.db.prepare('INSERT INTO chat_messages (account_id,body,created_at) VALUES (?,?,?)').run(id,text.trim(),Date.now());
+    const now=Date.now();
+    if (latest && now-latest.created_at<5000)
+      throw new RuleError('Подождите '+Math.ceil((5000-(now-latest.created_at))/1000)+' сек. перед следующим сообщением');
+    this.db.prepare('INSERT INTO chat_messages (account_id,body,created_at) VALUES (?,?,?)').run(id,text.trim(),now);
+    return {nextAllowedAt:now+5000};
   }
-  sendFeedback(id: string, category: unknown, text: unknown) {
-    if (category !== 'bug' && category !== 'idea' || typeof text !== 'string' || text.trim().length<10 || text.length>2000)
-      throw new RuleError('Выберите жалобу или предложение и напишите 10–2000 символов');
-    this.db.prepare('INSERT INTO feedback (account_id,category,body,created_at) VALUES (?,?,?,?)').run(id,category,text.trim(),Date.now());
+  chatHistory(before:unknown, count:unknown=50){
+    const id=before===undefined?Number.MAX_SAFE_INTEGER:Number(before);
+    const limit=Number(count);
+    if(!Number.isSafeInteger(id)||id<1||!Number.isSafeInteger(limit)||limit<1||limit>100)
+      throw new RuleError('Неверный запрос истории чата');
+    const entries=this.db.prepare(`SELECT m.id,m.account_id AS accountId,
+      COALESCE(a.login,'Удалённый игрок') AS login,m.body,m.created_at AS createdAt
+      FROM chat_messages m LEFT JOIN accounts a ON a.id=m.account_id
+      WHERE m.id<? ORDER BY m.id DESC LIMIT ?`).all(id,limit+1) as {id:number}[];
+    const hasMore=entries.length>limit;
+    const messages=entries.slice(0,limit).reverse();
+    return {messages,hasMore,nextBefore:hasMore?messages[0].id:null};
+  }
+  sendFeedback(id:string,category:unknown,text:unknown,titleInput?:unknown,roomInput?:unknown){
+    if(!['bug','idea','problem'].includes(String(category)) || typeof text!=='string'||text.trim().length<10||text.trim().length>2000)
+      throw new RuleError('Выберите категорию и напишите 10–2000 символов');
+    const title=typeof titleInput==='string'&&titleInput.trim()?titleInput.trim():'Без названия';
+    if(title.length<3||title.length>100)throw new RuleError('Заголовок обращения: 3–100 символов');
+    const room=roomInput===undefined||roomInput===''?null:roomInput;
+    if(room!==null&&(typeof room!=='string'||!/^[A-F0-9]{8}$/.test(room)))
+      throw new RuleError('Неверный код комнаты');
+    const result=this.db.prepare('INSERT INTO feedback (account_id,category,title,room_code,body,created_at,status) VALUES (?,?,?,?,?,?,?)')
+      .run(id,category,title,room,text.trim(),Date.now(),'new');
+    return {id:Number(result.lastInsertRowid),status:'new'};
+  }
+  myFeedback(id:string){
+    return this.db.prepare(`SELECT id,category,title,room_code AS roomCode,body,created_at AS createdAt,status
+      FROM feedback WHERE account_id=? ORDER BY id DESC LIMIT 100`).all(id);
   }
 }
