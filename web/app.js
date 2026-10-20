@@ -132,7 +132,18 @@ async function send(command) {
   if (busy || !game) return;
   busy=true;
   try {
-    await api('/api/rooms/'+room+'/commands',{...command,expectedRevision:game.revision,key:crypto.randomUUID()});
+    const payload={...command,expectedRevision:game.revision,key:crypto.randomUUID()};
+    try {
+      await api('/api/rooms/'+room+'/commands',payload);
+    } catch (error) {
+      // The other player's mulligan advances the shared revision. The local
+      // selected cards have not changed, so exactly one safe retry is possible.
+      if(command.type!=='mulligan'||error.message!=='Устаревшая ревизия')throw error;
+      const latest=(await api('/api/rooms/'+room)).game;
+      if(latest?.phase==='mulligan'&&!latest.mulliganReady?.[latest.seat]) {
+        await api('/api/rooms/'+room+'/commands',{...payload,expectedRevision:latest.revision});
+      } else if(!(latest?.mulliganReady?.[latest.seat]||latest?.phase==='main'))throw error;
+    }
     selected=null;selectedReward=null;selectedRewardKeepExisting=undefined;selectedArtifactIndex=null;await refresh();status('Действие принято');
   } catch(error){status(error.message);await refresh()}
   finally{busy=false}
