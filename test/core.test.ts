@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { apply, initialGame, player, validateDeck, type Card, type Game, type Command } from '../src/core.ts';
+import { apply, initialGame, player, sendToDiscard, validateDeck, type Card, type Game, type Command } from '../src/core.ts';
 const land: Card = { id: 'l', name: 'Базовое красное Владение', kind: 'domain', basic: true, produces: 'red' };
 const creature: Card = { id: 'c', name: 'Ученик', kind: 'creature', cost: { colored: { red: 1 }, generic: 1 }, attack: 2, health: 2 };
 function step(g: Game, command: Omit<Command, 'expectedRevision' | 'key'>, key: string): Game {
@@ -51,4 +51,34 @@ test('70 cards, 26 domains, basic colored domain and copy limits', () => {
   const deck = [...Array(26).fill(land), ...Array.from({ length: 44 }, (_, i) => ({ ...creature, id: `c${i}`, name: `Ученик ${i}` }))];
   assert.deepEqual(validateDeck(deck), []);
   assert.ok(validateDeck(Array(70).fill(creature)).length >= 2);
+});
+test('attack declaration waits for defender; Guard intercepts a creature attack', () => {
+  const guard = { ...creature, id: 'g', name: 'Страж', guard: true, attack: 1, health: 3 };
+  let g = step(initialGame(player([], []), player([], [])), { type: 'startTurn', actor: 0 }, 's');
+  g.players[0].main.push({ objectId: 1, card: creature, exhausted: false, damage: 0, shield: 0, interceptions: 0, enteredTurn: 0 });
+  g.players[1].main.push({ objectId: 2, card: creature, exhausted: false, damage: 0, shield: 0, interceptions: 0, enteredTurn: 0 });
+  g.players[1].main.push({ objectId: 3, card: guard, exhausted: false, damage: 0, shield: 0, interceptions: 0, enteredTurn: 0 });
+  g = step(g, { type: 'attack', actor: 0, attackerId: 1, target: { kind: 'creature', objectId: 2 } }, 'a');
+  assert.equal(g.phase, 'intercept');
+  assert.throws(() => step(g, { type: 'endTurn', actor: 0 }, 'e'), /Недоступная фаза/);
+  g = step(g, { type: 'intercept', actor: 1, interceptorId: 3 }, 'i');
+  assert.equal(g.phase, 'main');
+  assert.equal(g.players[1].main.find(x => x.objectId === 2)?.damage, 0);
+  assert.equal(g.players[1].main.find(x => x.objectId === 3)?.damage, 2);
+  assert.equal(g.players[0].main.find(x => x.objectId === 1)?.damage, 1);
+});
+test('shield absorbs damage and direct attack lowers ruler HP', () => {
+  let g = step(initialGame(player(), player()), { type: 'startTurn', actor: 0 }, 's');
+  g.players[0].main.push({ objectId: 1, card: creature, exhausted: false, damage: 0, shield: 1, interceptions: 0, enteredTurn: 0 });
+  g = step(g, { type: 'attack', actor: 0, attackerId: 1, target: { kind: 'player' } }, 'a');
+  g = step(g, { type: 'intercept', actor: 1, interceptorId: null }, 'i');
+  assert.equal(g.players[1].hp, 28);
+});
+test('ritual rewards and created tokens erase instead of entering discard', () => {
+  const p = player();
+  sendToDiscard(p, { ...creature, ritualReward: true });
+  sendToDiscard(p, { ...creature, createdToken: true });
+  sendToDiscard(p, creature);
+  assert.equal(p.erased.length, 2);
+  assert.equal(p.discard.length, 1);
 });
