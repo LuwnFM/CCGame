@@ -8,7 +8,7 @@
   <script src="/app.js" type="module"></script>
 </head>
 <body>
-<header><div class="brand"><span class="sigil">FW</span><div><strong>Firewell CCG</strong><small>Альфа · дуэль 1×1</small></div></div><span id="connection" class="pill">Не подключено</span></header>
+<header><div class="brand"><span class="sigil">FW</span><div><strong>Firewell CCG</strong><small>Альфа · дуэль 1×1</small></div></div><div class="header-actions"><button type="button" id="rulesOpen" class="secondary">Правила игры</button><button type="button" id="languageToggle" class="ghost" aria-label="Переключить язык / Switch language">EN</button><span id="connection" class="pill">Не подключено</span></div></header>
 <main>
   <section id="auth" class="panel">
     <h1>Войти в игру</h1>
@@ -56,6 +56,11 @@
       <section class="panel playarea"><h2>Ты <span id="myHp"></span></h2><p id="myInfo" class="muted"></p><h3>Легенды</h3><div id="myLegends" class="row"></div><h3>Основное поле · 8</h3><div id="myBoard" class="board"></div><h3>Вспомогательное поле · 4</h3><div id="myAux" class="board"></div><h3>Владения</h3><div id="myDomains" class="row"></div></section>
     </div>
     <section class="panel playarea"><h2>Рука</h2><div id="hand" class="hand"></div><div id="artifactReplacements" class="hand"></div><div class="actions"><button id="hero">Атаковать Владетеля</button><button id="skip" class="secondary">Пропустить перехват</button><button id="end" class="secondary">Завершить ход</button></div></section>
+  </section>
+  <section id="rulesPage" class="hidden">
+    <div class="panel top"><h1>Правила игры</h1><button id="rulesClose" type="button" class="secondary">Вернуться</button></div>
+    <div class="panel"><p class="hint">Правила, необходимые для игры в альфу. Описаны все доступные типы карт и механики. Тонкости внутренних взаимодействий событий можно исследовать в матчах.</p>
+      <div id="rulesContent" class="rules-content"></div></div>
   </section>
   <p id="status" role="status" aria-live="polite"></p>
 </main>

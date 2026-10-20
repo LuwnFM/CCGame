@@ -38,6 +38,14 @@ try {
   for (const page of [a,b]) page.on('pageerror', error => errors.push(error.message));
 
   await register(a, 'AlphaBrowser');
+  await a.locator('#languageToggle').click();
+  await a.getByText('Open deck builder').waitFor({state:'visible'});
+  await a.locator('#rulesOpen').click();
+  await a.locator('#rulesContent').getByText(/Cera Van Troupe/).waitFor();
+  await a.locator('#rulesContent').getByText(/exactly 70 cards/i).waitFor();
+  await a.locator('#languageToggle').click();
+  await a.locator('#rulesContent').getByText(/Цера Ван Троуп/).waitFor();
+  await a.locator('#rulesClose').click();
   await a.locator('#chatText').fill('Привет из браузерного теста');
   await a.locator('#chatForm button').click();
   await a.locator('#feedbackTitle').fill('Тестовое обращение');
@@ -124,7 +132,7 @@ try {
   await a.screenshot({ path: join(artifacts, 'alpha-match-desktop.png'), fullPage: true });
   // Vercel-like static client on a separate origin: browser CORS and bearer auth.
   const staticSite=createServer(async (req,res)=>{
-    const file=req.url==='/'?'index.html':req.url==='/app.js'?'app.js':req.url==='/style.css'?'style.css':null;
+    const file=req.url==='/'?'index.html':['/app.js','/style.css','/i18n.js','/rules.js'].includes(req.url)?req.url.slice(1):null;
     if(!file){res.writeHead(404);res.end();return}
     res.writeHead(200,{'content-type':file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html'});
     res.end(await readFile(new URL('../web/'+file,import.meta.url)));

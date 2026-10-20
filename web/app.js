@@ -1,3 +1,5 @@
+import { locale, setLocale, cardName, archetypeName, translate, observeLocalization, localize } from './i18n.js';
+import { renderPublicRules } from './rules.js';
 const $ = id => document.getElementById(id);
 const sessionKey = 'firewell_session', serverKey = 'firewell_server', roomKey = 'firewell_room';
 let token = localStorage.getItem(sessionKey) || '';
@@ -7,8 +9,12 @@ let account = null, catalog = [], presets = [], savedDecks = [], deckIds = [], g
 let selected = null, selectedMulligan = new Set(), selectedVictims = new Set(), selectedRitual = null;
 let selectedReward = null, selectedRewardKeepExisting = undefined, selectedArtifactIndex = null, busy = false, loading = false;
 let chatAvailableAt=0,olderMessages=[],chatMore=true;
-function status(value) { $('status').textContent = value || ''; }
-function show(id) { for (const pane of ['auth','home','builder','match']) $(pane).classList.toggle('hidden', pane !== id); }
+function status(value) { $('status').textContent = translate(value || ''); }
+let lastPage='auth';
+function show(id) {
+  if(id!=='rulesPage')lastPage=id;
+  for(const pane of ['auth','home','builder','match','rulesPage'])$(pane).classList.toggle('hidden',pane!==id);
+}
 function serverAddress() {
   const entered = $('apiUrl').value.trim().replace(/\/$/,'');
   if (!entered) {
@@ -42,7 +48,7 @@ function textElement(tag, value, className = '') {
 function initials(name) { return [...name.replace(/[^\p{L}\p{N}]/gu,'')].slice(0,2).join('').toUpperCase() || 'FW'; }
 function cardButton(card, label, onClick, disabled = false, active = false) {
   const element = button('',onClick,disabled,'card '+(card.aspects?.[0] || 'neutral')+(active?' active':''));
-  element.append(textElement('span',initials(card.name),'glyph'),textElement('b',card.name));
+  element.append(textElement('span',initials(cardName(card)),'glyph'),textElement('b',cardName(card)));
   element.append(textElement('small',label));
   const flags = [['unique','Уникальная'],['guard','Страж'],['flying','Полёт'],['firstStrike','Первый удар'],
     ['piercing','Пробивание'],['lifesteal','Похищение жизни'],['stealth','Скрытность'],['majestic','Величественный'],
@@ -52,8 +58,8 @@ function cardButton(card, label, onClick, disabled = false, active = false) {
   if(card.poisonHit)flags.push('Отрава '+card.poisonHit.strength+'/'+card.poisonHit.ticks);
   if(card.shield)flags.push('Щит '+card.shield);
   if(card.abilities?.length)flags.push('⚠ Временно неактивно: '+card.abilities.join(', '));
-  element.title=card.name+' · '+label+(flags.length?'\n'+flags.join(' · '):'');
-  element.setAttribute('aria-label',card.name+' · '+label+(flags.length?' · '+flags.join(', '):''));
+  element.title=cardName(card)+' · '+label+(flags.length?'\n'+flags.join(' · '):'');
+  element.setAttribute('aria-label',cardName(card)+' · '+label+(flags.length?' · '+flags.join(', '):''));
   if(flags.length)element.append(textElement('small',flags.slice(0,2).join(' · ')+(flags.length>2?' · +'+(flags.length-2):''),'card-flags'));
   if(card.abilities?.length)element.append(textElement('small','⚠ Способность пока не работает','inactive-ability'));
   return element;
@@ -85,9 +91,9 @@ async function authenticate(register) {
 async function loadData() {
   const [cards, saved]=await Promise.all([api('/api/catalog'),api('/api/my-decks')]);
   catalog=cards.cards; presets=cards.presets; savedDecks=saved.decks;
-  const options=[...presets.map(p=>({id:p.id,name:p.name})),...savedDecks.map(d=>({id:d.id,name:d.name+' · своя'}))];
+  const options=[...presets.map(p=>({id:p.id,name:archetypeName(p)})),...savedDecks.map(d=>({id:d.id,name:d.name+' · своя'}))];
   $('deck').replaceChildren(...options.map(o=>{const element=document.createElement('option');element.value=o.id;element.textContent=o.name;return element}));
-  $('starter').replaceChildren(...presets.map(p=>{const element=document.createElement('option');element.value=p.id;element.textContent=p.name;return element}));
+  $('starter').replaceChildren(...presets.map(p=>{const element=document.createElement('option');element.value=p.id;element.textContent=archetypeName(p);return element}));
   $('savedDecks').replaceChildren(...savedDecks.map(d=>{
     const row=document.createElement('div');row.className='saved';
     row.append(textElement('span',d.name+' · '+d.count+' карт'));
@@ -114,7 +120,7 @@ function renderLobby(data) {
   if (data.room && !room) enterRoom(data.room);
 }
 async function refresh() {
-  if (!token || loading) return;
+  if (!token || loading || !$('rulesPage').classList.contains('hidden')) return;
   loading=true;
   try {
     if (room) {
@@ -295,12 +301,22 @@ function renderBuilder() {
 }
 function entry(card,count,onClick,symbol) {
   const element=document.createElement('div');element.className='entry';
-  element.append(textElement('span',initials(card.name),'mini-glyph'));
+  element.append(textElement('span',initials(cardName(card)),'mini-glyph'));
   const desc=document.createElement('div');desc.className='mini';
-  desc.append(textElement('strong',card.name),textElement('small',card.kind+(card.cost?' · '+card.cost.generic+'+'+Object.values(card.cost.colored).reduce((a,b)=>a+b,0):'')));
+  desc.append(textElement('strong',cardName(card)),textElement('small',card.kind+(card.cost?' · '+card.cost.generic+'+'+Object.values(card.cost.colored).reduce((a,b)=>a+b,0):'')));
   element.append(desc,textElement('span',String(count),'count'),button(symbol,onClick,false,'secondary'));
   return element;
 }
+$('rulesOpen').onclick=()=>{show('rulesPage');renderPublicRules();localize()};
+$('rulesClose').onclick=()=>{show(lastPage);refresh()};
+$('languageToggle').onclick=async()=>{
+  setLocale(locale()==='ru'?'en':'ru');
+  localize();
+  if(!$('rulesPage').classList.contains('hidden'))renderPublicRules();
+  if(!$('builder').classList.contains('hidden'))renderBuilder();
+  if(token){await loadData();await refresh()}
+  localize();
+};
 $('register').onclick=()=>authenticate(true);
 $('signIn').onclick=()=>authenticate(false);
 $('logout').onclick=async()=>{try{await api('/api/logout',{})}catch{}token='';account=null;room='';localStorage.removeItem(sessionKey);localStorage.removeItem(roomKey);show('auth');status('Вы вышли')};
@@ -377,5 +393,6 @@ function tick(){if(!game?.deadlineAt){$('timer').textContent='';return}const lef
 $('apiUrl').value=apiBase;
 show('auth');
 if(token)api('/api/me').then(async data=>{setAccount(data.account);await loadData();await refresh()}).catch(()=>{token='';localStorage.removeItem(sessionKey);show('auth')});
+observeLocalization();
 setInterval(refresh,2500);setInterval(tick,1000);setInterval(updateChatCooldown,250);
 updateChatCooldown();
