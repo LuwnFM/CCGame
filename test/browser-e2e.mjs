@@ -54,6 +54,7 @@ try {
   await b.locator('#presence').waitFor();
   await b.screenshot({ path: join(artifacts, 'alpha-lobby-mobile.png'), fullPage: true });
 
+  await a.locator('summary').click();
   await a.locator('#createRoom').click();
   await a.locator('#match').waitFor({ state: 'visible' });
   await a.waitForFunction(() => /^Комната [A-F0-9]{8}$/.test(document.querySelector('#roomLabel')?.textContent ?? ''));
@@ -90,10 +91,34 @@ try {
   }, null, { timeout: 12000 });
   await b.locator('#hand .card').filter({ hasText: /Владение/ }).first().click();
   await b.locator('#myDomains button').first().waitFor({ state: 'visible' });
+  // Inject a battle-ready server state to verify the entire client -> command -> server -> board path.
+  // The same browser sessions and authenticated room are preserved.
+  const row = app.db.prepare('SELECT game FROM rooms WHERE code=?').get(code);
+  const battle = JSON.parse(row.game);
+  const attackCard = {id:'ui-attacker',name:'Атакующий теста',kind:'creature',attack:4,health:4};
+  const guardCard = {id:'ui-guard',name:'Оглушённый страж теста',kind:'creature',attack:1,health:3,guard:true};
+  battle.phase='main'; battle.active=0; battle.turn=7; battle.pendingAttack=null; battle.nextObjectId=503;
+  battle.players[0].main=[{objectId:501,card:attackCard,exhausted:false,damage:0,shield:0,interceptions:0,enteredTurn:1}];
+  battle.players[1].main=[{objectId:502,card:guardCard,exhausted:false,damage:0,shield:0,interceptions:0,enteredTurn:1,stunned:true}];
+  battle.revision++;
+  app.db.prepare('UPDATE rooms SET game=? WHERE code=?').run(JSON.stringify(battle),code);
+  await a.waitForFunction(() => document.querySelector('#myBoard .card')?.textContent.includes('Атакующий теста'));
+  await a.locator('#myBoard .card').first().click();
+  await a.locator('#hero').click();
+  await b.waitForFunction(() => !document.querySelector('#skip').disabled, null, {timeout:15000});
+  await b.locator('#myBoard .card').first().click();
+  await a.waitForFunction(() => document.querySelector('#myBoard .card')?.textContent.includes('4/3'), null, {timeout:15000});
+  const finalRow = app.db.prepare('SELECT game FROM rooms WHERE code=?').get(code);
+  const afterCombat = JSON.parse(finalRow.game);
+  assert.equal(afterCombat.phase,'main');
+  assert.equal(afterCombat.players[0].main[0].damage,1);
+  assert.equal(afterCombat.players[1].main.length,0);
+  assert.equal(afterCombat.players[0].hp,30);
+  assert.equal(afterCombat.players[1].hp,30);
   await b.screenshot({ path: join(artifacts, 'alpha-match-mobile.png'), fullPage: true });
   await a.screenshot({ path: join(artifacts, 'alpha-match-desktop.png'), fullPage: true });
   assert.deepEqual(errors, []);
-  console.log('BROWSER PASS: two registrations, chat, feedback, custom 70-card deck, private hands, PvP room, mulligan, energy and 2 turns');
+  console.log('BROWSER PASS: two registrations, chat, feedback, custom 70-card deck, private hands, PvP room, mulligan, energy, 2 turns and client-triggered combat with stunned interception');
 } catch (error) {
   for (let index=0; index<pages.length;index++) {
     try { await pages[index].screenshot({ path: join(artifacts, 'failure-'+index+'.png'), fullPage: true, timeout: 5000 }); } catch {}
