@@ -8,7 +8,9 @@ const sha=(value:string|Buffer)=>createHash('sha256').update(value).digest('hex'
 const safe=new Set(['type','handIndex','objectId','discardIndex','keepExisting','indices','attackerId','target','interceptorId','effectId','objectIds','rewardId','replaceId']);
 export class MatchHistory {
  private folder:string|null;
- constructor(private db:DatabaseSync,dbPath:string){
+ private db:DatabaseSync;
+ constructor(db:DatabaseSync,dbPath:string){
+  this.db=db;
   this.folder=dbPath===':memory:'?null:join(dirname(dbPath),'match-archives');
   db.exec('CREATE TABLE IF NOT EXISTS match_history (room TEXT PRIMARY KEY,host TEXT NOT NULL,guest TEXT NOT NULL,started_at INTEGER NOT NULL,finished_at INTEGER,winner TEXT,initial_game TEXT NOT NULL,archive_path TEXT,archive_sha256 TEXT)');
   db.exec('CREATE TABLE IF NOT EXISTS match_events (seq INTEGER PRIMARY KEY AUTOINCREMENT,room TEXT NOT NULL,timestamp INTEGER NOT NULL,source TEXT NOT NULL,actor INTEGER NOT NULL,action TEXT NOT NULL,revision_before INTEGER NOT NULL,revision_after INTEGER NOT NULL,state_hash TEXT NOT NULL,turn INTEGER NOT NULL,phase TEXT NOT NULL,active INTEGER NOT NULL,hp0 INTEGER NOT NULL,hp1 INTEGER NOT NULL)');
