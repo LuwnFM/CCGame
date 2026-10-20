@@ -147,7 +147,7 @@ export function localize(){
    if(next!==current)el.setAttribute(attr,next);
   }
  }
- const toggle=document.getElementById('languageToggle');if(toggle)toggle.textContent=language==='en'?'RU':'EN';
+ const toggle=document.getElementById('languageToggle');if(toggle){const next=language==='en'?'RU':'EN';if(toggle.textContent!==next)toggle.textContent=next;}
 }
 let queued=false;
 export function observeLocalization(){
