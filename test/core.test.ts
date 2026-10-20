@@ -82,3 +82,13 @@ test('ritual rewards and created tokens erase instead of entering discard', () =
   assert.equal(p.erased.length, 2);
   assert.equal(p.discard.length, 1);
 });
+test('ritual reward death produces ordinary combat result but never enters discard', () => {
+  let g = step(initialGame(player(), player()), { type: 'startTurn', actor: 0 }, 's');
+  g.players[0].main.push({ objectId: 1, card: creature, exhausted: false, damage: 0, shield: 0, interceptions: 0, enteredTurn: 0 });
+  g.players[1].main.push({ objectId: 2, card: { ...creature, health: 1 }, exhausted: false, damage: 0, shield: 0, interceptions: 0, enteredTurn: 0, ritualReward: true });
+  g = step(g, { type: 'attack', actor: 0, attackerId: 1, target: { kind: 'creature', objectId: 2 } }, 'attack');
+  g = step(g, { type: 'intercept', actor: 1, interceptorId: null }, 'damage');
+  assert.equal(g.players[1].main.length, 0);
+  assert.equal(g.players[1].discard.length, 0);
+  assert.equal(g.players[1].erased.length, 1);
+});
