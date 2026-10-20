@@ -299,7 +299,7 @@ export function createApp(options: { databasePath: string; accessPassword: strin
           const current = settleExpired(code, selectRoom.get(code) as Room, Date.now());
           const before = JSON.parse(current.game) as Game;
           const next = apply(before, { ...input, actor: seat } as Command);
-          if (input.type === 'endTurn' && next.phase !== 'paused') {
+          if (input.type === 'endTurn' && next.revision > before.revision && next.phase !== 'paused') {
             next.timeoutStreak ??= [0, 0]; next.timeoutStreak[seat] = 0;
           }
           commitGame(code, current, before, next, Date.now());
