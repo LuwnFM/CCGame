@@ -20,7 +20,7 @@ const errors = [];
 async function register(page, name) {
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   await page.locator('#login').fill(name);
-  await page.locator('#password').fill('very-secure-test-password');
+  await page.locator('#password').fill('very-secure-test-password1');
   await page.locator('#accessPassword').fill('test-access-password-123');
   await page.locator('#register').click();
   await page.locator('#home').waitFor({ state: 'visible', timeout: 15000 });
