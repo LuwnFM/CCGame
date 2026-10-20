@@ -80,7 +80,7 @@ try {
     return { own: Array.isArray(data.game.players[1].hand), enemyHidden: !('hand' in data.game.players[0]) };
   }, code);
   assert.deepEqual(visibility, { own: true, enemyHidden: true });
-  await a.locator('#hand .card').filter({ hasText: /Владение/ }).first().click();
+  await a.locator('#hand .card').filter({ hasText: /владение/i }).first().click();
   await a.locator('#myDomains button').first().waitFor({ state: 'visible' });
   await a.locator('#myDomains button').first().click();
   await a.waitForFunction(() => document.querySelector('#myInfo')?.textContent.includes('red:1'));
@@ -89,7 +89,7 @@ try {
     const button = document.querySelector('#end');
     return button && !button.disabled && !document.querySelector('#match').classList.contains('hidden');
   }, null, { timeout: 12000 });
-  await b.locator('#hand .card').filter({ hasText: /Владение/ }).first().click();
+  await b.locator('#hand .card').filter({ hasText: /владение/i }).first().click();
   await b.locator('#myDomains button').first().waitFor({ state: 'visible' });
   // Inject a battle-ready server state to verify the entire client -> command -> server -> board path.
   // The same browser sessions and authenticated room are preserved.
