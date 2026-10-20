@@ -71,7 +71,7 @@ export type Command =
   | { type: 'startTurn'; actor: PlayerId; expectedRevision: number; key: string }
   | { type: 'playDomain'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number }
   | { type: 'tapDomain'; actor: PlayerId; expectedRevision: number; key: string; objectId: number }
-  | { type: 'playCreature'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number }
+  | { type: 'playCreature'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number; replaceId?: number }
   | { type: 'playTechnique'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number }
   | { type: 'playLegend'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number; keepExisting?: boolean }
   | { type: 'activateLegend'; actor: PlayerId; expectedRevision: number; key: string; objectId: number }
@@ -196,12 +196,21 @@ export function apply(game: Game, command: Command): Game {
       const card = p.hand[command.handIndex];
       requireRule(card?.kind === 'creature' && card.cost, 'Неверное Существо');
       // Unknown abilities are displayed as inactive in the UI; they never run silently.
-      requireRule(p.main.length < 8, 'Основная зона заполнена');
       requireRule(Number.isSafeInteger(card.attack) && card.attack! >= 0 && Number.isSafeInteger(card.health) && card.health! > 0, 'Неверные характеристики');
+      const zone = card.createdToken ? p.auxiliary : p.main;
+      const limit = card.createdToken ? 4 : 8;
+      if (zone.length >= limit) {
+        if (!card.createdToken) throw new RuleError('Основная зона заполнена');
+        const replaced = zone.find(unit => unit.objectId === command.replaceId && !unit.card.majestic);
+        requireRule(replaced, 'Выберите допустимый объект для Вытеснения токеном');
+        // Displacement is a departure, not a death. Never trigger onDeath.
+        zone.splice(zone.indexOf(replaced), 1);
+        sendToDiscard(p, replaced.card, replaced.ritualReward);
+      }
       const energy = pay(p.energy, card.cost);
       p.energy = energy; p.hand.splice(command.handIndex, 1);
-      p.main.push({ objectId: next.nextObjectId++, card, exhausted: !card.haste && !card.zeal, damage: 0, shield: card.shield ?? 0,
-        interceptions: 0, enteredTurn: next.turn, sacrifice: card.sacrifice, attacksMade: 0 });
+      zone.push({ objectId: next.nextObjectId++, card, exhausted: !card.haste && !card.zeal, damage: 0, shield: card.shield ?? 0,
+        interceptions: 0, enteredTurn: next.turn, sacrifice: card.sacrifice, ritualReward: !!card.ritualReward, attacksMade: 0 });
       break;
     }
     case 'playTechnique': {
@@ -312,6 +321,9 @@ export function apply(game: Game, command: Command): Game {
       if (uniqueBlocked || zone.length >= limit) {
         const roll = nextRandom(next.seed ?? 1, pending.pool.length); next.seed = roll.seed;
         reward = { ...structuredClone(pending.pool[roll.value]), ritualReward: true };
+        // An unplaceable reward goes to hand as a playable card, including temporary token cards.
+        // Use printed cost where present; otherwise give generated rewards a zero-cost fallback.
+        reward.cost ??= { colored: {}, generic: 0 };
         p.hand.push(reward);
       } else {
         zone.push({ objectId: next.nextObjectId++, card: reward, exhausted: true, damage: 0,
@@ -411,8 +423,9 @@ function advance(game: Game): void {
   for (const creature of game.players[1 - game.active].auxiliary) creature.interceptions = 0;
   if (p.deck.length) p.hand.push(p.deck.shift()!);
   for (const unit of [...p.main, ...p.auxiliary]) {
-    // Poison is a status tick and continues during Stasis; Stasis suppresses abilities.
-    if (unit.poison) {
+    // v0.9.13: Stasis pauses Poison; its duration still advances at turn end.
+    // The Poison tick resumes at the next own turn start after Stasis expires.
+    if (unit.poison && !unit.stasis) {
       damage(unit, unit.poison.strength);
       if (--unit.poison.ticks <= 0) unit.poison = undefined;
     }
