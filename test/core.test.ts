@@ -67,6 +67,24 @@ test('attack declaration waits for defender; Guard intercepts a creature attack'
   assert.equal(g.players[1].main.find(x => x.objectId === 3)?.damage, 2);
   assert.equal(g.players[0].main.find(x => x.objectId === 1)?.damage, 1);
 });
+test('stunned but ready defender can intercept, Stasis cannot', () => {
+  let g = step(initialGame(player(), player()), { type: 'startTurn', actor: 0 }, 'stun-start');
+  const attacker = { objectId: 1, card: { ...creature, attack: 1 }, exhausted: false, damage: 0,
+    shield: 0, interceptions: 0, enteredTurn: 0 };
+  const blocker = { objectId: 2, card: { ...creature, attack: 0, health: 4 }, exhausted: false,
+    damage: 0, shield: 0, interceptions: 0, enteredTurn: 0, stunned: true };
+  g.players[0].main.push(attacker);
+  g.players[1].main.push(blocker);
+  g = step(g, { type: 'attack', actor: 0, attackerId: 1, target: { kind: 'player' } }, 'stun-attack');
+  g = step(g, { type: 'intercept', actor: 1, interceptorId: 2 }, 'stun-intercept');
+  assert.equal(g.players[1].hp, 30);
+  assert.equal(g.players[1].main[0].interceptions, 1);
+  const g2 = step(initialGame(player(), player()), { type: 'startTurn', actor: 0 }, 'stasis-start');
+  g2.players[0].main.push({ ...attacker });
+  g2.players[1].main.push({ ...blocker, stasis: 1, stunned: false });
+  const pending = step(g2, { type: 'attack', actor: 0, attackerId: 1, target: { kind: 'player' } }, 'stasis-attack');
+  assert.throws(() => step(pending, { type: 'intercept', actor: 1, interceptorId: 2 }, 'stasis-intercept'), /недоступен/);
+});
 test('shield absorbs damage and direct attack lowers ruler HP', () => {
   let g = step(initialGame(player(), player()), { type: 'startTurn', actor: 0 }, 's');
   g.players[0].main.push({ objectId: 1, card: creature, exhausted: false, damage: 0, shield: 1, interceptions: 0, enteredTurn: 0 });

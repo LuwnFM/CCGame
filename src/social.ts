@@ -61,7 +61,7 @@ export class Social {
   authenticate(loginInput: unknown, passwordInput: unknown) {
     const { key } = loginKey(loginInput);
     const row = this.db.prepare('SELECT * FROM accounts WHERE login_key=?').get(key) as AccountRow | undefined;
-    if (typeof passwordInput !== 'string' || !row) throw new RuleError('Неверный логин или пароль');
+    if (typeof passwordInput !== 'string' || passwordInput.length > 128 || !row) throw new RuleError('Неверный логин или пароль');
     const hash = scryptSync(passwordInput, Buffer.from(row.salt,'hex'),64);
     if (!timingSafeEqual(hash,Buffer.from(row.password_hash,'hex'))) throw new RuleError('Неверный логин или пароль');
     return row;

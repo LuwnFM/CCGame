@@ -43,7 +43,17 @@ function cardButton(card, label, onClick, disabled = false, active = false) {
   const element = button('',onClick,disabled,'card '+(card.aspects?.[0] || 'neutral')+(active?' active':''));
   element.append(textElement('span',initials(card.name),'glyph'),textElement('b',card.name));
   element.append(textElement('small',label));
-  element.setAttribute('aria-label',card.name+' · '+label);
+  const flags = [['unique','Уникальная'],['guard','Страж'],['flying','Полёт'],['firstStrike','Первый удар'],
+    ['piercing','Пробивание'],['lifesteal','Похищение жизни'],['stealth','Скрытность'],['majestic','Величественный'],
+    ['sacrifice','Жертва'],['haste','Мгновенная атака'],['zeal','Рвение']]
+    .filter(([flag])=>card[flag]).map(([,name])=>name);
+  if(card.ritual)flags.push('Ритуал '+card.ritual.threshold);
+  if(card.poisonHit)flags.push('Отрава '+card.poisonHit.strength+'/'+card.poisonHit.ticks);
+  if(card.shield)flags.push('Щит '+card.shield);
+  if(card.abilities?.length)flags.push('⚠ Временно неактивно: '+card.abilities.join(', '));
+  element.title=card.name+' · '+label+(flags.length?'\n'+flags.join(' · '):'');
+  element.setAttribute('aria-label',card.name+' · '+label+(flags.length?' · '+flags.join(', '):''));
+  if(card.abilities?.length)element.append(textElement('small','⚠ Способность пока не работает','inactive-ability'));
   return element;
 }
 function setAccount(value) {
@@ -188,7 +198,7 @@ function renderGame(ready) {
     $(id).replaceChildren(...zone.map(p=>cardButton(p.card,cardLabel(p),()=>{
       if(defense)send({type:'intercept',interceptorId:p.objectId});
       else{selected=p.objectId;renderGame(ready)}
-    },p.card.kind!=='creature'||!defense&&!mine||!!p.stasis||!!p.stunned||p.exhausted,selected===p.objectId)));
+    },p.card.kind!=='creature'||!defense&&!mine||!!p.stasis||(!defense&&!!p.stunned)||p.exhausted,selected===p.objectId)));
   }
   for(const [id,zone] of [['enemyBoard',enemy.main],['enemyAux',enemy.auxiliary]])
     $(id).replaceChildren(...zone.map(p=>cardButton(p.card,cardLabel(p),

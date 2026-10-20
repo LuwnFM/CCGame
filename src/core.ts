@@ -357,7 +357,7 @@ export function apply(game: Game, command: Command): Game {
       const attacker = [...next.players[next.active].main, ...next.players[next.active].auxiliary].find(c => c.objectId === pending.attackerId);
       const interceptor = command.interceptorId === null ? null : [...p.main, ...p.auxiliary].find(c => c.objectId === command.interceptorId && c.card.kind === 'creature');
       if (command.interceptorId !== null) {
-        requireRule(interceptor && !interceptor.exhausted && !interceptor.stunned && !interceptor.stasis && interceptor.interceptions === 0, 'Перехватчик недоступен');
+        requireRule(interceptor && !interceptor.exhausted && !interceptor.stasis && interceptor.interceptions === 0, 'Перехватчик недоступен');
         requireRule(pending.target.kind !== 'creature' || interceptor.card.guard, 'Только Страж перехватывает атаку по Существу');
         requireRule(!attacker?.card.flying || interceptor.card.flying, 'Наземное Существо не перехватывает Полёт');
         interceptor.interceptions++;

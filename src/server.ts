@@ -156,6 +156,10 @@ export function createApp(options: { databasePath: string; accessPassword: strin
     commitGame(code, row, before, next, now);
     return selectRoom.get(code) as Room;
   }
+  // Limit online guessing of passwords; the alpha access password gates only registration.
+  const authFailures = new Map<string, { attempts: number; blockedUntil: number }>();
+  const AUTH_WINDOW_MS = 15 * 60_000;
+  const AUTH_MAX_FAILURES = 15;
   const server = createServer(async (req, res) => {
     try {
       const url = new URL(req.url ?? '/', 'http://local');
@@ -170,7 +174,9 @@ export function createApp(options: { databasePath: string; accessPassword: strin
         res.writeHead(origin === options.clientOrigin ? 204 : 403);
         return res.end();
       }
-      if (origin && new URL(origin).host !== req.headers.host && origin !== options.clientOrigin)
+      let originHost = '';
+      if (origin) { try { originHost = new URL(origin).host; } catch { return json(res,403,{error:'Недопустимый источник'}); } }
+      if (origin && originHost !== req.headers.host && origin !== options.clientOrigin)
         return json(res,403,{error:'Недопустимый источник'});
       if (req.method === 'GET' && ['/', '/style.css', '/app.js'].includes(url.pathname)) {
         const file = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
@@ -180,12 +186,28 @@ export function createApp(options: { databasePath: string; accessPassword: strin
         return;
       }
       if ((url.pathname === '/api/register' || url.pathname === '/api/login') && req.method === 'POST') {
+        const address = req.socket.remoteAddress ?? 'unknown';
+        const now = Date.now(), entry = authFailures.get(address);
+        if (entry && entry.blockedUntil > now && entry.attempts >= AUTH_MAX_FAILURES)
+          return json(res,429,{error:'Слишком много попыток входа. Повторите через 15 минут'});
         const input = await body(req);
-        if (url.pathname === '/api/register' && !checkPassword(input.accessPassword, options.accessPassword))
-          return json(res, 403, { error: 'Неверный пароль доступа к альфе' });
-        const account = url.pathname === '/api/register'
-          ? social.register(input.login, input.password)
-          : social.authenticate(input.login, input.password);
+        if (!input || typeof input !== 'object' || Array.isArray(input))
+          throw new RuleError('Неверные данные профиля');
+        let account;
+        try {
+          if (url.pathname === '/api/register' && !checkPassword(input.accessPassword, options.accessPassword))
+            return json(res,403,{error:'Неверный пароль доступа к альфе'});
+          account = url.pathname === '/api/register'
+            ? social.register(input.login, input.password)
+            : social.authenticate(input.login, input.password);
+          authFailures.delete(address);
+        } catch (error) {
+          if (url.pathname === '/api/login') {
+            const failures = entry && entry.blockedUntil > now ? entry.attempts + 1 : 1;
+            authFailures.set(address,{attempts:failures,blockedUntil:now+AUTH_WINDOW_MS});
+          }
+          throw error;
+        }
         const sid = randomBytes(32).toString('hex');
         db.prepare('INSERT INTO sessions (id, expires, user_id) VALUES (?, ?, ?)').run(sid, Date.now() + 7 * 86400_000,account.id);
         return json(res, 200, { token:sid, account:social.get(account.id) });
