@@ -9,3 +9,5 @@ label{display:block;margin:10px 0;font-size:.9rem;color:var(--muted)}input,selec
 @media(max-width:390px){.board{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}.board .card{padding:5px;min-height:96px}.board .card b{font-size:.7rem}.board .card small{font-size:.62rem}.actions>button{flex:1}.hand .card{flex-basis:105px}}
 
 .inactive-ability{color:#ffd48c!important;font-weight:700}
+
+.card .card-flags{color:var(--accent);font-size:.62rem;line-height:1.15}.slot-placeholder{min-height:102px;border:1px dashed #465371;border-radius:10px;display:grid;place-items:center;color:#60708a;font-size:1.2rem;background:#171d2c70}@media(max-width:390px){.slot-placeholder{min-height:96px}}

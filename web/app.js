@@ -53,6 +53,7 @@ function cardButton(card, label, onClick, disabled = false, active = false) {
   if(card.abilities?.length)flags.push('⚠ Временно неактивно: '+card.abilities.join(', '));
   element.title=card.name+' · '+label+(flags.length?'\n'+flags.join(' · '):'');
   element.setAttribute('aria-label',card.name+' · '+label+(flags.length?' · '+flags.join(', '):''));
+  if(flags.length)element.append(textElement('small',flags.slice(0,2).join(' · ')+(flags.length>2?' · +'+(flags.length-2):''),'card-flags'));
   if(card.abilities?.length)element.append(textElement('small','⚠ Способность пока не работает','inactive-ability'));
   return element;
 }
@@ -204,6 +205,12 @@ function renderGame(ready) {
     $(id).replaceChildren(...zone.map(p=>cardButton(p.card,cardLabel(p),
       ()=>send({type:'attack',attackerId:selected,target:{kind:'creature',objectId:p.objectId}}),
       !mine||selected===null||p.card.kind!=='creature'||!!p.card.stealth)));
+  // Show the real 8+4 capacity even when the field is empty.
+  for(const [id,limit] of [['myBoard',8],['enemyBoard',8],['myAux',4],['enemyAux',4]]) {
+    for(let i=$(id).children.length;i<limit;i++){
+      const place=textElement('div','◇','slot-placeholder');place.setAttribute('aria-hidden','true');$(id).append(place);
+    }
+  }
   $('myDomains').replaceChildren(...me.domains.map(p=>button(p.card.name+(p.exhausted?' · истощено':' · готово'),
     ()=>send({type:'tapDomain',objectId:p.objectId}),!mine||p.exhausted,'secondary')));
   $('enemyDomains').textContent=enemy.domains.length+' Владений';

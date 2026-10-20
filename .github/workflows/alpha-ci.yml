@@ -1,7 +1,7 @@
 name: Firewell Alpha CI
 on:
   push:
-    branches: [main, codex/initial-rules-core]
+    branches: [main]
   pull_request:
   workflow_dispatch:
 

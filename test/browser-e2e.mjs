@@ -14,6 +14,7 @@ const url = 'http://127.0.0.1:' + address.port;
 const artifacts = join(process.cwd(), 'artifacts', 'browser');
 await mkdir(artifacts, { recursive: true });
 let browser;
+const pages = [];
 const errors = [];
 async function register(page, name) {
   await page.goto(url, { waitUntil: 'domcontentloaded' });
@@ -25,13 +26,14 @@ async function register(page, name) {
   await page.locator('#profileName').waitFor({ state: 'visible' });
   assert.equal(await page.locator('#profileName').innerText(), name);
   assert.match(await page.locator('#profileId').innerText(), /^[a-f0-9-]{36}$/);
-  await page.locator('#deck option').first().waitFor();
+  await page.waitForFunction(() => document.querySelector('#deck')?.options.length > 0);
 }
 try {
   browser = await chromium.launch({ headless: true });
   const desktop = await browser.newContext({ viewport: { width: 1350, height: 900 } });
   const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   const a = await desktop.newPage(), b = await phone.newPage();
+  pages.push(a,b);
   for (const page of [a,b]) page.on('pageerror', error => errors.push(error.message));
 
   await register(a, 'AlphaBrowser');
@@ -80,7 +82,7 @@ try {
   await a.locator('#hand .card').filter({ hasText: /Владение/ }).first().click();
   await a.locator('#myDomains button').first().waitFor({ state: 'visible' });
   await a.locator('#myDomains button').first().click();
-  await a.locator('#myInfo').getByText(/Энергия|red/).waitFor();
+  await a.waitForFunction(() => document.querySelector('#myInfo')?.textContent.includes('red:1'));
   await a.locator('#end').click();
   await b.waitForFunction(() => {
     const button = document.querySelector('#end');
@@ -92,6 +94,11 @@ try {
   await a.screenshot({ path: join(artifacts, 'alpha-match-desktop.png'), fullPage: true });
   assert.deepEqual(errors, []);
   console.log('BROWSER PASS: two registrations, chat, feedback, custom 70-card deck, private hands, PvP room, mulligan, energy and 2 turns');
+} catch (error) {
+  for (let index=0; index<pages.length;index++) {
+    try { await pages[index].screenshot({ path: join(artifacts, 'failure-'+index+'.png'), fullPage: true, timeout: 5000 }); } catch {}
+  }
+  throw error;
 } finally {
   if (browser) await browser.close();
   await new Promise(resolve => app.server.close(resolve));
