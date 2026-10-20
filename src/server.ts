@@ -10,6 +10,7 @@ import { ARCHETYPES, testDeck, type ArchetypeId } from './decks.ts';
 import { nextRandom } from './ritual.ts';
 import { Social, catalog } from './social.ts';
 import type { Card } from './core.ts';
+import { MatchHistory } from './history.ts';
 
 type Room = { code: string; host: string; guest: string | null; host_deck: ArchetypeId | null;
   game: string; deadline: number; turn_deadline: number; intercept_started: number; intercept_banks: string };
@@ -145,13 +146,17 @@ export function createApp(options: { databasePath: string; accessPassword: strin
   const sessionColumns = new Set((db.prepare('PRAGMA table_info(sessions)').all() as {name:string}[]).map(c=>c.name));
   if (!sessionColumns.has('user_id')) db.exec('ALTER TABLE sessions ADD COLUMN user_id TEXT');
   const social = new Social(db);
+  const history = new MatchHistory(db, options.databasePath);
+  history.archiveCompleted();
   const selectSession = db.prepare('SELECT user_id FROM sessions WHERE id=? AND expires>?');
   const selectRoom = db.prepare('SELECT * FROM rooms WHERE code=?');
   const insertRoom = db.prepare('INSERT INTO rooms (code,host,guest,game,host_deck) VALUES (?, ?, NULL, ?, ?)');
   const updateRoom = db.prepare('UPDATE rooms SET game=?, deadline=?, turn_deadline=?, intercept_started=?, intercept_banks=? WHERE code=?');
-  function commitGame(code: string, row: Room, before: Game, next: Game, now: number) {
-    const timing = timers(before, next, row, now);
-    updateRoom.run(JSON.stringify(next), timing.deadline, timing.turn, timing.started, timing.banks, code);
+  function commitGame(code:string,row:Room,before:Game,next:Game,now:number,
+    source:'player'|'timeout',command:Command){
+    const timing=timers(before,next,row,now);
+    updateRoom.run(JSON.stringify(next),timing.deadline,timing.turn,timing.started,timing.banks,code);
+    if(next.revision>before.revision)history.record(code,source,command,before,next,now);
   }
   function settleExpired(code: string, row: Room, now: number): Room {
     if (!row.guest || !row.deadline || now < row.deadline) return row;
@@ -167,7 +172,7 @@ export function createApp(options: { databasePath: string; accessPassword: strin
         next.phase = 'finished';
       }
     }
-    commitGame(code, row, before, next, now);
+    commitGame(code, row, before, next, now,'timeout',command);
     return selectRoom.get(code) as Room;
   }
   // Limit online guessing of passwords; the alpha access password gates only registration.
@@ -285,6 +290,7 @@ export function createApp(options: { databasePath: string; accessPassword: strin
               db.prepare('INSERT INTO rooms (code,host,guest,game,host_deck,deadline) VALUES (?,?,?,?,?,?)')
                 .run(room,candidate.account_id,uid,JSON.stringify(game),'custom',Date.now()+MULLIGAN_MS);
               social.matched(candidate.account_id,uid,room);
+              history.open(room,candidate.account_id,uid,game);
             }
           }
           db.exec('COMMIT');
@@ -315,6 +321,7 @@ export function createApp(options: { databasePath: string; accessPassword: strin
           if (!row.guest) {
             const game = newGame(social.resolveDeck(row.host,row.host_deck ?? 'red'),guestDeck);
             db.prepare('UPDATE rooms SET guest=?, game=?, deadline=? WHERE code=?').run(uid, JSON.stringify(game), Date.now() + MULLIGAN_MS, code);
+            history.open(code,row.host,uid,game);
           }
           db.exec('COMMIT');
           return json(res, 200, { code, seat: 1 });
@@ -328,6 +335,7 @@ export function createApp(options: { databasePath: string; accessPassword: strin
         let current: Room;
         try { current = settleExpired(code, selectRoom.get(code) as Room, Date.now()); db.exec('COMMIT'); }
         catch (error) { db.exec('ROLLBACK'); throw error; }
+        history.archiveCompleted();
         return json(res, 200, { code, ready: !!current.guest, game: current.guest ? view(JSON.parse(current.game), seat, current) : null });
       }
       if (req.method === 'POST' && action === 'commands') {
@@ -343,8 +351,9 @@ export function createApp(options: { databasePath: string; accessPassword: strin
           if (input.type === 'endTurn' && next.revision > before.revision && next.phase !== 'paused') {
             next.timeoutStreak ??= [0, 0]; next.timeoutStreak[seat] = 0;
           }
-          commitGame(code, current, before, next, Date.now());
+          commitGame(code,current,before,next,Date.now(),'player',{...input,actor:seat} as Command);
           db.exec('COMMIT');
+          history.archiveCompleted();
           return json(res, 200, { game: view(next, seat, selectRoom.get(code) as Room) });
         } catch (error) { db.exec('ROLLBACK'); throw error; }
       }
@@ -353,7 +362,7 @@ export function createApp(options: { databasePath: string; accessPassword: strin
       return json(res, error instanceof RuleError ? 409 : 500, { error: error instanceof Error ? error.message : 'Ошибка сервера' });
     }
   });
-  return { server, db, close: () => { server.close(); db.close(); } };
+  return { server, db, history, close: () => { server.close(); db.close(); } };
 }
 if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
   const app = createApp({ databasePath: process.env.FIREWELL_DB ?? './firewell.sqlite', accessPassword: process.env.FIREWELL_ALPHA_PASSWORD ?? '', clientOrigin: process.env.FIREWELL_CLIENT_ORIGIN });
