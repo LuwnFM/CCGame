@@ -203,11 +203,11 @@ function renderGame(ready) {
         send({type:'playLegend',handIndex:i,keepExisting:confirm('Оставить уже находящуюся на поле Легенду?')});
       else if(c.kind==='artifact'&&me.auxiliary.some(p=>p.card.name===c.name))
         send({type:'playArtifact',handIndex:i,keepExisting:confirm('Оставить уже находящийся на поле предмет?')});
-      else if(c.kind==='artifact'&&me.auxiliary.length>=4){selectedArtifactIndex=i;renderGame(ready)}
+      else if((c.kind==='artifact'||c.kind==='creature'&&c.createdToken)&&me.auxiliary.length>=4){selectedArtifactIndex=i;renderGame(ready)}
       else send({type:c.kind==='domain'?'playDomain':c.kind==='technique'?'playTechnique':c.kind==='legend'?'playLegend':c.kind==='artifact'?'playArtifact':'playCreature',handIndex:i})},
     !(mine||game.phase==='discard'&&game.active===seat))));
   $('artifactReplacements').replaceChildren(...(selectedArtifactIndex===null?[]:me.auxiliary.filter(p=>!p.card.majestic)
-    .map(p=>cardButton(p.card,'Вытеснить',()=>send({type:'playArtifact',handIndex:selectedArtifactIndex,replaceId:p.objectId})))));
+    .map(p=>cardButton(p.card,'Вытеснить',()=>send({type:me.hand[selectedArtifactIndex]?.kind==='creature'?'playCreature':'playArtifact',handIndex:selectedArtifactIndex,replaceId:p.objectId})))));
   $('hero').disabled=!mine||selected===null;$('skip').disabled=!defense;$('end').disabled=!mine;
 }
 function renderBuilder() {
