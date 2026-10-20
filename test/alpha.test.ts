@@ -129,3 +129,21 @@ test('unique auxiliary item boosts combat and can displace a token without death
   g = step(g, { type: 'intercept', actor: 1, interceptorId: null }, 'i');
   assert.equal(g.players[1].hp, 27);
 });
+test('same-name Legends and unique items require an explicit survivor and discard without death',()=>{
+  const legend:Card={id:'hero',name:'Герой',kind:'legend',unique:true,cost:{colored:{},generic:0},
+    loyalty:3,loyaltyAbility:{delta:1,kind:'draw',amount:0}};
+  const item:Card={id:'relic',name:'Реликвия',kind:'artifact',unique:true,cost:{colored:{},generic:0},auraAttack:1};
+  let g=step(initialGame(player([], [legend,legend,item,item]),player()),{type:'startTurn',actor:0},'s');
+  g=step(g,{type:'playLegend',actor:0,handIndex:0},'l0');
+  assert.throws(()=>step(g,{type:'playLegend',actor:0,handIndex:0},'lbad'),/Выберите/);
+  g=step(g,{type:'playLegend',actor:0,handIndex:0,keepExisting:true},'lkeep');
+  assert.equal(g.players[0].legends.length,1);
+  assert.equal(g.players[0].discard.length,1);
+  g=step(g,{type:'playArtifact',actor:0,handIndex:0},'i0');
+  assert.throws(()=>step(g,{type:'playArtifact',actor:0,handIndex:0},'ibad'),/Выберите/);
+  const old=g.players[0].auxiliary[0].objectId;
+  g=step(g,{type:'playArtifact',actor:0,handIndex:0,keepExisting:false},'ireplace');
+  assert.equal(g.players[0].auxiliary.length,1);
+  assert.notEqual(g.players[0].auxiliary[0].objectId,old);
+  assert.equal(g.players[0].discard.length,2);
+});

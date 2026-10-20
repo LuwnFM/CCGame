@@ -73,9 +73,9 @@ export type Command =
   | { type: 'tapDomain'; actor: PlayerId; expectedRevision: number; key: string; objectId: number }
   | { type: 'playCreature'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number }
   | { type: 'playTechnique'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number }
-  | { type: 'playLegend'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number }
+  | { type: 'playLegend'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number; keepExisting?: boolean }
   | { type: 'activateLegend'; actor: PlayerId; expectedRevision: number; key: string; objectId: number }
-  | { type: 'playArtifact'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number; replaceId?: number }
+  | { type: 'playArtifact'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number; replaceId?: number; keepExisting?: boolean }
   | { type: 'chooseRitual'; actor: PlayerId; expectedRevision: number; key: string; effectId: string; objectIds: number[] }
   | { type: 'chooseReward'; actor: PlayerId; expectedRevision: number; key: string; rewardId: string; replaceId?: number }
   | { type: 'attack'; actor: PlayerId; expectedRevision: number; key: string; attackerId: number; target: { kind: 'player' } | { kind: 'creature' | 'legend'; objectId: number } }
@@ -220,9 +220,15 @@ export function apply(game: Game, command: Command): Game {
       requireRule(next.turn > 0 && next.phase === 'main', 'Недоступная фаза');
       const card = p.hand[command.handIndex];
       requireRule(card?.kind === 'legend' && card.cost && Number.isSafeInteger(card.loyalty) && card.loyalty! > 0, 'Неверная Легенда');
-      requireRule(!p.legends.some(legend => legend.card.name === card.name), 'Такая Легенда уже на поле');
+      const sameLegend = p.legends.find(legend => legend.card.name === card.name);
+      requireRule(!sameLegend || typeof command.keepExisting === 'boolean', 'Выберите, какую одноимённую Легенду оставить');
       p.energy = pay(p.energy, card.cost);
       p.hand.splice(command.handIndex, 1);
+      if (sameLegend) {
+        if (command.keepExisting) { sendToDiscard(p, card); break; }
+        p.legends.splice(p.legends.indexOf(sameLegend), 1);
+        sendToDiscard(p, sameLegend.card, sameLegend.ritualReward);
+      }
       p.legends.push({ objectId: next.nextObjectId++, card, loyalty: card.loyalty,
         exhausted: false, damage: 0, shield: card.shield ?? 0, interceptions: 0, enteredTurn: next.turn });
       break;
@@ -248,8 +254,9 @@ export function apply(game: Game, command: Command): Game {
       requireRule(next.turn > 0 && next.phase === 'main', 'Недоступная фаза');
       const card = p.hand[command.handIndex];
       requireRule(card?.kind === 'artifact' && card.cost, 'Неверный предмет');
-      requireRule(!p.auxiliary.some(unit => unit.card.name === card.name), 'Уникальный предмет уже на поле');
-      if (p.auxiliary.length >= 4) {
+      const sameItem = p.auxiliary.find(unit => unit.card.name === card.name);
+      requireRule(!sameItem || typeof command.keepExisting === 'boolean', 'Выберите, какой одноимённый предмет оставить');
+      if (!sameItem && p.auxiliary.length >= 4) {
         const replaced = p.auxiliary.find(unit => unit.objectId === command.replaceId && !unit.card.majestic);
         requireRule(replaced, 'Выберите допустимый предмет или токен для Вытеснения');
         p.auxiliary.splice(p.auxiliary.indexOf(replaced), 1);
@@ -257,6 +264,11 @@ export function apply(game: Game, command: Command): Game {
       }
       p.energy = pay(p.energy, card.cost);
       p.hand.splice(command.handIndex, 1);
+      if (sameItem) {
+        if (command.keepExisting) { sendToDiscard(p, card); break; }
+        p.auxiliary.splice(p.auxiliary.indexOf(sameItem), 1);
+        sendToDiscard(p, sameItem.card, sameItem.ritualReward);
+      }
       p.auxiliary.push({ objectId: next.nextObjectId++, card, exhausted: false, damage: 0,
         shield: 0, interceptions: 0, enteredTurn: next.turn });
       break;

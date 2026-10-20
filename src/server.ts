@@ -6,6 +6,8 @@ import { apply, openingGame, RuleError, type Command, type Game, type PlayerId }
 import { openingHand } from './setup.ts';
 import { ARCHETYPES, testDeck, type ArchetypeId } from './decks.ts';
 import { nextRandom } from './ritual.ts';
+import { Social, catalog } from './social.ts';
+import type { Card } from './core.ts';
 
 type Room = { code: string; host: string; guest: string | null; host_deck: ArchetypeId | null;
   game: string; deadline: number; turn_deadline: number; intercept_started: number; intercept_banks: string };
@@ -94,9 +96,9 @@ function deckId(input: unknown): ArchetypeId {
   if (typeof input !== 'string' || !ARCHETYPES.some(a => a.id === input)) throw new RuleError('Выберите тестовую колоду');
   return input as ArchetypeId;
 }
-function newGame(host: ArchetypeId, guest: ArchetypeId): Game {
+function newGame(host: readonly Card[], guest: readonly Card[]): Game {
   const seed = () => randomBytes(4).readUInt32LE(0) || 1;
-  return openingGame(openingHand(testDeck(host), seed()), openingHand(testDeck(guest), seed()));
+  return openingGame(openingHand(host, seed()), openingHand(guest, seed()));
 }
 function view(game: Game, seat: PlayerId, row?: Room) {
   return {
@@ -113,11 +115,11 @@ function view(game: Game, seat: PlayerId, row?: Room) {
       energy: p.energy, domainsPlayed: p.domainsPlayed, rituals: p.rituals.map(r => ({ id: r.id, color: r.color, threshold: r.threshold, remainingStarts: r.remainingStarts })) }))
   };
 }
-export function createApp(options: { databasePath: string; accessPassword: string }) {
+export function createApp(options: { databasePath: string; accessPassword: string; clientOrigin?: string }) {
   if (!options.accessPassword || options.accessPassword.length < 12) throw new Error('FIREWELL_ALPHA_PASSWORD должен содержать не менее 12 символов');
   const db = new DatabaseSync(options.databasePath);
   db.exec(`PRAGMA journal_mode=WAL;
-    CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, expires INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, expires INTEGER NOT NULL, user_id TEXT);
     CREATE TABLE IF NOT EXISTS rooms (code TEXT PRIMARY KEY, host TEXT NOT NULL, guest TEXT, game TEXT NOT NULL,
       host_deck TEXT, deadline INTEGER NOT NULL DEFAULT 0, turn_deadline INTEGER NOT NULL DEFAULT 0,
       intercept_started INTEGER NOT NULL DEFAULT 0, intercept_banks TEXT NOT NULL DEFAULT '[45000,45000]');`);
@@ -126,7 +128,10 @@ export function createApp(options: { databasePath: string; accessPassword: strin
     turn_deadline: 'INTEGER NOT NULL DEFAULT 0', intercept_started: 'INTEGER NOT NULL DEFAULT 0',
     intercept_banks: `TEXT NOT NULL DEFAULT '[45000,45000]'` }))
     if (!columns.has(column)) db.exec(`ALTER TABLE rooms ADD COLUMN ${column} ${definition}`);
-  const selectSession = db.prepare('SELECT id FROM sessions WHERE id=? AND expires>?');
+  const sessionColumns = new Set((db.prepare('PRAGMA table_info(sessions)').all() as {name:string}[]).map(c=>c.name));
+  if (!sessionColumns.has('user_id')) db.exec('ALTER TABLE sessions ADD COLUMN user_id TEXT');
+  const social = new Social(db);
+  const selectSession = db.prepare('SELECT user_id FROM sessions WHERE id=? AND expires>?');
   const selectRoom = db.prepare('SELECT * FROM rooms WHERE code=?');
   const insertRoom = db.prepare('INSERT INTO rooms (code,host,guest,game,host_deck) VALUES (?, ?, NULL, ?, ?)');
   const updateRoom = db.prepare('UPDATE rooms SET game=?, deadline=?, turn_deadline=?, intercept_started=?, intercept_banks=? WHERE code=?');
@@ -154,51 +159,129 @@ export function createApp(options: { databasePath: string; accessPassword: strin
   const server = createServer(async (req, res) => {
     try {
       const url = new URL(req.url ?? '/', 'http://local');
-      if (req.method === 'GET' && url.pathname === '/') {
-        res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'x-content-type-options': 'nosniff' });
-        res.end(await readFile(new URL('../web/index.html', import.meta.url)));
+      const origin = req.headers.origin;
+      if (origin && options.clientOrigin && origin === options.clientOrigin) {
+        res.setHeader('access-control-allow-origin', origin);
+        res.setHeader('vary', 'Origin');
+        res.setHeader('access-control-allow-headers', 'Content-Type, Authorization');
+        res.setHeader('access-control-allow-methods', 'GET, POST, DELETE, OPTIONS');
+      }
+      if (req.method === 'OPTIONS') {
+        res.writeHead(origin === options.clientOrigin ? 204 : 403);
+        return res.end();
+      }
+      if (origin && new URL(origin).host !== req.headers.host && origin !== options.clientOrigin)
+        return json(res,403,{error:'Недопустимый источник'});
+      if (req.method === 'GET' && ['/', '/style.css', '/app.js'].includes(url.pathname)) {
+        const file = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
+        const contentType = file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : 'text/html';
+        res.writeHead(200, { 'content-type': `${contentType}; charset=utf-8`, 'x-content-type-options': 'nosniff' });
+        res.end(await readFile(new URL(`../web/${file}`, import.meta.url)));
         return;
       }
-      if (url.pathname === '/api/access' && req.method === 'POST') {
+      if ((url.pathname === '/api/register' || url.pathname === '/api/login') && req.method === 'POST') {
         const input = await body(req);
-        if (!checkPassword(input.password, options.accessPassword)) return json(res, 403, { error: 'Неверный пароль' });
+        if (url.pathname === '/api/register' && !checkPassword(input.accessPassword, options.accessPassword))
+          return json(res, 403, { error: 'Неверный пароль доступа к альфе' });
+        const account = url.pathname === '/api/register'
+          ? social.register(input.login, input.password)
+          : social.authenticate(input.login, input.password);
         const sid = randomBytes(32).toString('hex');
-        db.prepare('INSERT INTO sessions (id, expires) VALUES (?, ?)').run(sid, Date.now() + 7 * 86400_000);
-        res.setHeader('set-cookie', `${cookieName}=${sid}; HttpOnly; SameSite=Strict; Path=/; Max-Age=604800`);
-        return json(res, 200, { ok: true });
+        db.prepare('INSERT INTO sessions (id, expires, user_id) VALUES (?, ?, ?)').run(sid, Date.now() + 7 * 86400_000,account.id);
+        return json(res, 200, { token:sid, account:social.get(account.id) });
       }
-      const sid = sessionId(req);
-      if (!sid || !selectSession.get(sid, Date.now())) return json(res, 401, { error: 'Нужен пароль альфы' });
-      if (req.method === 'POST' && req.headers.origin && new URL(req.headers.origin).host !== req.headers.host)
-        return json(res, 403, { error: 'Недопустимый источник' });
+      const bearer = /^Bearer ([a-f0-9]{64})$/.exec(req.headers.authorization ?? '')?.[1];
+      const sid = bearer ?? sessionId(req);
+      const user = sid && selectSession.get(sid, Date.now()) as {user_id:string|null}|undefined;
+      if (!user?.user_id) return json(res, 401, { error: 'Войдите в профиль' });
+      const uid = user.user_id;
+      social.touch(uid);
+      if (url.pathname === '/api/me' && req.method === 'GET') return json(res,200,{account:social.get(uid)});
+      if (url.pathname === '/api/logout' && req.method === 'POST') {
+        db.prepare('DELETE FROM sessions WHERE id=?').run(sid);
+        return json(res,200,{ok:true});
+      }
+      if (url.pathname === '/api/me/rename' && req.method === 'POST')
+        return json(res,200,{account:social.rename(uid,(await body(req)).login)});
+      if (url.pathname === '/api/me/delete' && req.method === 'POST') {
+        const input = await body(req);
+        social.authenticate(social.get(uid).login,input.password);
+        social.delete(uid);
+        return json(res,200,{ok:true});
+      }
       if (url.pathname === '/api/decks' && req.method === 'GET') return json(res, 200, { decks: ARCHETYPES });
+      if (url.pathname === '/api/catalog' && req.method === 'GET')
+        return json(res,200,{cards:[...catalog.values()],presets:ARCHETYPES.map(a=>({ ...a,cards:testDeck(a.id).map(c=>c.id) }))});
+      if (url.pathname === '/api/my-decks' && req.method === 'GET')
+        return json(res,200,{decks:social.deckList(uid)});
+      if (url.pathname === '/api/my-decks' && req.method === 'POST')
+        { const input=await body(req); return json(res,201,{deck:social.saveDeck(uid,input.name,input.cards)}); }
+      const deckDelete = /^\/api\/my-decks\/([a-f0-9-]{36})$/.exec(url.pathname);
+      if (deckDelete && req.method === 'DELETE') {
+        social.deleteDeck(uid,deckDelete[1]); return json(res,200,{ok:true});
+      }
+      if (url.pathname === '/api/lobby' && req.method === 'GET') return json(res,200,social.lobby(uid));
+      if (url.pathname === '/api/chat' && req.method === 'POST') {
+        social.postChat(uid,(await body(req)).text); return json(res,201,{ok:true});
+      }
+      if (url.pathname === '/api/feedback' && req.method === 'POST') {
+        const input=await body(req); social.sendFeedback(uid,input.category,input.text); return json(res,201,{ok:true});
+      }
+      if (url.pathname === '/api/queue' && req.method === 'DELETE') {
+        social.cancel(uid); return json(res,200,{ok:true});
+      }
+      if (url.pathname === '/api/queue' && req.method === 'POST') {
+        const selection = (await body(req)).deckId;
+        const cards = social.resolveDeck(uid,selection);
+        db.exec('BEGIN IMMEDIATE');
+        try {
+          let room = social.enqueue(uid,cards);
+          if (!room) {
+            const candidate = social.opponent(uid);
+            if (candidate) {
+              do room=randomBytes(4).toString('hex').toUpperCase(); while(selectRoom.get(room));
+              const game=newGame(JSON.parse(candidate.deck_json),cards);
+              db.prepare('INSERT INTO rooms (code,host,guest,game,host_deck,deadline) VALUES (?,?,?,?,?,?)')
+                .run(room,candidate.account_id,uid,JSON.stringify(game),'custom',Date.now()+MULLIGAN_MS);
+              social.matched(candidate.account_id,uid,room);
+            }
+          }
+          db.exec('COMMIT');
+          return json(res,200,{room,searching:!room});
+        } catch(error){db.exec('ROLLBACK');throw error;}
+      }
+      if (url.pathname === '/api/queue/leave' && req.method === 'POST') {
+        social.leaveRoom(uid); return json(res,200,{ok:true});
+      }
       if (url.pathname === '/api/rooms' && req.method === 'POST') {
-        const choice = deckId((await body(req)).deckId ?? 'red');
+        const choice = (await body(req)).deckId ?? 'red';
+        social.resolveDeck(uid,choice);
         let code = '';
         do code = randomBytes(4).toString('hex').toUpperCase(); while (selectRoom.get(code));
-        insertRoom.run(code, sid, '{}', choice);
+        insertRoom.run(code, uid, '{}', choice);
         return json(res, 201, { code, seat: 0 });
       }
       const match = /^\/api\/rooms\/([A-F0-9]{8})(?:\/(join|commands))?$/.exec(url.pathname);
       if (!match) return json(res, 404, { error: 'Не найдено' });
       const code = match[1], action = match[2];
       if (action === 'join' && req.method === 'POST') {
-        const choice = deckId((await body(req)).deckId ?? 'red');
+        const choice = (await body(req)).deckId ?? 'red';
+        const guestDeck=social.resolveDeck(uid,choice);
         db.exec('BEGIN IMMEDIATE');
         try {
           const row = selectRoom.get(code) as { host: string; guest: string | null; host_deck: ArchetypeId | null } | undefined;
-          if (!row || (row.guest && row.guest !== sid) || row.host === sid) throw new RuleError('Комната недоступна');
+          if (!row || (row.guest && row.guest !== uid) || row.host === uid) throw new RuleError('Комната недоступна');
           if (!row.guest) {
-            const game = newGame(row.host_deck ?? 'red', choice);
-            db.prepare('UPDATE rooms SET guest=?, game=?, deadline=? WHERE code=?').run(sid, JSON.stringify(game), Date.now() + MULLIGAN_MS, code);
+            const game = newGame(social.resolveDeck(row.host,row.host_deck ?? 'red'),guestDeck);
+            db.prepare('UPDATE rooms SET guest=?, game=?, deadline=? WHERE code=?').run(uid, JSON.stringify(game), Date.now() + MULLIGAN_MS, code);
           }
           db.exec('COMMIT');
           return json(res, 200, { code, seat: 1 });
         } catch (error) { db.exec('ROLLBACK'); throw error; }
       }
       const row = selectRoom.get(code) as Room | undefined;
-      if (!row || (row.host !== sid && row.guest !== sid)) return json(res, 404, { error: 'Комната недоступна' });
-      const seat: PlayerId = row.host === sid ? 0 : 1;
+      if (!row || (row.host !== uid && row.guest !== uid)) return json(res, 404, { error: 'Комната недоступна' });
+      const seat: PlayerId = row.host === uid ? 0 : 1;
       if (req.method === 'GET' && !action) {
         db.exec('BEGIN IMMEDIATE');
         let current: Room;
@@ -232,7 +315,7 @@ export function createApp(options: { databasePath: string; accessPassword: strin
   return { server, db, close: () => { server.close(); db.close(); } };
 }
 if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
-  const app = createApp({ databasePath: process.env.FIREWELL_DB ?? './firewell.sqlite', accessPassword: process.env.FIREWELL_ALPHA_PASSWORD ?? '' });
+  const app = createApp({ databasePath: process.env.FIREWELL_DB ?? './firewell.sqlite', accessPassword: process.env.FIREWELL_ALPHA_PASSWORD ?? '', clientOrigin: process.env.FIREWELL_CLIENT_ORIGIN });
   const port = Number(process.env.PORT ?? 3000);
-  app.server.listen(port, () => process.stdout.write(`Firewell CCG: http://localhost:${port}\n`));
+  app.server.listen(port, process.env.FIREWELL_BIND ?? '127.0.0.1', () => process.stdout.write(`Firewell CCG: http://localhost:${port}\n`));
 }
