@@ -5,6 +5,8 @@ import { mkdtemp, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
+import { Social } from '../src/social.ts';
+import { validateDeck } from '../src/core.ts';
 
 async function fixture() {
   const app=createApp({databasePath:':memory:',accessPassword:'shared-alpha-password',clientOrigin:'https://ccgame-omega.vercel.app'});
@@ -155,4 +157,108 @@ test('chat 5-second throttle, history paging, private feedback and stored ticket
       .get(report.body.report.id) as any;
     assert.equal(sql.account_id,author.account.id);assert.equal(sql.room_code,'AABB00CC');
   }finally{app.close()}
+});
+
+test('Latin username, minimum ten-character account password, locked alpha registration and persistent login',async()=>{
+  const {app,request,register}=await fixture();
+  try{
+    const fail=await request('/api/register','',{login:'Логин',password:'securePass012',accessPassword:'shared-alpha-password'});
+    assert.equal(fail.status,409);
+    assert.equal((await request('/api/register','',{login:'Test!User',password:'securePass012',accessPassword:'shared-alpha-password'})).status,409);
+    assert.equal((await request('/api/register','',{login:'LatinOnly',password:'onlyletters',accessPassword:'shared-alpha-password'})).status,409);
+    assert.equal((await request('/api/register','',{login:'LatinOnly',password:'1234567890',accessPassword:'shared-alpha-password'})).status,409);
+    assert.equal((await request('/api/register','',{login:'LatinOnly',password:'TestAlpha1',accessPassword:'wrong-password'})).status,403);
+    const user=await request('/api/register','',{login:'LatinOnly',password:'TestAlpha1',accessPassword:'shared-alpha-password'});
+    assert.equal(user.status,200);
+    assert.equal((await request('/api/register','',{login:'latinonly',password:'TestAlpha1',accessPassword:'shared-alpha-password'})).status,409);
+    const me=await request('/api/me',user.body.token);
+    assert.equal(me.body.account.id,user.body.account.id);
+    assert.equal((await request('/api/login','',{login:'LATINONLY',password:'TestAlpha1'})).body.account.id,user.body.account.id);
+    const renamed=await request('/api/me/rename',user.body.token,{login:'Latin_Next'});
+    assert.equal(renamed.status,200);assert.equal(renamed.body.account.id,user.body.account.id);
+    assert.equal((await request('/api/me/rename',user.body.token,{login:'кириллица'})).status,409);
+  } finally{app.close()}
+});
+
+test('matchmaking pairs distinct accounts, honors persistent identity, rejects stale queues and preserves deck choices',async()=>{
+ const {app,request,register}=await fixture();
+ try{
+  const a=await register('Queue_A'),b=await register('Queue_B'),c=await register('Queue_C');
+  const red=(await request('/api/queue',a.token,{deckId:'red'})).body;
+  assert.equal(red.searching,true);
+  assert.equal((await request('/api/queue',a.token,{deckId:'green'})).body.searching,true);
+  const pair=await request('/api/queue',b.token,{deckId:'blue'});
+  assert.match(pair.body.room,/^[A-F0-9]{8}$/);
+  const persisted=(await request('/api/lobby',a.token)).body;
+  assert.equal(persisted.room,pair.body.room);
+  assert.equal(persisted.searching,0);
+  const room=app.db.prepare('SELECT host,guest,game FROM rooms WHERE code=?').get(pair.body.room) as any;
+  assert.equal(room.host,a.account.id);assert.equal(room.guest,b.account.id);
+  const deck=JSON.parse(room.game);
+  assert.equal(deck.players[0].deck.length+deck.players[0].hand.length,70);
+  assert.equal(deck.players[1].deck.length+deck.players[1].hand.length,70);
+  assert.equal((await request('/api/queue/leave',a.token,{})).status,200);
+  assert.equal((await request('/api/queue/leave',b.token,{})).status,200);
+  assert.equal((await request('/api/queue',c.token,{deckId:'green'})).body.searching,true);
+  app.db.prepare('UPDATE accounts SET seen_at=? WHERE id=?').run(Date.now()-100000,c.account.id);
+  assert.equal((await request('/api/queue',a.token,{deckId:'gold'})).body.searching,true);
+  assert.equal((await request('/api/lobby',a.token)).body.searching,1);
+  assert.equal((await request('/api/queue',b.token,{deckId:'violet'})).body.room!==null,true);
+  assert.equal((await request('/api/queue',a.token,{deckId:'gold'})).body.room!==null,true);
+ }finally{app.close()}
+});
+
+test('10-minute leaderboard counts completed non-draw wins, uses current account name and stable ID',async()=>{
+ const {app,request,register}=await fixture();
+ try{
+  const a=await register('Winner_A'),b=await register('Winner_B'),c=await register('Winner_C');
+  const ids=[a.account.id,b.account.id,c.account.id];
+  const save=app.db.prepare("INSERT INTO match_history(room,host,guest,started_at,finished_at,winner,initial_game) VALUES (?,?,?,?,?,?,?)");
+  save.run('BBAA0001',ids[0],ids[1],1,2,'0','{}');
+  save.run('BBAA0002',ids[1],ids[0],2,3,'1','{}');
+  save.run('BBAA0003',ids[1],ids[2],3,4,'draw','{}');
+  save.run('BBAA0004',ids[2],ids[1],4,null,null,'{}');
+  let board=(await request('/api/lobby',a.token)).body.leaderboard;
+  assert.equal(board.entries.length,1);assert.equal(board.entries[0].id,ids[0]);assert.equal(board.entries[0].wins,2);
+  assert.equal(board.expiresAt-board.updatedAt,600000);
+  assert.equal((await request('/api/me/rename',a.token,{login:'Victory_A'})).status,200);
+  const fresh=new Social(app.db).leaderboard(board.expiresAt+1);
+  assert.equal(fresh.entries[0].login,'Victory_A');
+  assert.equal(fresh.entries[0].id,ids[0]);
+  save.run('BBAA0005',ids[1],ids[0],5,6,'0','{}');
+  const cached=(await request('/api/lobby',a.token)).body.leaderboard;
+  assert.equal(cached.entries[0].wins,2);
+ }finally{app.close()}
+});
+
+test('extra domains are in combined catalog but never modify preset ratios or basic copy restrictions',async()=>{
+ const {app,request,register}=await fixture();
+ try{
+  const {token}=await register('MixedDeck');
+  const data=(await request('/api/catalog',token)).body;
+  const additions=data.cards.filter((c:any)=>c.id.startsWith('extra-domain-'));
+  assert.equal(additions.length,50);
+  for(const color of ['red','blue','green','gold','violet'])
+    assert.equal(additions.filter((c:any)=>c.produces===color).length,10);
+  for(const p of data.presets){
+    const cards=p.cards.map((id:string)=>data.cards.find((c:any)=>c.id===id));
+    assert.equal(cards.length,70);assert.equal(cards.filter((c:any)=>c.kind==='domain').length,26);
+    assert.equal(cards.filter((c:any)=>c.kind==='legend').length,2);
+    assert.equal(cards.filter((c:any)=>c.kind==='artifact').length,1);
+    assert.equal(validateDeck(cards).length,0);
+  }
+  const neutral=data.presets.find((p:any)=>p.id==='neutral');
+  const creature=neutral.cards.map((id:string)=>data.cards.find((c:any)=>c.id===id)).filter((c:any)=>c.name==='Свирус Жирникус');
+  assert.equal(creature.length,2);assert.equal(creature[0].attack,6);assert.equal(creature[0].health,5);
+  const red=data.presets.find((p:any)=>p.id==='red');
+  const mixed=red.cards.slice();
+  const slot=mixed.findIndex((id:string)=>data.cards.find((c:any)=>c.id===id)?.kind==='domain');
+  mixed[slot]='extra-domain-violet-1';
+  const test=await request('/api/my-decks',token,{name:'Two-color experiment',cards:mixed});
+  assert.equal(test.status,201,JSON.stringify(test.body));
+  const invalid=mixed.slice();invalid[slot]='extra-domain-violet-1';
+  // nonbasic Domain copy limit is three, unlike unlimited basic Domains
+  invalid.splice(0,4,'extra-domain-violet-1','extra-domain-violet-1','extra-domain-violet-1','extra-domain-violet-1');
+  assert.equal((await request('/api/my-decks',token,{name:'Illegal domains',cards:invalid})).status,409);
+ }finally{app.close()}
 });

@@ -38,13 +38,19 @@ try {
   for (const page of [a,b]) page.on('pageerror', error => errors.push(error.message));
 
   await register(a, 'AlphaBrowser');
+  await a.locator('#leaderboard').waitFor({state:'visible'});
+  assert.equal(await a.locator('#leaderboard li').count(),1);
+  await a.reload({waitUntil:'domcontentloaded'});
+  await a.locator('#profileName').waitFor({state:'visible'});
+  assert.equal(await a.locator('#profileName').innerText(),'AlphaBrowser');
+  await a.waitForFunction(()=>document.querySelector('#deck')?.options.length>0);
   await a.locator('#languageToggle').click();
   await a.getByText('Open deck builder').waitFor({state:'visible'});
   await a.locator('#rulesOpen').click();
-  await a.locator('#rulesContent').getByText(/Cera Van Troupe/).waitFor();
+  await a.locator('#rulesContent').getByText(/Cera Van Troupe/).first().waitFor();
   await a.locator('#rulesContent').getByText(/exactly 70 cards/i).waitFor();
   await a.locator('#languageToggle').click();
-  await a.locator('#rulesContent').getByText(/Цера Ван Троуп/).waitFor();
+  await a.locator('#rulesContent').getByText(/Цера Ван Троуп/).first().waitFor();
   await a.locator('#rulesClose').click();
   await a.locator('#chatText').fill('Привет из браузерного теста');
   await a.locator('#chatForm button').click();
@@ -64,6 +70,9 @@ try {
   await a.screenshot({ path: join(artifacts, 'alpha-lobby-desktop.png'), fullPage: true });
 
   await register(b, 'BetaMobile');
+  assert.equal(await b.locator('#languageToggle').count(),1);
+  const scrollInfo=await b.evaluate(()=>({body:document.documentElement.scrollWidth,viewport:innerWidth}));
+  assert.ok(scrollInfo.body<=scrollInfo.viewport+5,JSON.stringify(scrollInfo));
   await b.locator('#presence').waitFor();
   await b.screenshot({ path: join(artifacts, 'alpha-lobby-mobile.png'), fullPage: true });
 
