@@ -221,6 +221,7 @@ test('Cera Van Troupe raises 2/2 auxiliary Sacrifice token and begins an eligibl
   const cera=testDeck('violet').find(c=>c.name==='Цера Ван Троуп')!;
   const ritual=testDeck('violet').find(c=>c.ritual)!.ritual!;
   let g=step(initialGame(player([], [cera]),player()),{type:'startTurn',actor:0},'cera-start');
+  g.players[0].energy.violet=10;
   g=step(g,{type:'playLegend',actor:0,handIndex:0},'cera-enter');
   g.players[0].rituals.push({...ritual,id:'cera-active',requiresSource:false,remainingStarts:2});
   g.players[0].main.push(victim(101),victim(102));
@@ -245,6 +246,7 @@ test('Cera Van Troupe raises 2/2 auxiliary Sacrifice token and begins an eligibl
 test('Coldrake Shaw returns a creature from discard to hand, never free-plays it',()=>{
   const lich=testDeck('violet').find(c=>c.name==='Колдрейк Шоу')!;
   let g=step(initialGame(player([], [lich]),player()),{type:'startTurn',actor:0},'lich-start');
+  g.players[0].energy.violet=10;
   g=step(g,{type:'playLegend',actor:0,handIndex:0},'lich-enter');
   const creature={id:'lich-memory',name:'Реликтовое умертвие',kind:'creature',attack:1,health:2} as Card;
   g.players[0].discard.push(creature);
