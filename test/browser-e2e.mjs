@@ -40,8 +40,12 @@ try {
   await register(a, 'AlphaBrowser');
   await a.locator('#chatText').fill('Привет из браузерного теста');
   await a.locator('#chatForm button').click();
+  await a.locator('#feedbackTitle').fill('Тестовое обращение');
+  await a.locator('#feedbackType').selectOption('problem');
   await a.locator('#feedbackText').fill('Проверка формы обратной связи в браузере');
   await a.locator('#feedbackForm button').click();
+  await a.locator('#feedbackConfirm').getByText(/Обращение №\d+ сохранено/).waitFor();
+  await a.locator('#chatCooldown').getByText(/Повторная отправка через/).waitFor();
   await a.locator('#openBuilder').click();
   await a.locator('#builder').waitFor({ state: 'visible' });
   assert.equal(await a.locator('#deckCount').innerText(), '70/70');

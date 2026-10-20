@@ -6,6 +6,7 @@ let room = localStorage.getItem(roomKey) || '';
 let account = null, catalog = [], presets = [], savedDecks = [], deckIds = [], game = null;
 let selected = null, selectedMulligan = new Set(), selectedVictims = new Set(), selectedRitual = null;
 let selectedReward = null, selectedRewardKeepExisting = undefined, selectedArtifactIndex = null, busy = false, loading = false;
+let chatAvailableAt=0,olderMessages=[],chatMore=true;
 function status(value) { $('status').textContent = value || ''; }
 function show(id) { for (const pane of ['auth','home','builder','match']) $(pane).classList.toggle('hidden', pane !== id); }
 function serverAddress() {
@@ -100,13 +101,16 @@ function renderLobby(data) {
   $('search').disabled=data.searchingSelf;
   $('cancelSearch').classList.toggle('hidden',!data.searchingSelf);
   const chat=$('chat'), pinned=chat.scrollTop+chat.clientHeight>=chat.scrollHeight-20;
-  chat.replaceChildren(...data.chat.map(message=>{
+  const items=[...new Map([...olderMessages,...data.chat].map(message=>[message.id,message])).values()].sort((a,b)=>a.id-b.id);
+  chat.dataset.earliest=String(items[0]?.id||'');
+  chat.replaceChildren(...items.map(message=>{
     const line=document.createElement('div');line.className='message';
     line.append(textElement('strong',message.login+' '),textElement('small','ID '+message.accountId+' · '),
       textElement('span',message.body));
     line.title=message.accountId;return line;
   }));
   if (pinned) chat.scrollTop=chat.scrollHeight;
+  $('olderChat').disabled=!chatMore;
   if (data.room && !room) enterRoom(data.room);
 }
 async function refresh() {
@@ -310,8 +314,55 @@ $('cancelSearch').onclick=async()=>{try{await api('/api/queue',undefined,'DELETE
 $('createRoom').onclick=async()=>{try{enterRoom((await api('/api/rooms',{deckId:$('deck').value})).code)}catch(e){status(e.message)}};
 $('joinRoom').onclick=async()=>{try{const code=$('code').value.trim().toUpperCase();await api('/api/rooms/'+code+'/join',{deckId:$('deck').value});enterRoom(code)}catch(e){status(e.message)}};
 $('leaveMatch').onclick=async()=>{try{await api('/api/queue/leave',{})}catch{}room='';game=null;localStorage.removeItem(roomKey);show('home');await refresh()};
-$('chatForm').onsubmit=async event=>{event.preventDefault();try{await api('/api/chat',{text:$('chatText').value});$('chatText').value='';await refresh()}catch(e){status(e.message)}};
-$('feedbackForm').onsubmit=async event=>{event.preventDefault();try{await api('/api/feedback',{category:$('feedbackType').value,text:$('feedbackText').value});$('feedbackText').value='';status('Спасибо, сообщение сохранено на сервере')}catch(e){status(e.message)}};
+function updateChatCooldown(){
+  const left=Math.max(0,Math.ceil((chatAvailableAt-Date.now())/1000));
+  $('chatSubmit').disabled=left>0;
+  $('chatSubmit').textContent=left?'Отправить ('+left+'с)':'Отправить';
+  $('chatCooldown').textContent=left?'Повторная отправка через '+left+' сек.':'';
+}
+$('chatForm').onsubmit=async event=>{
+  event.preventDefault();if(Date.now()<chatAvailableAt)return;
+  try {
+    const response=await api('/api/chat',{text:$('chatText').value});
+    $('chatText').value='';chatAvailableAt=response.nextAllowedAt||Date.now()+5000;
+    updateChatCooldown();await refresh();
+  } catch(e){
+    const match=/Подождите (\d+) сек/.exec(e.message);
+    if(match){chatAvailableAt=Date.now()+Number(match[1])*1000;updateChatCooldown()}
+    status(e.message);
+  }
+};
+$('olderChat').onclick=async()=>{
+  try{
+    const before=olderMessages[0]?.id||$('chat').dataset.earliest;
+    const result=await api('/api/chat/history?limit=50'+(before?'&before='+encodeURIComponent(before):''));
+    olderMessages=[...result.messages,...olderMessages].filter((m,i,a)=>a.findIndex(z=>z.id===m.id)===i);
+    chatMore=result.hasMore;await refresh();
+  }catch(e){status(e.message)}
+};
+async function reloadFeedback(){
+  const records=(await api('/api/feedback/mine')).reports;
+  $('myFeedback').replaceChildren(...records.map(report=>{
+    const row=document.createElement('div');row.className='report-entry';
+    row.append(textElement('strong','#'+report.id+' · '+report.title),
+      textElement('small',report.category+' · '+report.status+' · '+new Date(report.createdAt).toLocaleString()),
+      textElement('p',report.body));
+    return row;
+  }));
+}
+$('loadFeedback').onclick=()=>reloadFeedback().catch(e=>status(e.message));
+$('feedbackForm').onsubmit=async event=>{
+  event.preventDefault();$('feedbackSubmit').disabled=true;
+  try{
+    const result=await api('/api/feedback',{category:$('feedbackType').value,
+      title:$('feedbackTitle').value,roomCode:$('feedbackRoom').value.trim().toUpperCase(),
+      text:$('feedbackText').value});
+    $('feedbackText').value='';$('feedbackTitle').value='';
+    $('feedbackConfirm').textContent='Обращение №'+result.report.id+' сохранено';
+    await reloadFeedback();
+  }catch(e){status(e.message)}
+  finally{$('feedbackSubmit').disabled=false}
+};
 $('openBuilder').onclick=()=>{deckIds=[...presets[0].cards];$('deckName').value='Моя колода';show('builder');renderBuilder()};
 $('closeBuilder').onclick=()=>{show('home');refresh()};
 $('loadStarter').onclick=()=>{deckIds=[...presets.find(p=>p.id===$('starter').value).cards];renderBuilder()};
@@ -326,4 +377,5 @@ function tick(){if(!game?.deadlineAt){$('timer').textContent='';return}const lef
 $('apiUrl').value=apiBase;
 show('auth');
 if(token)api('/api/me').then(async data=>{setAccount(data.account);await loadData();await refresh()}).catch(()=>{token='';localStorage.removeItem(sessionKey);show('auth')});
-setInterval(refresh,2500);setInterval(tick,1000);
+setInterval(refresh,2500);setInterval(tick,1000);setInterval(updateChatCooldown,250);
+updateChatCooldown();

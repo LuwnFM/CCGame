@@ -29,9 +29,19 @@
         <p id="queueStatus" class="hint"></p>
         <details><summary>Матч по коду</summary><div class="actions"><button id="createRoom" class="secondary">Создать комнату</button><input id="code" maxlength="8" placeholder="Код комнаты"><button id="joinRoom" class="secondary">Войти по коду</button></div></details>
       </section>
-      <section class="panel"><h2>Общий чат</h2><div id="chat" class="chat" aria-live="polite"></div><form id="chatForm" class="actions"><input id="chatText" maxlength="500" placeholder="Сообщение (до 500 символов)" aria-label="Сообщение"><button>Отправить</button></form></section>
+      <section class="panel"><h2>Общий чат</h2><div id="chat" class="chat" aria-live="polite"></div>
+        <div class="actions"><button id="olderChat" type="button" class="ghost">Загрузить ранние сообщения</button><span id="chatCooldown" class="hint" aria-live="polite"></span></div>
+        <form id="chatForm" class="actions"><input id="chatText" maxlength="500" placeholder="Сообщение (до 500 символов)" aria-label="Сообщение"><button id="chatSubmit">Отправить</button></form></section>
       <section class="panel"><h2>Мои колоды</h2><p class="muted">Собирай из карт всех шести стартовых наборов: 70 карт и не меньше 26 Владений.</p><button id="openBuilder" class="secondary">Открыть редактор колоды</button><div id="savedDecks"></div></section>
-      <section class="panel"><h2>Жалобы и предложения</h2><form id="feedbackForm"><label>Тип <select id="feedbackType"><option value="bug">Жалоба / ошибка</option><option value="idea">Предложение</option></select></label><label>Описание <textarea id="feedbackText" minlength="10" maxlength="2000" rows="4" placeholder="Опиши проблему или идею"></textarea></label><button>Отправить</button></form></section>
+      <section class="panel"><h2>Ошибки, проблемы и идеи</h2>
+        <form id="feedbackForm" class="feedback-fields">
+          <label>Категория <select id="feedbackType"><option value="bug">Ошибка / баг</option><option value="problem">Проблема с игрой</option><option value="idea">Идея / улучшение</option></select></label>
+          <label>Краткий заголовок <input id="feedbackTitle" minlength="3" maxlength="100" required placeholder="Что произошло или что улучшить?"></label>
+          <label>Код матча (необязательно) <input id="feedbackRoom" maxlength="8" pattern="[A-Fa-f0-9]{8}" placeholder="Например, A1B2C3D4"></label>
+          <label>Описание <textarea id="feedbackText" minlength="10" maxlength="2000" required rows="5" placeholder="Опиши ситуацию, шаги воспроизведения, ожидаемый и фактический результат"></textarea></label>
+          <p class="hint">Отчёт привязывается к вашему постоянному ID и сохраняется на сервере.</p>
+          <div class="actions"><button id="feedbackSubmit">Отправить обращение</button><span id="feedbackConfirm" class="hint" aria-live="polite"></span></div>
+        </form><details><summary>Мои обращения</summary><button id="loadFeedback" type="button" class="secondary">Обновить</button><div id="myFeedback" class="report-list"></div></details></section>
     </div>
   </section>
   <section id="builder" class="hidden"><div class="panel"><div class="top"><h1>Редактор колоды <span id="deckCount">0/70</span></h1><button id="closeBuilder" class="secondary">Назад</button></div><div class="actions"><label>Начать с <select id="starter"></select></label><button id="loadStarter" class="secondary">Загрузить</button><label>Имя <input id="deckName" maxlength="40" placeholder="Моя колода"></label><button id="saveDeck">Сохранить</button></div><p id="deckIssues" class="hint"></p></div>

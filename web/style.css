@@ -11,3 +11,5 @@ label{display:block;margin:10px 0;font-size:.9rem;color:var(--muted)}input,selec
 .inactive-ability{color:#ffd48c!important;font-weight:700}
 
 .card .card-flags{color:var(--accent);font-size:.62rem;line-height:1.15}.slot-placeholder{min-height:102px;border:1px dashed #465371;border-radius:10px;display:grid;place-items:center;color:#60708a;font-size:1.2rem;background:#171d2c70}@media(max-width:390px){.slot-placeholder{min-height:96px}}
+
+.feedback-fields{display:grid;gap:10px}.feedback-fields label{display:grid;gap:5px}.report-list{display:grid;gap:6px;padding:10px 0;max-height:320px;overflow:auto}.report-entry{border:1px solid #465371;padding:9px;border-radius:8px}.report-entry p{white-space:pre-wrap;overflow-wrap:anywhere}
