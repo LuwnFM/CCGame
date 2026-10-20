@@ -10,7 +10,7 @@ export FIREWELL_DB="$PWD/data/firewell.sqlite"
 export PORT=3000
 export FIREWELL_BIND=127.0.0.1
 if [ -z "${FIREWELL_ALPHA_PASSWORD:-}" ]; then
-  read -r -s -p "Общий пароль допуска к альфе (не менее 12 символов): " FIREWELL_ALPHA_PASSWORD
+  read -r -s -p "Общий пароль допуска к альфе (не менее 10 символов): " FIREWELL_ALPHA_PASSWORD
   echo
   export FIREWELL_ALPHA_PASSWORD
 fi

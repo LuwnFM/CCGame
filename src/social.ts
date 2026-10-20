@@ -6,24 +6,27 @@ import { ARCHETYPES, testDeck, EXTRA_DOMAINS } from './decks.ts';
 type AccountRow = { id: string; login: string; login_key: string; salt: string; password_hash: string; created_at: number; seen_at: number };
 type DeckRow = { id: string; owner_id: string; name: string; cards: string; created_at: number };
 export const catalog: Map<string, Card> = new Map([...ARCHETYPES.flatMap(a => testDeck(a.id)),...EXTRA_DOMAINS].map(c => [c.id, c]));
-const loginPattern = /^[\p{L}\p{N}_]{3,20}$/u;
+const loginPattern = /^[A-Za-z0-9_]{3,20}$/;
 const reserved = new Set(['admin','administrator','moderator','system','support','сервер','админ','модератор']);
 function loginKey(login: unknown): { login: string; key: string } {
   if (typeof login !== 'string') throw new RuleError('Логин должен быть строкой');
-  const value = login.normalize('NFC').trim();
+  const value = login.trim();
   if (!loginPattern.test(value) || [...value].length < 3 || [...value].length > 20)
-    throw new RuleError('Логин: 3–20 букв, цифр или символов _');
-  const key = value.toLocaleLowerCase('ru-RU');
+    throw new RuleError('Логин: 3–20 латинских букв, цифр или символов _');
+  const key = value.toLowerCase();
   if (reserved.has(key)) throw new RuleError('Этот логин зарезервирован');
   return { login: value, key };
 }
 function password(value: unknown): string {
-  if (typeof value !== 'string' || value.length < 10 || value.length > 128) throw new RuleError('Пароль профиля: 10–128 символов');
+  if (typeof value !== 'string' || value.length < 10 || value.length > 128 ||
+      !/[A-Za-z]/.test(value) || !/[0-9]/.test(value) || /[\x00-\x1f\x7f]/.test(value))
+    throw new RuleError('Пароль профиля: 10–128 символов, минимум одна латинская буква и цифра');
   return value;
 }
 function publicAccount(row: AccountRow) { return { id: row.id, login: row.login, createdAt: row.created_at }; }
 export class Social {
   readonly db: DatabaseSync;
+  private leaderboardCache: {expiresAt:number; updatedAt:number; entries: {id:string;login:string;wins:number}[]} | null = null;
   constructor(db: DatabaseSync) {
     this.db = db;
     db.exec(`CREATE TABLE IF NOT EXISTS accounts (
@@ -122,6 +125,20 @@ export class Social {
   deleteDeck(id: string, deckId: string) {
     this.db.prepare('DELETE FROM saved_decks WHERE owner_id=? AND id=?').run(id,deckId);
   }
+  leaderboard(now=Date.now()){
+    if(this.leaderboardCache && now<this.leaderboardCache.expiresAt)
+      return {updatedAt:this.leaderboardCache.updatedAt,expiresAt:this.leaderboardCache.expiresAt,entries:this.leaderboardCache.entries};
+    // Count only completed, decisive matches. Current login is read from
+    // accounts so changing one's username never discards accumulated wins.
+    const entries=this.db.prepare(`SELECT a.id,a.login,COUNT(*) AS wins
+      FROM match_history m JOIN accounts a ON a.id =
+      CASE m.winner WHEN '0' THEN m.host ELSE m.guest END
+      WHERE m.finished_at IS NOT NULL AND m.winner IN ('0','1')
+      GROUP BY a.id ORDER BY wins DESC,a.login_key ASC,a.id ASC LIMIT 10`).all() as {id:string;login:string;wins:number}[];
+    const result={updatedAt:now,expiresAt:now+600_000,entries};
+    this.leaderboardCache=result;
+    return result;
+  }
   lobby(id: string) {
     const cutoff = Date.now()-60_000;
     this.db.prepare('DELETE FROM matchmaking WHERE matched_room IS NULL AND account_id IN (SELECT id FROM accounts WHERE seen_at<?)').run(cutoff);
@@ -131,7 +148,7 @@ export class Social {
     const chat = this.db.prepare(`SELECT m.id,m.account_id AS accountId,COALESCE(a.login,'Удалённый игрок') AS login,m.body,m.created_at AS createdAt
       FROM chat_messages m LEFT JOIN accounts a ON a.id=m.account_id ORDER BY m.id DESC LIMIT 50`).all().reverse();
     return { online:online.n, searching:searching.n, searchingSelf:!!queue&&!queue.matched_room,
-      room:queue?.matched_room ?? null, chat };
+      room:queue?.matched_room ?? null, chat, leaderboard:this.leaderboard() };
   }
   queueRow(id: string) {
     return this.db.prepare('SELECT * FROM matchmaking WHERE account_id=?').get(id) as

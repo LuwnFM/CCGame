@@ -18,9 +18,11 @@ set "FIREWELL_DB=%CD%\data\firewell.sqlite"
 set "PORT=3000"
 set "FIREWELL_BIND=127.0.0.1"
 echo.
-echo Придумайте общий пароль допуска к альфе (не менее 12 символов).
-set /p "FIREWELL_ALPHA_PASSWORD=Пароль допуска: "
-if "%FIREWELL_ALPHA_PASSWORD:~11,1%"=="" (
+if not defined FIREWELL_ALPHA_PASSWORD (
+  echo Введите согласованный общий пароль альфы ^(не менее 10 символов^).
+  set /p "FIREWELL_ALPHA_PASSWORD=Пароль допуска: "
+)
+if "%FIREWELL_ALPHA_PASSWORD:~9,1%"=="" (
   echo Пароль слишком короткий.
   pause
   exit /b 1

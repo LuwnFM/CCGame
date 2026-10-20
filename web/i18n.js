@@ -5,7 +5,7 @@ const labels=[
 ['Войти в игру','Enter the game'],['Создай профиль с постоянным ID или войди под своим логином.','Create a permanent player ID or sign into your profile.'],
 ['Адрес игрового сервера','Game server address'],['Для локальной игры оставить пустым','Leave blank for local play'],
 ['Локально сервер и страница работают по одному адресу. Для клиента Vercel нужен HTTPS-адрес игрового сервера.','Locally the client and server share one address. Hosted clients require an HTTPS game-server address.'],
-['Логин','Username'],['3–20 букв, цифр или _','3–20 letters, numbers or _'],['Пароль профиля','Account password'],
+['Логин','Username'],['3–20 букв, цифр или _','3–20 letters, numbers or _'],['3–20 латинских букв, цифр или _','3–20 Latin letters, digits or _'],['10–128 символов, буква и цифра','10–128 characters, letter and digit'],['Пароль профиля','Account password'],
 ['Не менее 10 символов','At least 10 characters'],['Пароль доступа к альфе','Alpha access password'],
 ['Зарегистрироваться','Register'],['Войти','Sign in'],['Сменить логин','Change username'],['Выйти','Sign out'],
 ['Удалить профиль','Delete profile'],['Искать соперника','Find an opponent'],['Твоя колода','Your deck'],
@@ -37,7 +37,7 @@ const labels=[
 ['Вспомогательное поле · 4','Auxiliary field · 4'],['Владения','Domains'],
 ['Рука','Hand'],['Атаковать Владетеля','Attack Ruler'],['Пропустить перехват','Skip intercept'],['Завершить ход','End turn'],
 ['В сети','Online'],['Не подключено','Disconnected'],['Альфа · дуэль 1×1','Alpha · 1v1 duel'],
-['Готово','Ready'],['Истощено','Exhausted'],['Сохранено','Saved'],['Удалить','Delete'],
+['Готово','Ready'],['Истощено','Exhausted'],['Сохранено','Saved'],['Топ-10 по победам','Top 10 by wins'],['Обновление каждые 10 минут · только завершённые победой матчи','Updated every 10 minutes · completed wins only'],['побед','wins'],['Пока нет завершённых матчей','No completed matches yet'],['Данные на: ','Updated: '],['Удалить','Delete'],
 ['Колода удалена','Deck deleted'],['Колода сохранена','Deck saved'],
 [' · своя',' · custom'],[' карт',' cards'],['Владений','Domains'],['Колода ','Deck '],
 [' · Рука ',' · Hand '],[' · Сброс ',' · Discard '],[' · Энергия ',' · Energy '],
@@ -99,7 +99,7 @@ const names=Object.fromEntries([
 ['Колдрейк Шоу','Coldrake Shaw'],['Цера Ван Троуп','Cera Van Troupe'],['Драгнир и Иммельсторн','Dragnir and Immelstorn'],['Призыв забытой реликвии','Call of the Forgotten Relic'],
 ['Дворянский призрак Ван Троупов','Van Troupe Noble Ghost'],['Некроартофакт Ван Троупов','Van Troupe Necro-Artifice'],['Реликтовый страж Ван Троупов','Van Troupe Relic Sentinel'],['Умертвие родовой крипты','Ancestral Crypt Revenant'],['Искра фамильной сокровищницы','Family Vault Spark'],['Умертвие свиты Церы','Cera’s Undead Retainer'],
 ['Послушник Ордена','Order Novice'],['Дозорный Ордена','Order Watchman'],['Писарь утремера','Utremere Scribe'],['Странствующий хранитель','Wandering Keeper'],['Мастеровой Ордена','Order Artisan'],['Ветеран Хранителей','Veteran of the Keepers'],
-['Быстрый разведчик','Fast Scout'],['Страж утремера','Utremere Guard'],['Инквизитор дозора','Watch Inquisitor'],['Полевой лекарь','Field Healer'],['Рыцарь знамени','Banner Knight'],['Страж архивов','Archive Sentinel'],['Мастер перехвата','Interception Master'],['Ветеран новых хранителей','New Keepers Veteran'],
+['Быстрый разведчик','Fast Scout'],['Страж утремера','Utremere Guard'],['Инквизитор дозора','Watch Inquisitor'],['Полевой лекарь','Field Healer'],['Рыцарь знамени','Banner Knight'],['Страж архивов','Archive Sentinel'],['Мастер перехвата','Interception Master'],['Ветеран новых хранителей','New Keepers Veteran'],['Свирус Жирникус','Svirus Zhirnikus'],
 ['Верховный хранитель Данте','High Keeper Dante'],['Мейстер Глерторул','Maester Glertorul'],['Полевое знамя Ордена','Order Field Banner']
 ]);
 const archetypes={red:'Steel Kingdom · Mountain Guard',blue:'Taldraik · Air Fleet',

@@ -15,8 +15,8 @@
     <p class="muted">Создай профиль с постоянным ID или войди под своим логином.</p>
     <label>Адрес игрового сервера <input id="apiUrl" type="url" placeholder="Для локальной игры оставить пустым" autocomplete="url"></label>
     <p id="apiHint" class="hint">Локально сервер и страница работают по одному адресу. Для клиента Vercel нужен HTTPS-адрес игрового сервера.</p>
-    <label>Логин <input id="login" autocomplete="username" maxlength="20" placeholder="3–20 букв, цифр или _"></label>
-    <label>Пароль профиля <input id="password" type="password" autocomplete="current-password" minlength="10" placeholder="Не менее 10 символов"></label>
+    <label>Логин <input id="login" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="20" pattern="[A-Za-z0-9_]{3,20}" placeholder="3–20 латинских букв, цифр или _"></label>
+    <label>Пароль профиля <input id="password" type="password" autocomplete="current-password" minlength="10" maxlength="128" placeholder="10–128 символов, буква и цифра"></label>
     <label id="accessWrap">Пароль доступа к альфе <input id="accessPassword" type="password" autocomplete="off"></label>
     <div class="actions"><button id="register">Зарегистрироваться</button><button id="signIn" class="secondary">Войти</button></div>
   </section>
@@ -32,6 +32,7 @@
       <section class="panel"><h2>Общий чат</h2><div id="chat" class="chat" aria-live="polite"></div>
         <div class="actions"><button id="olderChat" type="button" class="ghost">Загрузить ранние сообщения</button><span id="chatCooldown" class="hint" aria-live="polite"></span></div>
         <form id="chatForm" class="actions"><input id="chatText" maxlength="500" placeholder="Сообщение (до 500 символов)" aria-label="Сообщение"><button id="chatSubmit">Отправить</button></form></section>
+      <section class="panel"><h2>Топ-10 по победам</h2><p class="hint">Обновление каждые 10 минут · только завершённые победой матчи</p><ol id="leaderboard" class="leaderboard" aria-live="polite"></ol><p id="leaderboardUpdated" class="hint"></p></section>
       <section class="panel"><h2>Мои колоды</h2><p class="muted">Собирай из карт всех шести стартовых наборов: 70 карт и не меньше 26 Владений.</p><button id="openBuilder" class="secondary">Открыть редактор колоды</button><div id="savedDecks"></div></section>
       <section class="panel"><h2>Ошибки, проблемы и идеи</h2>
         <form id="feedbackForm" class="feedback-fields">

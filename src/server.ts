@@ -119,7 +119,7 @@ function view(game: Game, seat: PlayerId, row?: Room) {
   };
 }
 export function createApp(options: { databasePath: string; accessPassword: string; clientOrigin?: string }) {
-  if (!options.accessPassword || options.accessPassword.length < 12) throw new Error('FIREWELL_ALPHA_PASSWORD должен содержать не менее 12 символов');
+  if (!options.accessPassword || options.accessPassword.length < 10) throw new Error('FIREWELL_ALPHA_PASSWORD должен содержать не менее 10 символов');
   const existingFile = options.databasePath !== ':memory:' && existsSync(options.databasePath) && statSync(options.databasePath).size > 0;
   const db = new DatabaseSync(options.databasePath);
   // SQLite VACUUM INTO produces a transactionally consistent backup, including

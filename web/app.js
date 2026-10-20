@@ -101,7 +101,22 @@ async function loadData() {
     return row;
   }));
 }
+function renderLeaderboard(board){
+  if(!board)return;
+  const root=$('leaderboard');
+  root.replaceChildren(...(board.entries.length?board.entries.map(player=>{
+    const item=document.createElement('li');item.className='leaderboard-entry';
+    const identity=document.createElement('div');
+    identity.append(textElement('strong',player.login,'user-value'),
+      textElement('small','ID: '+player.id,'user-value'));
+    item.append(identity,textElement('b',player.wins+' '+translate('побед')));
+    return item;
+  }):[textElement('li',translate('Пока нет завершённых матчей'))]));
+  $('leaderboardUpdated').textContent=translate('Данные на: ')+
+    new Date(board.updatedAt).toLocaleString(locale()==='en'?'en-US':'ru-RU');
+}
 function renderLobby(data) {
+  renderLeaderboard(data.leaderboard);
   $('presence').textContent='Онлайн: '+data.online+' · в поиске: '+data.searching;
   $('queueStatus').textContent=data.searchingSelf?'Поиск идёт. Подбираем другого игрока…':'';
   $('search').disabled=data.searchingSelf;
