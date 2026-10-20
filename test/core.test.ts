@@ -1,0 +1,54 @@
+import { test } from 'node:test';
+import { strict as assert } from 'node:assert';
+import { apply, initialGame, player, validateDeck, type Card, type Game, type Command } from '../src/core.ts';
+const land: Card = { id: 'l', name: 'Базовое красное Владение', kind: 'domain', basic: true, produces: 'red' };
+const creature: Card = { id: 'c', name: 'Ученик', kind: 'creature', cost: { colored: { red: 1 }, generic: 1 }, attack: 2, health: 2 };
+function step(g: Game, command: Omit<Command, 'expectedRevision' | 'key'>, key: string): Game {
+  return apply(g, { ...command, expectedRevision: g.revision, key } as Command);
+}
+test('first player skips draw, second draws; energy clears and domain refreshes', () => {
+  let g = initialGame(player([land], [land]), player([creature], [land]));
+  g = step(g, { type: 'startTurn', actor: 0 }, 'start');
+  assert.equal(g.players[0].hand.length, 1);
+  g = step(g, { type: 'playDomain', actor: 0, handIndex: 0 }, 'land');
+  g = step(g, { type: 'tapDomain', actor: 0, objectId: 1 }, 'tap');
+  g = step(g, { type: 'endTurn', actor: 0 }, 'end');
+  assert.equal(g.players[0].energy.red, 0);
+  assert.equal(g.players[1].hand.length, 2);
+  g = step(g, { type: 'endTurn', actor: 1 }, 'end2');
+  assert.equal(g.players[0].hand.length, 1);
+  assert.equal(g.players[0].domains[0].exhausted, false);
+});
+test('duplicate command is idempotent; stale revision and invalid action leave state intact', () => {
+  let g = step(initialGame(player([], [land]), player()), { type: 'startTurn', actor: 0 }, 's');
+  const cmd: Command = { type: 'playDomain', actor: 0, handIndex: 0, expectedRevision: g.revision, key: 'l' };
+  g = apply(g, cmd);
+  assert.equal(apply(g, cmd), g);
+  assert.throws(() => apply(g, { ...cmd, type: 'endTurn' }), /Ключ команды/);
+  assert.throws(() => apply(g, { ...cmd, key: 'l2' }), /ревизия/);
+  assert.throws(() => step(g, { type: 'playDomain', actor: 0, handIndex: 0 }, 'bad'), /Владение уже/);
+  assert.equal(g.players[0].domains.length, 1);
+});
+test('colored cost cannot be paid with neutral; failed payment does not mutate game', () => {
+  const neutral: Card = { ...land, id: 'n', name: 'Нейтральное Владение', produces: 'neutral' };
+  let g = step(initialGame(player([], [neutral, creature]), player()), { type: 'startTurn', actor: 0 }, 's');
+  g = step(g, { type: 'playDomain', actor: 0, handIndex: 0 }, 'n');
+  g = step(g, { type: 'tapDomain', actor: 0, objectId: 1 }, 'tap');
+  assert.throws(() => step(g, { type: 'playCreature', actor: 0, handIndex: 0 }, 'c'), /цветной/);
+  assert.equal(g.players[0].hand.length, 1);
+  assert.equal(g.players[0].energy.neutral, 1);
+});
+test('discard exactly down to 8 at end of turn', () => {
+  let g = step(initialGame(player([], Array(10).fill(creature)), player()), { type: 'startTurn', actor: 0 }, 's');
+  g = step(g, { type: 'endTurn', actor: 0 }, 'e');
+  assert.equal(g.phase, 'discard');
+  g = step(g, { type: 'discard', actor: 0, handIndex: 0 }, 'd1');
+  g = step(g, { type: 'discard', actor: 0, handIndex: 0 }, 'd2');
+  assert.equal(g.active, 1);
+  assert.equal(g.players[0].hand.length, 8);
+});
+test('70 cards, 26 domains, basic colored domain and copy limits', () => {
+  const deck = [...Array(26).fill(land), ...Array.from({ length: 44 }, (_, i) => ({ ...creature, id: `c${i}`, name: `Ученик ${i}` }))];
+  assert.deepEqual(validateDeck(deck), []);
+  assert.ok(validateDeck(Array(70).fill(creature)).length >= 2);
+});
