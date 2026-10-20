@@ -211,7 +211,20 @@ function renderGame(ready) {
     ' · Энергия '+(Object.entries(me.energy).filter(([,n])=>n).map(([c,n])=>c+':'+n).join(', ')||'0');
   $('enemyInfo').textContent='Колода '+enemy.deckCount+' · Рука '+enemy.handCount+' · Сброс '+enemy.discardCount;
   $('myLegends').replaceChildren(...me.legends.map(p=>cardButton(p.card,cardLabel(p)+' · '+(p.card.loyaltyAbility?.kind||''),
-    ()=>send({type:'activateLegend',objectId:p.objectId}),!mine||p.lastActivatedTurn===game.turn)));
+    () => {
+      const ability=p.card.loyaltyAbility?.kind;
+      if(ability==='recoverCreature'){
+        const choices=(me.discard||[]).map((c,i)=>({card:c,index:i})).filter(x=>x.card.kind==='creature');
+        if(!choices.length){status('В сбросе нет Существ');return}
+        const numbered=choices.map((item,n)=>(n+1)+'. '+item.card.name).join('\n');
+        const pick=prompt('Колдрейк — выбери Существо для возвращения в руку:\n'+numbered);
+        if(pick===null)return;
+        const found=choices[Number(pick)-1];if(!found){status('Неверный номер Существа');return}
+        send({type:'activateLegend',objectId:p.objectId,discardIndex:found.index});
+      } else send({type:'activateLegend',objectId:p.objectId});
+    },!mine||p.lastActivatedTurn===game.turn||p.loyalty+p.card.loyaltyAbility.delta<0
+      ||p.card.loyaltyAbility.kind==='raiseSacrifice'&&me.auxiliary.length>=4
+      ||p.card.loyaltyAbility.kind==='recoverCreature'&&!me.discard?.some(c=>c.kind==='creature'))));
   $('enemyLegends').replaceChildren(...enemy.legends.map(p=>cardButton(p.card,cardLabel(p),
     ()=>send({type:'attack',attackerId:selected,target:{kind:'legend',objectId:p.objectId}}),!mine||selected===null)));
   for(const [id,zone] of [['myBoard',me.main],['myAux',me.auxiliary]]) {

@@ -36,7 +36,7 @@ const themes: Record<ArchetypeId, Theme> = {
   violet: {
     plain: [['Искатель сокровищницы',1,1,2],['Подручный Ван Троупов',2,2,2],['Сторож подвала',2,2,3],['Шифровальщик реликвий',3,3,2],['Сборщик механизмов',4,4,4],['Хранитель тайника',5,5,5]].map(unit),
     effects: [['Зовущий забытых',1,1,2,{sacrifice:true}],['Призрачный агент',2,2,2,{sacrifice:true,stealth:true}],['Хранитель неисправностей',2,2,3,{sacrifice:true,onDeath:{kind:'damageOpponent',amount:1}}],['Разведчик искажения',3,3,2,{sacrifice:true,haste:true}],['Оператор механизмов',4,3,4,{sacrifice:true,onDeath:{kind:'damageAllCreatures',amount:1}}],['Вестник Шоу',4,4,3,{sacrifice:true,poisonHit:{strength:1,ticks:2}}],['Страж забытого архива',5,4,5,{guard:true,sacrifice:true}]].map(unit),
-    legends: ['Колдрейк Шоу','Хранительница сокровищницы Ван Троупов'], item:'Драгнир и Иммельсторн',
+    legends: ['Колдрейк Шоу','Цера Ван Троуп'], item:'Драгнир и Иммельсторн',
   },
   neutral: {
     plain: [['Послушник Ордена',1,1,2],['Дозорный Ордена',2,2,2],['Писарь утремера',2,2,3],['Странствующий хранитель',3,3,3],['Мастеровой Ордена',4,4,4],['Ветеран Хранителей',5,5,5]].map(unit),
@@ -52,12 +52,13 @@ function cost(color: ArchetypeId, amount: number): Cost { return { colored: colo
 function identifier(color: string, name: string): string { return `${color}-${name.toLowerCase().replace(/[^\p{L}\p{N}]+/gu,'-')}`; }
 function rewardPool(): [Card,Card,Card,Card,Card] {
   return [
-    {id:'vt-echo',name:'Эхо сокровищницы',kind:'creature',aspects:['violet'],attack:4,health:4,shield:1},
-    {id:'vt-mechanism',name:'Забытый механизм',kind:'creature',aspects:['violet'],attack:5,health:3,firstStrike:true},
-    {id:'vt-guardian',name:'Хранитель реликвий',kind:'creature',aspects:['violet'],attack:3,health:6,guard:true},
-    {id:'vt-specter',name:'Отзвук Искажения',kind:'creature',aspects:['violet'],attack:4,health:4,lifesteal:true},
-    {id:'vt-spark',name:'Искра механизма',kind:'creature',aspects:['violet'],attack:3,health:3,createdToken:true,poisonHit:{strength:1,ticks:2}},
-  ];
+    {id:'vt-echo',name:'Дворянский призрак Ван Троупов',nameEn:'Van Troupe Noble Ghost',kind:'creature',aspects:['violet'],attack:4,health:4,shield:1},
+    {id:'vt-mechanism',name:'Некроартофакт Ван Троупов',nameEn:'Van Troupe Necro-Artifice',kind:'creature',aspects:['violet'],attack:5,health:3,firstStrike:true},
+    {id:'vt-guardian',name:'Реликтовый страж Ван Троупов',nameEn:'Van Troupe Relic Sentinel',kind:'creature',aspects:['violet'],attack:3,health:6,guard:true},
+    {id:'vt-specter',name:'Умертвие родовой крипты',nameEn:'Ancestral Crypt Revenant',kind:'creature',aspects:['violet'],attack:4,health:4,lifesteal:true},
+    {id:'vt-spark',name:'Искра фамильной сокровищницы',nameEn:'Family Vault Spark',kind:'creature',aspects:['violet'],attack:3,health:3,createdToken:true,poisonHit:{strength:1,ticks:2}},
+  ].map(card => ({...card, lore:{state:'Искажение', organization:'Дом Ван Троуп',
+    note:'Награда ритуала из сокровищницы и некромантских артофактов Ван Троупов; название — игровая адаптация.'}})) as [Card,Card,Card,Card,Card];
 }
 export function testDeck(id: ArchetypeId): Card[] {
   const archetype = ARCHETYPES.find(a => a.id === id);
@@ -70,12 +71,23 @@ export function testDeck(id: ArchetypeId): Card[] {
   }));
   const creatures = (entries: Unit[], copies: number[]) => entries.flatMap((entry,i) => Array.from({length:copies[i]},(): Card => ({
     id:identifier(id,entry.name),name:entry.name,kind:'creature',aspects:id==='neutral'?[]:[id],
-    cost:cost(id,entry.cost),attack:entry.attack,health:entry.health,...entry.traits,lore,
+    cost:cost(id,entry.cost),attack:entry.attack,health:entry.health,...entry.traits,lore:
+      id==='violet'?{...lore,note:entry.traits?.sacrifice
+        ?'Слуга культа Ван Троупов: нежить, культ или реликтовая механика; игровая интерпретация.'
+        :'Обитатель владений Ван Троупов; игровое имя, не подтверждённое в вики.'}:lore,
   })));
   const vanilla = creatures(theme.plain, Array(6).fill(3));
   const effects = creatures(theme.effects, theme.effects.map((_,i)=>i===theme.effects.length-1?2:3));
-  const legends: Card[] = theme.legends.map((name,i)=>({id:identifier(id,name),name,kind:'legend',aspects:id==='neutral'?[]:[id],
-    unique:true,cost:cost(id,5+i),loyalty:4+i,loyaltyAbility: i===0 ? {delta:1,kind:'healRuler',amount:2} : {delta:-2,kind:'damageOpponent',amount:2},lore}));
+  const legends: Card[] = theme.legends.map((name,i)=>({id:identifier(id,name),name,
+    ...(id==='violet'?{nameEn:i===0?'Coldrake Shaw':'Cera Van Troupe'}:{}),
+    kind:'legend',aspects:id==='neutral'?[]:[id],
+    unique:true,cost:cost(id,5+i),loyalty:4+i,
+    loyaltyAbility:id==='violet'
+      ? i===0 ? {delta:-2,kind:'recoverCreature',amount:1} : {delta:-2,kind:'raiseSacrifice',amount:1}
+      : i===0 ? {delta:1,kind:'healRuler',amount:2} : {delta:-2,kind:'damageOpponent',amount:2},
+    lore:id==='violet'?{...lore,note:i===0
+      ?'Колдрейк Шоу — лич. Возвращает Существо из сброса в руку; игровая трактовка некромантии.'
+      :'Цера Ван Троуп — девушка, умертвие-некромант дома Ван Троуп; создаёт ритуальную Жертву и даёт дополнительный добор при исполнении Ритуала.'}:lore}));
   const artifact: Card = {id:identifier(id,theme.item),name:theme.item,kind:'artifact',aspects:id==='neutral'?[]:[id],
     unique:true,cost:cost(id,3),auraAttack:1,lore};
   const techniques: Card[] = id==='violet' ? Array.from({length:3},():Card=>({id:'vt-ritual',name:'Призыв забытой реликвии',kind:'technique',aspects:['violet'],
@@ -85,3 +97,27 @@ export function testDeck(id: ArchetypeId): Card[] {
   if (issues.length) throw new Error(`${id}: ${issues.join('; ')}`);
   return deck;
 }
+
+
+/** Optional domains in the combined card pool. Not included in ANY preset deck. */
+const additionalNames: Record<Aspect, readonly string[]> = {
+  red:['Кузня Стального рубежа','Рудные копи Стального королевства','Горная караулка','Укреплённая перевальная застава','Сталелитейный двор','Двор казарменного кузнеца','Башня горной стражи','Крепость серпантинного тракта','Железнорудное поместье','Приграничный форпост'],
+  blue:['Аэродром Талдрейка','Швартовочная башня','Док воздушной флотилии','Каютный порт Талдрейка','Обсерватория штурманов','Ангар дирижаблей','Башня аэронавигации','Талдрейкская гавань','Маяк ветров','Высотная верфь'],
+  green:['Суварская лесная усадьба','Зелёный сторожевой кордон','Охотничья сторожка Кайров','Лесопильный двор Сувара','Заповедная дубрава','Домик лесного травника','Суварский питомник','Стражевое урочище','Тропа пограничного дозора','Роща дома Кайров'],
+  gold:['Ивелтинский дворец','Конюшня королевских рыцарей','Королевский караульный двор','Бастион золотого знамени','Внутренняя крепость Ивелтина','Часовня придворных рыцарей','Королевский монетный двор','Зал коронных аудиенций','Площадь рыцарского смотра','Приказной двор Ивелтина'],
+  violet:['Крипта Ван Троупов','Подземная сокровищница Ван Троупов','Лаборатория Церы','Некромантская галерея','Артофакторная мастерская культа','Мавзолей семейных реликтов','Тайный алтарь Жертвы','Усадьба сумрачного рода','Погреб с реликтовыми печатями','Забытая оружейная сокровищницы'],
+};
+const additionalNamesEn: Record<Aspect, readonly string[]> = {
+  red:['Steel Border Forge','Steel Kingdom Ore Mines','Mountain Guardhouse','Fortified Pass Outpost','Steel Foundry Yard','Garrison Smithy','Mountain Watchtower','Winding Pass Fortress','Iron Estate','Border Stronghold'],
+  blue:['Taldraik Airfield','Mooring Tower','Air Fleet Dock','Taldraik Cabin Port','Navigator Observatory','Airship Hangar','Aero-Navigation Tower','Taldraik Harbor','Wind Lighthouse','High-Altitude Shipyard'],
+  green:['Suvar Forest Estate','Green Ranger Post','Kair Hunting Lodge','Suvar Sawmill Yard','Protected Oak Grove','Herbalist Cottage','Suvar Nursery','Woodland Watch','Border Patrol Trail','Kair Grove'],
+  gold:['Iveltin Palace','Royal Knight Stables','Royal Guard Court','Golden Banner Bastion','Iveltin Inner Keep','Knightly Chapel','Royal Mint','Crown Audience Hall','Knightly Parade Square','Iveltin Chancellery'],
+  violet:['Van Troupe Crypt','Van Troupe Underground Treasury','Cera’s Laboratory','Necromantic Gallery','Cult Artifice Workshop','Family Relic Mausoleum','Hidden Sacrifice Altar','Gloomborne Manor','Relic-Sealed Cellar','Forgotten Treasury Armory'],
+};
+export const EXTRA_DOMAINS: readonly Card[] = (Object.keys(additionalNames) as Aspect[]).flatMap(color =>
+  additionalNames[color].map((name,i):Card=>({
+    id:'extra-domain-'+color+'-'+(i+1),name,nameEn:additionalNamesEn[color][i],
+    kind:'domain',basic:false,produces:color,aspects:[color],
+    lore:{state:ARCHETYPES.find(a=>a.id===color)!.state,organization:ARCHETYPES.find(a=>a.id===color)!.organization,
+      note:'Новое игровое название недвижимости для расширенного каталога; не заявлено каноническим объектом на карте мира.'},
+  })));

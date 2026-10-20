@@ -215,3 +215,43 @@ test('duplicate Unique ritual reward requires survivor choice, never fakes a dea
   assert.equal(replaced.players[0].discard.some(c=>c.id===rewardId),true);
   assert.equal(replaced.phase,'main');
 });
+
+
+test('Cera Van Troupe raises 2/2 auxiliary Sacrifice token and begins an eligible ritual immediately',()=>{
+  const cera=testDeck('violet').find(c=>c.name==='Цера Ван Троуп')!;
+  const ritual=testDeck('violet').find(c=>c.ritual)!.ritual!;
+  let g=step(initialGame(player([], [cera]),player()),{type:'startTurn',actor:0},'cera-start');
+  g=step(g,{type:'playLegend',actor:0,handIndex:0},'cera-enter');
+  g.players[0].rituals.push({...ritual,id:'cera-active',requiresSource:false,remainingStarts:2});
+  g.players[0].main.push(victim(101),victim(102));
+  const before=g.players[0].legends[0].loyalty!;
+  g=step(g,{type:'activateLegend',actor:0,objectId:1},'cera-raise');
+  assert.equal(g.phase,'ritual');
+  assert.equal(g.players[0].auxiliary.length,1);
+  assert.equal(g.players[0].auxiliary[0].card.attack,2);
+  assert.equal(g.players[0].auxiliary[0].card.health,2);
+  assert.equal(g.players[0].auxiliary[0].card.createdToken,true);
+  assert.equal(g.players[0].auxiliary[0].sacrifice,true);
+  assert.equal(g.players[0].legends[0].loyalty,before-2);
+  assert.equal(g.readyRituals?.length,1);
+  assert.equal(g.readyRituals![0].eligibleIds.length,3);
+  g.players[0].deck.push({id:'bonus-draw',name:'Добор Церы',kind:'domain',basic:true,produces:'violet'});
+  g=step(g,{type:'chooseRitual',actor:0,effectId:'cera-active',objectIds:g.readyRituals![0].eligibleIds},'cera-ritual');
+  assert.equal(g.phase,'reward');
+  assert.ok(g.players[0].hand.some(x=>x.id==='bonus-draw'));
+  assert.equal(g.pendingReward!.offeredIds.length,3);
+  assert.equal(g.players[0].erased.filter(c=>c.id==='vt-cera-ritual-servant').length,1);
+});
+test('Coldrake Shaw returns a creature from discard to hand, never free-plays it',()=>{
+  const lich=testDeck('violet').find(c=>c.name==='Колдрейк Шоу')!;
+  let g=step(initialGame(player([], [lich]),player()),{type:'startTurn',actor:0},'lich-start');
+  g=step(g,{type:'playLegend',actor:0,handIndex:0},'lich-enter');
+  const creature={id:'lich-memory',name:'Реликтовое умертвие',kind:'creature',attack:1,health:2} as Card;
+  g.players[0].discard.push(creature);
+  assert.throws(()=>step(g,{type:'activateLegend',actor:0,objectId:1},'lich-bad'),/Выберите Существо/);
+  g=step(g,{type:'activateLegend',actor:0,objectId:1,discardIndex:0},'lich-recur');
+  assert.equal(g.players[0].hand.some(x=>x.id===creature.id),true);
+  assert.equal(g.players[0].discard.length,0);
+  assert.equal(g.players[0].main.length,0);
+  assert.equal(g.players[0].legends[0].loyalty,2);
+});

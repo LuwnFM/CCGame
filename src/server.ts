@@ -112,7 +112,7 @@ function view(game: Game, seat: PlayerId, row?: Room) {
     pendingReward: game.pendingReward?.owner === seat ? game.pendingReward.offeredIds.map(id => game.pendingReward!.pool.find(card => card.id === id)) : undefined,
     pauseReason: game.pauseReason,
     players: game.players.map((p, i) => ({ hp: p.hp, hand: i === seat ? p.hand : undefined,
-      handCount: p.hand.length, deckCount: p.deck.length, discardCount: p.discard.length,
+      handCount: p.hand.length, deckCount: p.deck.length, discardCount: p.discard.length, discard: i === seat ? p.discard : undefined,
       erasedCount: p.erased.length, domains: p.domains, main: p.main, auxiliary: p.auxiliary, legends: p.legends,
       energy: p.energy, domainsPlayed: p.domainsPlayed, rituals: p.rituals.map(r => ({ id: r.id, color: r.color, threshold: r.threshold, remainingStarts: r.remainingStarts })) }))
   };

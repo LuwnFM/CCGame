@@ -1,11 +1,11 @@
 import { randomBytes, randomUUID, scryptSync, timingSafeEqual } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 import { RuleError, validateDeck, type Card } from './core.ts';
-import { ARCHETYPES, testDeck } from './decks.ts';
+import { ARCHETYPES, testDeck, EXTRA_DOMAINS } from './decks.ts';
 
 type AccountRow = { id: string; login: string; login_key: string; salt: string; password_hash: string; created_at: number; seen_at: number };
 type DeckRow = { id: string; owner_id: string; name: string; cards: string; created_at: number };
-export const catalog: Map<string, Card> = new Map(ARCHETYPES.flatMap(a => testDeck(a.id)).map(c => [c.id, c]));
+export const catalog: Map<string, Card> = new Map([...ARCHETYPES.flatMap(a => testDeck(a.id)),...EXTRA_DOMAINS].map(c => [c.id, c]));
 const loginPattern = /^[\p{L}\p{N}_]{3,20}$/u;
 const reserved = new Set(['admin','administrator','moderator','system','support','сервер','админ','модератор']);
 function loginKey(login: unknown): { login: string; key: string } {

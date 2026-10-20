@@ -12,6 +12,7 @@ export type DeathEffect = { kind: 'damageController' | 'damageOpponent' | 'damag
 export type Card = {
   id: string;
   name: string;
+  nameEn?: string;
   kind: 'domain' | 'creature' | 'technique' | 'legend' | 'artifact';
   aspects?: readonly Aspect[];
   basic?: boolean;
@@ -38,7 +39,7 @@ export type Card = {
   ritual?: RitualSpec;
   onDeath?: DeathEffect;
   loyalty?: number;
-  loyaltyAbility?: { delta: number; kind: 'healRuler' | 'damageOpponent' | 'draw'; amount: number };
+  loyaltyAbility?: { delta: number; kind: 'healRuler' | 'damageOpponent' | 'draw' | 'recoverCreature' | 'raiseSacrifice'; amount: number };
   auraAttack?: number;
   lore?: { state: string; organization: string; note?: string };
   // Abilities need a separately specified resolver, never arbitrary card scripts.
@@ -74,7 +75,7 @@ export type Command =
   | { type: 'playCreature'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number; replaceId?: number }
   | { type: 'playTechnique'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number }
   | { type: 'playLegend'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number; keepExisting?: boolean }
-  | { type: 'activateLegend'; actor: PlayerId; expectedRevision: number; key: string; objectId: number }
+  | { type: 'activateLegend'; actor: PlayerId; expectedRevision: number; key: string; objectId: number; discardIndex?: number }
   | { type: 'playArtifact'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number; replaceId?: number; keepExisting?: boolean }
   | { type: 'chooseRitual'; actor: PlayerId; expectedRevision: number; key: string; effectId: string; objectIds: number[] }
   | { type: 'chooseReward'; actor: PlayerId; expectedRevision: number; key: string; rewardId: string; replaceId?: number; keepExisting?: boolean }
@@ -249,12 +250,34 @@ export function apply(game: Game, command: Command): Game {
       requireRule(legend && ability && legend.lastActivatedTurn !== next.turn && !legend.stunned && !legend.stasis, 'Способность Легенды недоступна');
       requireRule(Number.isSafeInteger(ability.delta) && Number.isSafeInteger(ability.amount) && ability.amount >= 0, 'Неверная способность');
       requireRule(legend.loyalty! + ability.delta >= 0, 'Не хватает Лояльности');
+      if (ability.kind === 'recoverCreature')
+        requireRule(Number.isSafeInteger(command.discardIndex) && p.discard[command.discardIndex!]?.kind === 'creature',
+          'Выберите Существо из сброса для возвращения в руку');
+      if (ability.kind === 'raiseSacrifice')
+        requireRule(p.auxiliary.length < 4, 'Нет свободного места для умертвия Жертвы');
       legend.loyalty! += ability.delta;
       legend.lastActivatedTurn = next.turn;
       if (ability.kind === 'healRuler') p.hp = Math.min(30, p.hp + ability.amount);
       else if (ability.kind === 'damageOpponent') next.players[(1 - command.actor) as PlayerId].hp -= ability.amount;
       else if (ability.kind === 'draw') for (let i = 0; i < ability.amount && p.deck.length; i++) p.hand.push(p.deck.shift()!);
-      else throw new RuleError('Неизвестная способность Легенды');
+      else if (ability.kind === 'recoverCreature') p.hand.push(p.discard.splice(command.discardIndex!, 1)[0]);
+      else if (ability.kind === 'raiseSacrifice') {
+        const token: Card = { id: 'vt-cera-ritual-servant', name: 'Умертвие свиты Церы',
+          nameEn: 'Cera’s Undead Retainer', kind: 'creature', aspects: ['violet'],
+          attack: 2, health: 2, createdToken: true, sacrifice: true,
+          lore: {state:'Искажение',organization:'Дом Ван Троуп',
+            note:'Игровой ритуальный слуга из некромантской свиты Церы Ван Троуп.'} };
+        p.auxiliary.push({objectId:next.nextObjectId++, card:token, exhausted:true,
+          damage:0, shield:0, interceptions:0, enteredTurn:next.turn, sacrifice:true, attacksMade:0});
+        // Cera may complete ONE existing ritual immediately. The 3-of-5 reward
+        // selection, sacrifices and death triggers remain entirely unchanged.
+        const ready = p.rituals.find(effect => eligibleVictims(p,effect.color).length >= effect.threshold);
+        if (ready) {
+          next.readyRituals=[{effect:structuredClone(ready),
+            eligibleIds:eligibleVictims(p,ready.color).map(unit=>unit.objectId)}];
+          next.phase='ritual';
+        }
+      } else throw new RuleError('Неизвестная способность Легенды');
       if (legend.loyalty === 0) { p.legends.splice(p.legends.indexOf(legend), 1); sendToDiscard(p, legend.card); }
       finishIfLethal(next);
       break;
@@ -291,6 +314,10 @@ export function apply(game: Game, command: Command): Game {
       next.seed = plan.seedAfter;
       const dead = removePermanents(p, plan.chosenObjectIds);
       resolveDeaths(next, dead.map(unit => ({ unit, owner: command.actor })));
+      // Cera's one-card bonus is outside and AFTER the sacrifice death sequence.
+      // It does not change the five possible reward cards or three offers.
+      if (p.legends.some(unit => unit.card.id === 'violet-цера-ван-троуп' && !unit.stasis && !unit.stunned) && p.deck.length)
+        p.hand.push(p.deck.shift()!);
       next.readyRituals = [];
       if (finishIfLethal(next)) break;
       next.pendingReward = { owner: command.actor, offeredIds: plan.offeredRewardIds, pool: [...ready.effect.rewardPool] as PendingReward['pool'] };
