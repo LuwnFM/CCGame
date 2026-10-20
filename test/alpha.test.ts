@@ -32,7 +32,7 @@ test('all six alpha decks are legal, with a playable violet Technique', () => {
   assert.ok(testDeck('violet').some(card => card.name === 'Колдрейк Шоу'));
   assert.ok(testDeck('violet').some(card => card.name === 'Драгнир и Иммельсторн'));
 });
-test('First Strike prevents retaliation, and poison ticks through Stasis', () => {
+test('First Strike prevents retaliation, and Poison pauses for Stasis then resumes', () => {
   let g = step(initialGame(player(),player()),{type:'startTurn',actor:0},'start');
   g.players[0].main.push({...victim(1),card:{...victim(1).card,attack:3,health:3,firstStrike:true},enteredTurn:0});
   g.players[1].main.push({...victim(2),card:{...victim(2).card,attack:5,health:2,poisonHit:{strength:2,ticks:2}},enteredTurn:0});
@@ -43,6 +43,14 @@ test('First Strike prevents retaliation, and poison ticks through Stasis', () =>
   const poisoned = {...victim(3),card:{...victim(3).card,health:3},shield:0,stasis:2,poison:{strength:1,ticks:2}};
   g.players[1].main.push(poisoned);
   g = step(g,{type:'endTurn',actor:0},'turn');
+  assert.equal(g.players[1].main[0].damage,0);
+  assert.equal(g.players[1].main[0].poison?.ticks,2);
+  g = step(g,{type:'endTurn',actor:1},'stasis-1');
+  g = step(g,{type:'endTurn',actor:0},'stasis-2');
+  assert.equal(g.players[1].main[0].damage,0);
+  assert.equal(g.players[1].main[0].poison?.ticks,2);
+  g = step(g,{type:'endTurn',actor:1},'stasis-3');
+  g = step(g,{type:'endTurn',actor:0},'stasis-4');
   assert.equal(g.players[1].main[0].damage,1);
   assert.equal(g.players[1].main[0].poison?.ticks,1);
 });
@@ -146,4 +154,39 @@ test('same-name Legends and unique items require an explicit survivor and discar
   assert.equal(g.players[0].auxiliary.length,1);
   assert.notEqual(g.players[0].auxiliary[0].objectId,old);
   assert.equal(g.players[0].discard.length,2);
+});
+
+
+test('ritual reward token in hand uses auxiliary zone and legal displacement, never death', () => {
+  const token: Card = { id: 'temporary-token', name: 'Награда-токен', kind: 'creature',
+    aspects: ['violet'], attack: 2, health: 2, cost: { colored: {}, generic: 0 },
+    ritualReward: true, createdToken: true };
+  let g = step(initialGame(player([], [token]), player()), { type: 'startTurn', actor: 0 }, 'open-token');
+  g.players[0].main = Array.from({length:8},(_,i)=>({...victim(100+i),sacrifice:false}));
+  for (let i=0;i<4;i++) {
+    const unit=victim(20+i, i===0 ? {kind:'damageController',amount:9}:undefined);
+    unit.card.createdToken=true;
+    g.players[0].auxiliary.push(unit);
+  }
+  assert.throws(() => step(g, {type:'playCreature',actor:0,handIndex:0},'no-slot'), /Вытеснения/);
+  g=step(g,{type:'playCreature',actor:0,handIndex:0,replaceId:20},'create-token');
+  assert.equal(g.players[0].main.length,8);
+  assert.equal(g.players[0].auxiliary.length,4);
+  assert.equal(g.players[0].auxiliary.some(unit=>unit.card.id===token.id),true);
+  assert.equal(g.players[0].hp,30);
+  assert.equal(g.players[0].erased.length,1);
+  assert.equal(g.players[0].hand.length,0);
+});
+
+test('Stasis does not suppress Poison permanently after its own counter expires', () => {
+  let g=step(initialGame(player(),player()),{type:'startTurn',actor:0},'start-s');
+  const unit={...victim(9),card:{...victim(9).card,health:5},shield:0,stasis:1,
+    poison:{strength:2,ticks:2}};
+  g.players[1].main.push(unit);
+  g=step(g,{type:'endTurn',actor:0},'a');
+  assert.equal(g.players[1].main[0].damage,0);
+  g=step(g,{type:'endTurn',actor:1},'b');
+  g=step(g,{type:'endTurn',actor:0},'c');
+  assert.equal(g.players[1].main[0].damage,2);
+  assert.equal(g.players[1].main[0].poison?.ticks,1);
 });
