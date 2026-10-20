@@ -18,9 +18,9 @@ function check(g: Game) {
   }
   assert.equal(g.players.length,2);
 }
-test('72 seeded matches exercise every ordered starter pairing and preserve field invariants',()=>{
+test('288 seeded matches exercise every ordered starter pairing and preserve field invariants',()=>{
   let count=0,rituals=0,legends=0,artifacts=0,combat=0, actions=0;
-  for (let i=0;i<ARCHETYPES.length;i++) for (let j=0;j<ARCHETYPES.length;j++) for (let repeat=0;repeat<2;repeat++) {
+  for (let i=0;i<ARCHETYPES.length;i++) for (let j=0;j<ARCHETYPES.length;j++) for (let repeat=0;repeat<8;repeat++) {
     let g=openingGame(openingHand(testDeck(ARCHETYPES[i].id),1001+i*29+j*11+repeat),
       openingHand(testDeck(ARCHETYPES[j].id),4001+j*37+i*13+repeat));
     let serial=0;
@@ -78,8 +78,8 @@ test('72 seeded matches exercise every ordered starter pairing and preserve fiel
     }
     count++;
   }
-  assert.equal(count,72);
+  assert.equal(count,288);
   assert.ok(combat>10 && legends>0 && artifacts>0 && actions>700,
     `coverage: combats=${combat} legends=${legends} artifacts=${artifacts} actions=${actions}`);
-  assert.ok(rituals>=0);
+  console.log(`288 simulated matches: ${actions} operations, ${combat} combats, ${legends} legends, ${artifacts} artifacts, ${rituals} rituals`);
 });
