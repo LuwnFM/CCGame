@@ -22,16 +22,19 @@ export function enterTrigger(game:Game,actor:PlayerId,card:Card,origin:'hand'|'d
     throw new EffectLimitError('Превышен бюджет Вступления/Второго шанса');
   requireRule(Number.isSafeInteger(effect.amount) && effect.amount>=0&&effect.amount<=4,'Неверное Вступление');
   if(effect.kind==='summonSkeleton')spawnSkeleton(game,actor,effect.amount,card);
-  else if(effect.kind==='stunEnemy') {
-    // A blue entry stuns one chosen enemy Creature; a clear board does not prevent entry.
+  else if(effect.kind==='stunEnemy'||effect.kind==='stasisEnemy') {
+    // Targeted blue Entry only affects enemy creatures; an empty enemy field is legal.
+    // Stun prevents attacks during the next controller turn; Stasis also suspends abilities.
     const enemy=game.players[(1-actor) as PlayerId];
-    const candidates=[...enemy.main,...enemy.auxiliary].filter(u=>u.card.kind==='creature'&&!u.stunned&&!u.stasis);
+    const candidates=[...enemy.main,...enemy.auxiliary].filter(u=>u.card.kind==='creature'&&!u.stasis &&
+      (effect.kind==='stasisEnemy'||!u.stunned));
     if(candidates.length){
-      requireRule(Number.isSafeInteger(targetId),'Выберите цель для Ошеломления');
+      requireRule(Number.isSafeInteger(targetId),'Выберите цель для синего контроля');
       const target=candidates.find(u=>u.objectId===targetId);
-      requireRule(target,'Недоступная цель Ошеломления');
-      target.stunned=true;
-    }else requireRule(targetId===undefined,'Некого ошеломить');
+      requireRule(target,'Недоступная цель синего контроля');
+      if(effect.kind==='stunEnemy')target.stunned=true;
+      else target.stasis=effect.amount;
+    }else requireRule(targetId===undefined,'Нет допустимой цели контроля');
   }
   else if(effect.kind==='healRuler')game.players[actor].hp=Math.min(30,game.players[actor].hp+effect.amount);
   else if(effect.kind==='draw')for(let i=0;i<effect.amount&&game.players[actor].deck.length;i++)
