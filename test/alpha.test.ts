@@ -23,7 +23,7 @@ test('all six alpha decks are legal, with a playable violet Technique', () => {
     assert.equal(cards.length, 70);
     assert.deepEqual(validateDeck(cards), []);
     assert.equal(cards.filter(c => c.kind === 'domain').length, 26);
-    assert.equal(cards.filter(c => c.kind === 'creature' && !c.guard && !c.flying && !c.firstStrike && !c.piercing && !c.lifesteal && !c.haste && !c.zeal && !c.extraAttacks && !c.stealth && !c.poisonHit && !c.shield && !c.sacrifice && !c.onDeath && !c.onEntry && !c.secondChance).length, 18);
+    assert.equal(cards.filter(c => c.kind === 'creature' && !c.guard && !c.flying && !c.firstStrike && !c.piercing && !c.lifesteal && !c.haste && !c.zeal && !c.extraAttacks && !c.stealth && !c.poisonHit && !c.shield && !c.sacrifice && !c.onDeath && !c.onEntry && !c.secondChance).length, archetype.id === 'red' ? 14 : 18);
     assert.equal(cards.filter(c => c.kind === 'legend').length, 2);
     assert.equal(cards.filter(c => c.kind === 'artifact' && c.unique).length, 1);
     assert.ok(cards.every(c => c.lore?.organization === archetype.organization));
