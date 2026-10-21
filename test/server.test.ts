@@ -313,3 +313,30 @@ test('registered profile, permanent ID and bearer session survive a full SQLite 
    await rm(temp,{recursive:true,force:true});
  }
 });
+
+
+test('Ruler API eligibility, archive parameters and idempotent commands preserve deadlines',async()=>{
+ const {app,request,register}=await fixture();
+ try{
+  const a=await register('NewRulesA'),b=await register('NewRulesB');
+  const code=(await request('/api/rooms',a.token,{deckId:'violet'})).body.code;
+  await request('/api/rooms/'+code+'/join',b.token,{deckId:'red'});
+  let g=JSON.parse((app.db.prepare('SELECT game FROM rooms WHERE code=?').get(code) as any).game);
+  g.phase='main';g.turn=1;g.players[0].hand=[];
+  app.db.prepare('UPDATE rooms SET game=?,deadline=?,turn_deadline=? WHERE code=?').run(JSON.stringify(g),Date.now()+120000,Date.now()+120000,code);
+  const cmd={type:'rulerDraw',key:'draw-ruler-api',expectedRevision:g.revision};
+  const accepted=await request('/api/rooms/'+code+'/commands',a.token,cmd);
+  assert.equal(accepted.status,200,JSON.stringify(accepted.body));assert.equal(accepted.body.game.players[0].hp,28);
+  assert.equal(accepted.body.game.players[0].lastRulerDrawTurn,1);
+  const timing=app.db.prepare('SELECT deadline,turn_deadline FROM rooms WHERE code=?').get(code);
+  assert.equal((await request('/api/rooms/'+code+'/commands',a.token,cmd)).status,200);
+  assert.deepEqual(app.db.prepare('SELECT deadline,turn_deadline FROM rooms WHERE code=?').get(code),timing);
+  assert.equal((await request('/api/rooms/'+code+'/commands',a.token,{...cmd,key:'twice',expectedRevision:accepted.body.game.revision})).status,409);
+  g=JSON.parse((app.db.prepare('SELECT game FROM rooms WHERE code=?').get(code) as any).game);
+  g.players[0].legends=[{objectId:900,card:{id:'legend',name:'Test legend',kind:'legend',loyaltyAbilities:[{delta:1,kind:'healRuler',amount:1},{delta:-2,kind:'draw',amount:1}]},loyalty:4,exhausted:false,damage:0,shield:0,interceptions:0,enteredTurn:1}];
+  app.db.prepare('UPDATE rooms SET game=? WHERE code=?').run(JSON.stringify(g),code);
+  assert.equal((await request('/api/rooms/'+code+'/commands',a.token,{type:'activateLegend',objectId:900,abilityIndex:0,key:'ability-choice',expectedRevision:g.revision})).status,200);
+  const event=app.db.prepare('SELECT action FROM match_events WHERE room=? ORDER BY seq DESC LIMIT 1').get(code) as any;
+  assert.equal(JSON.parse(event.action).abilityIndex,0);
+ }finally{app.close()}
+});

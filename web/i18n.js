@@ -2,6 +2,14 @@
 const KEY='firewell_locale';
 let language=localStorage.getItem(KEY)==='en'?'en':'ru';
 const labels=[
+['Владетель: −2 HP → 2 карты','Ruler: −2 HP → 2 cards'],
+['Один раз за свой ход, если в руке не больше 3 карт.','Once per own turn, with at most 3 cards in hand.'],
+['Вступление','Entry'],['Второй шанс','Second Chance'],['Последнее слово','Last Word'],
+['Нет подходящих карт','No eligible cards'],['Отмена','Cancel'],['Вернуть Существо на поле','Return a Creature to the field'],['Воскресить','Reanimate'],
+['Выбери цель Техники','Choose the Technique target'],['Какую Легенду оставить?','Which Legend should remain?'],['Какой предмет оставить?','Which item should remain?'],['Какое Уникальное Существо оставить?','Which Unique Creature should remain?'],
+['Оставить на поле','Keep the existing one'],['Оставить новую','Keep the new one'],['Оставить новое','Keep the new one'],['Оставить новый','Keep the new one'],
+['Призвать скелетов 1/1 с Жертвой:','Summon 1/1 Sacrifice Skeletons:'],['Восстановить HP Владетелю:','Restore Ruler HP:'],['Взять карт:','Draw cards:'],['Урон Владетелю соперника:','Damage to the enemy Ruler:'],['Урон своему Владетелю:','Damage to your Ruler:'],['Урон всем Существам:','Damage to all Creatures:'],['Вернуть Существо из своего сброса на поле:','Return a Creature from your discard to the field:'],
+
 ['Войти в игру','Enter the game'],['Создай профиль с постоянным ID или войди под своим логином.','Create a permanent player ID or sign into your profile.'],
 ['Адрес игрового сервера','Game server address'],['Для локальной игры оставить пустым','Leave blank for local play'],
 ['Локально сервер и страница работают по одному адресу. Для клиента Vercel нужен HTTPS-адрес игрового сервера.','Locally the client and server share one address. Hosted clients require an HTTPS game-server address.'],
@@ -156,3 +164,4 @@ export function observeLocalization(){
  localize();return obs;
 }
 export const translatedCardNames=names;
+

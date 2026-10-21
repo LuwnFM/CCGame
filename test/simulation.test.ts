@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { apply, openingGame, type Command, type Game, type PlayerId } from '../src/core.ts';
+import { apply, openingGame, RuleError, type Command, type Game, type PlayerId } from '../src/core.ts';
 import { ARCHETYPES, testDeck } from '../src/decks.ts';
+import { totalAttack } from '../src/mechanics/combat.ts';
 import { openingHand } from '../src/setup.ts';
 
 function step(g: Game, action: object, n: number): Game {
@@ -18,7 +19,15 @@ function check(g: Game) {
   }
   assert.equal(g.players.length,2);
 }
+function defend(g:Game,n:number):Game {
+ const p=g.players[g.pendingAttack!.defender],a=[...g.players[g.active].main,...g.players[g.active].auxiliary].find(x=>x.objectId===g.pendingAttack!.attackerId)!;
+ const candidates=[...p.main,...p.auxiliary].filter(x=>x.card.kind==='creature'&&!x.exhausted&&!x.stasis&&x.interceptions===0&&(!a.card.flying||x.card.flying)&&(g.pendingAttack!.target.kind!=='creature'||x.card.guard));
+ candidates.sort((x,y)=>(x.card.attack!+x.card.health!)-(y.card.attack!+y.card.health!));
+ const chosen=candidates.find(x=>x.card.health!-x.damage+x.shield>totalAttack(g.players[g.active],a)||totalAttack(p,x)>=a.card.health!-a.damage+a.shield||p.hp<=totalAttack(g.players[g.active],a));
+ return step(g,{type:'intercept',actor:g.pendingAttack!.defender,interceptorId:chosen?.objectId??null},n);
+}
 test('288 seeded matches exercise every ordered starter pairing and preserve field invariants',()=>{
+  let finished=0,cutoff=0,draws=0;const wins:Record<string,number>={},pairings:Record<string,{first:number;second:number;cutoff:number}>={};
   let count=0,rituals=0,legends=0,artifacts=0,combat=0, actions=0;
   for (let i=0;i<ARCHETYPES.length;i++) for (let j=0;j<ARCHETYPES.length;j++) for (let repeat=0;repeat<8;repeat++) {
     let g=openingGame(openingHand(testDeck(ARCHETYPES[i].id),1001+i*29+j*11+repeat),
@@ -26,7 +35,7 @@ test('288 seeded matches exercise every ordered starter pairing and preserve fie
     let serial=0;
     g=step(g,{type:'mulligan',actor:0,indices:[]},serial++);
     g=step(g,{type:'mulligan',actor:1,indices:[]},serial++);
-    for(let round=0;round<38 && g.phase!=='finished' && g.phase!=='paused';round++) {
+    for(let round=0;round<160 && g.phase!=='finished' && g.phase!=='paused';round++) {
       const actor=g.active,p=g.players[actor],enemy=(1-actor) as PlayerId;
       if (g.phase==='ritual') {
         rituals++;
@@ -40,7 +49,7 @@ test('288 seeded matches exercise every ordered starter pairing and preserve fie
       } else if (g.phase==='discard') {
         g=step(g,{type:'discard',actor,handIndex:0},serial++);
       } else if (g.phase==='intercept') {
-        g=step(g,{type:'intercept',actor:g.pendingAttack!.defender,interceptorId:null},serial++);
+        g=defend(g,serial++);
       } else {
         const land=p.domainsPlayed<1?p.hand.findIndex(c=>c.kind==='domain'):-1;
         if(land>=0)g=step(g,{type:'playDomain',actor,handIndex:land},serial++);
@@ -53,33 +62,41 @@ test('288 seeded matches exercise every ordered starter pairing and preserve fie
             const type=kind==='creature'?'playCreature':kind==='technique'?'playTechnique':kind==='legend'?'playLegend':kind==='artifact'?'playArtifact':null;
             if(!type)continue;
             try {
-              const next=step(g,{type,actor,handIndex:index},serial++);
+              const discardIndex=g.players[actor].discard.findIndex(c=>c.kind==='creature');
+              const next=step(g,{type,actor,handIndex:index,...(hand[index].techniqueEffect?.kind==='reanimate'?{discardIndex}: {})},serial++);
               g=next;played=true;
               if(kind==='legend')legends++;if(kind==='artifact')artifacts++;
               break;
-            } catch { /* Try another card; failed command left g unchanged. */ }
+            } catch(error) { if(!(error instanceof RuleError))throw error; }
           }
           if(!played)break;
         }
         for(const l of [...g.players[actor].legends]) if(l.lastActivatedTurn!==g.turn) {
-          try{g=step(g,{type:'activateLegend',actor,objectId:l.objectId},serial++)}catch{}
+          try{const strong=l.card.loyaltyAbilities?.[1];const discardIndex=g.players[actor].discard.findIndex(c=>c.kind==='creature');const abilityIndex=l.loyalty!>=2&&strong&&(strong.kind!=='healRuler'||g.players[actor].hp<27)&&(strong.kind!=='recoverCreature'||discardIndex>=0)?1:0;g=step(g,{type:'activateLegend',actor,objectId:l.objectId,abilityIndex,discardIndex},serial++)}catch(error){if(!(error instanceof RuleError))throw error}
         }
         for(const creature of [...g.players[actor].main]) if(!creature.exhausted) {
           try {
             g=step(g,{type:'attack',actor,attackerId:creature.objectId,target:{kind:'player'}},serial++);
-            g=step(g,{type:'intercept',actor:enemy,interceptorId:null},serial++);
+            g=defend(g,serial++);
             combat++;
             if(g.phase==='finished')break;
-          } catch {}
+          } catch(error) {if(!(error instanceof RuleError))throw error}
         }
+        if(g.phase==='main'&&g.players[actor].hp>8&&g.players[actor].hand.length<=3&&g.players[actor].deck.length>=2&&g.players[actor].lastRulerDrawTurn!==g.turn)g=step(g,{type:'rulerDraw',actor},serial++);
         if(g.phase==='main')g=step(g,{type:'endTurn',actor},serial++);
       }
       check(g);actions++;
     }
+    assert.notEqual(g.phase,'paused');
+    const pairing=ARCHETYPES[i].id+' vs '+ARCHETYPES[j].id;pairings[pairing]??={first:0,second:0,cutoff:0};
+    if(g.phase==='finished'){finished++;if(g.winner==='draw')draws++;else{const winner=ARCHETYPES[g.winner===0?i:j].id;wins[winner]=(wins[winner]||0)+1;pairings[pairing][g.winner===0?'first':'second']++}}else{cutoff++;pairings[pairing].cutoff++}
     count++;
   }
+  console.log('SIMULATION_REPORT '+JSON.stringify({matches:count,finished,cutoff,draws,wins,pairings}));
   assert.equal(count,288);
+  assert.ok(finished>0);
   assert.ok(combat>10 && legends>0 && artifacts>0 && actions>700,
     `coverage: combats=${combat} legends=${legends} artifacts=${artifacts} actions=${actions}`);
   console.log(`288 simulated matches: ${actions} operations, ${combat} combats, ${legends} legends, ${artifacts} artifacts, ${rituals} rituals`);
 });
+

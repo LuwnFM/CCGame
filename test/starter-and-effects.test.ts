@@ -41,3 +41,30 @@ test('Ruler draw costs two HP, requires <=3 cards and two deck cards, once per o
  assert.throws(()=>act(bad,{type:'rulerDraw'}));assert.equal(bad.players[0].hp,hp);
  }
 });
+
+test('Silence suppresses item aura immediately; Cleanse restores it without removing Shield',async()=>{
+ const {totalAttack}=await import('../src/mechanics/combat.ts');
+ const silence:Card={...cast,id:'silence',techniqueEffect:{kind:'silence',amount:1}};
+ const cleanse:Card={...cast,id:'cleanse',techniqueEffect:{kind:'cleanse',amount:1}};
+ let g=initialGame(player([],[silence]),player([],[cleanse]));g.turn=1;
+ const make=(objectId:number,card:Card)=>({objectId,card,damage:0,shield:2,exhausted:false,interceptions:0,enteredTurn:0});
+ g.players[1].auxiliary=[make(10,{id:'aura',name:'Aura',kind:'artifact',auraAttack:2})];g.players[1].main=[make(11,unit)];
+ assert.equal(totalAttack(g.players[1],g.players[1].main[0]),4);
+ g=act(g,{type:'playTechnique',handIndex:0,targetId:10});assert.equal(totalAttack(g.players[1],g.players[1].main[0]),2);
+ g=act(g,{type:'endTurn'});g=act(g,{type:'playTechnique',actor:1,handIndex:0,targetId:10});
+ assert.equal(totalAttack(g.players[1],g.players[1].main[0]),4);assert.equal(g.players[1].auxiliary[0].shield,2);
+});
+test('Unique creature survivor choice is a departure with no Last Word or Entry for discarded newcomer',()=>{
+ const c:Card={...unit,unique:true,onDeath:{kind:'damageOpponent',amount:10},onEntry:{kind:'healRuler',amount:1}};
+ let g=initialGame(player([],[c,c]),player());g.turn=1;g.players[0].hp=20;
+ g=act(g,{type:'playCreature',handIndex:0});assert.equal(g.players[0].hp,21);
+ assert.throws(()=>act(g,{type:'playCreature',handIndex:0}),/Уникальную/);
+ g=act(g,{type:'playCreature',handIndex:0,keepExisting:true});assert.equal(g.players[0].hp,21);assert.equal(g.players[1].hp,30);assert.equal(g.players[0].main.length,1);
+ g.players[0].hand.push(c);g=act(g,{type:'playCreature',handIndex:0,keepExisting:false});assert.equal(g.players[0].hp,22);assert.equal(g.players[1].hp,30);assert.equal(g.players[0].main.length,1);
+});
+test('Bind refreshes existing Stasis; Cleanse preserves printed abilities and damage',()=>{
+ const spell:Card={...cast,techniqueEffect:{kind:'bind',amount:2}};
+ let g=initialGame(player([],[spell]),player());g.turn=1;
+ g.players[1].main=[{objectId:10,card:{...unit,firstStrike:true},damage:1,shield:1,exhausted:false,interceptions:0,enteredTurn:0,stasis:1}];
+ g=act(g,{type:'playTechnique',handIndex:0,targetId:10});assert.equal(g.players[1].main[0].stasis,2);
+});

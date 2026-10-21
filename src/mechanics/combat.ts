@@ -1,3 +1,4 @@
+import { ability } from './abilities.ts';
 import type { Game, Permanent, Player, PlayerId } from '../core.ts';
 
 export function damage(target: Permanent, amount: number): number {
@@ -8,7 +9,7 @@ export function damage(target: Permanent, amount: number): number {
   return dealt;
 }
 export function totalAttack(owner: Player, creature: Permanent): number {
-  const aura = owner.auxiliary.filter(item => item.card.kind === 'artifact' && !item.stasis)
+  const aura = owner.auxiliary.filter(item => !item.stasis && !item.silenced)
     .reduce((sum, item) => sum + (item.card.auraAttack ?? 0), 0);
   return Math.max(0, (creature.card.attack ?? 0) + aura);
 }
@@ -22,7 +23,7 @@ function woundLegend(target: Permanent, raw: number): number {
   return actual;
 }
 function applyPoison(target: Permanent, source: Permanent): void {
-  const incoming = source.card.poisonHit;
+  const incoming = ability(source,'poisonHit');
   if (!incoming) return;
   const old = target.poison;
   if (!old || incoming.strength > old.strength || incoming.strength === old.strength && incoming.ticks > old.ticks)
@@ -35,7 +36,7 @@ export function resolveCombat(game: Game, attacker: Permanent, defender: Permane
   const attackingPlayer = game.players[game.active];
   const attack = totalAttack(attackingPlayer, attacker);
   const response = defender ? totalAttack(defendingPlayer, defender) : 0;
-  const heal = (owner: Player, source: Permanent, dealt: number) => { if (source.card.lifesteal) owner.hp = Math.min(30, owner.hp + dealt); };
+  const heal = (owner: Player, source: Permanent, dealt: number) => { if (ability(source,'lifesteal')) owner.hp = Math.min(30, owner.hp + dealt); };
   const original = () => declared.kind === 'creature' ? [...defendingPlayer.main, ...defendingPlayer.auxiliary].find(x => x.objectId === declared.objectId)
     : declared.kind === 'legend' ? defendingPlayer.legends.find(x => x.objectId === declared.objectId) : null;
   const spill = (amount: number) => {
@@ -54,7 +55,7 @@ export function resolveCombat(game: Game, attacker: Permanent, defender: Permane
       const dealt = damage(defender, attack);
       heal(attackingPlayer, attacker, Math.min(remaining, dealt));
       applyPoison(defender, attacker);
-      if (intercepted && attacker.card.piercing) spill(Math.max(0, attack - shieldBefore - remaining));
+      if (intercepted && ability(attacker,'piercing')) spill(Math.max(0, attack - shieldBefore - remaining));
     } else if (legend) heal(attackingPlayer, attacker, woundLegend(legend, attack));
     else { const dealt = Math.min(Math.max(0, defendingPlayer.hp), attack); defendingPlayer.hp -= attack; heal(attackingPlayer, attacker, dealt); }
   };
@@ -66,9 +67,10 @@ export function resolveCombat(game: Game, attacker: Permanent, defender: Permane
     applyPoison(attacker, defender);
   };
   if (!defender) { hit(); return; }
-  if (attacker.card.firstStrike && !defender.card.firstStrike) {
+  if (ability(attacker,'firstStrike') && !ability(defender,'firstStrike')) {
     hit(); if (defender.damage < defender.card.health!) reply();
-  } else if (defender.card.firstStrike && !attacker.card.firstStrike) {
+  } else if (ability(defender,'firstStrike') && !ability(attacker,'firstStrike')) {
     reply(); if (attacker.damage < attacker.card.health!) hit();
   } else { hit(); reply(); }
 }
+

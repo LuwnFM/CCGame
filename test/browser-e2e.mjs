@@ -140,6 +140,29 @@ try {
   assert.equal(afterCombat.players[1].main.length,0);
   assert.equal(afterCombat.players[0].hp,30);
   assert.equal(afterCombat.players[1].hp,30);
+  // Inspect an enemy card on mobile; unavailable actions must remain inspectable.
+  await b.locator('#enemyBoard .card .inspect-card').first().click();
+  await b.locator('#cardInspector').waitFor({state:'visible'});
+  await b.locator('#inspectorClose').click();
+  // Targeted resurrection uses a card picker, then Ruler draw is a real API action.
+  const resumed=JSON.parse(app.db.prepare('SELECT game FROM rooms WHERE code=?').get(code).game);
+  resumed.active=1;resumed.turn=8;resumed.revision++;
+  resumed.players[1].hand=[{id:'ui-revive',name:'Возвращение теста',kind:'technique',cost:{colored:{},generic:0},techniqueEffect:{kind:'reanimate',amount:1}}];
+  resumed.players[1].discard=[{id:'ui-reborn',name:'Возвращённый теста',kind:'creature',attack:2,health:3,secondChance:{kind:'summonSkeleton',amount:1}}];
+  app.db.prepare('UPDATE rooms SET game=?,deadline=?,turn_deadline=? WHERE code=?').run(JSON.stringify(resumed),Date.now()+120000,Date.now()+120000,code);
+  await b.waitForFunction(()=>document.querySelector('#hand')?.textContent.includes('Возвращение теста'));
+  await b.locator('#hand .card').first().click();
+  await b.locator('#choiceDialog').waitFor({state:'visible'});
+  await b.locator('#choiceCards .card').first().click();
+  await b.waitForFunction(()=>document.querySelector('#myBoard')?.textContent.includes('Возвращённый теста'));
+  assert.equal(await b.locator('#myAux .card').count(),1);
+  await b.locator('#rulerDraw').click();
+  await b.waitForFunction(()=>document.querySelector('#myHp')?.textContent.includes('28 HP'));
+  assert.equal(await b.locator('#rulerDraw').isDisabled(),true);
+  await b.reload({waitUntil:'domcontentloaded'});
+  await b.waitForFunction(()=>document.querySelector('#myBoard')?.textContent.includes('Возвращённый теста'));
+  const matchWidth=await b.evaluate(()=>({body:document.documentElement.scrollWidth,viewport:innerWidth}));
+  assert.ok(matchWidth.body<=matchWidth.viewport+5,JSON.stringify(matchWidth));
   await b.screenshot({ path: join(artifacts, 'alpha-match-mobile.png'), fullPage: true });
   await a.screenshot({ path: join(artifacts, 'alpha-match-desktop.png'), fullPage: true });
   // Vercel-like static client on a separate origin: browser CORS and bearer auth.
@@ -184,3 +207,4 @@ try {
   app.db.close();
   await rm(temp, { recursive: true, force: true });
 }
+

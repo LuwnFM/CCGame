@@ -1,6 +1,7 @@
 /** Firewell CCG rules. No client or network state is trusted. */
 import { mulligan } from './setup.ts';
 import { eligibleVictims, nextRandom, planRitual, type RitualEffect } from './ritual.ts';
+import { ability } from './mechanics/abilities.ts';
 import { damage, resolveCombat } from './mechanics/combat.ts';
 export const RULES_VERSION = '0.9.14-alpha';
 export type PlayerId = 0 | 1;
@@ -79,7 +80,7 @@ export type Command =
   | { type: 'startTurn'; actor: PlayerId; expectedRevision: number; key: string }
   | { type: 'playDomain'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number }
   | { type: 'tapDomain'; actor: PlayerId; expectedRevision: number; key: string; objectId: number }
-  | { type: 'playCreature'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number; replaceId?: number }
+  | { type: 'playCreature'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number; replaceId?: number; keepExisting?: boolean }
   | { type: 'playTechnique'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number; targetId?: number; discardIndex?: number }
   | { type: 'rulerDraw'; actor: PlayerId; expectedRevision: number; key: string }
   | { type: 'playLegend'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number; keepExisting?: boolean }
@@ -183,13 +184,14 @@ function resolveTechnique(game:Game,actor:PlayerId,card:Card,command:{targetId?:
       exhausted:true,interceptions:0,enteredTurn:game.turn,sacrifice:revived.sacrifice,attacksMade:0});
     enterTrigger(game,actor,revived,'discard');
   }else {
-    const target=effect.kind==='silence'||effect.kind==='bind'?getCreature(enemy,command.targetId):getCreature(owner,command.targetId);
+    const side=effect.kind==='silence'||effect.kind==='bind'?enemy:owner;
+    const target=effect.kind==='bind'?getCreature(side,command.targetId):[...side.main,...side.auxiliary,...side.legends].find(p=>p.objectId===command.targetId);
     requireRule(target,'Выберите допустимое Существо');
     if(effect.kind==='cleanse'){target.poison=undefined;target.stunned=false;target.stasis=undefined;target.silenced=false}
-    else if(effect.kind==='ward')target.shield+=effect.amount;
+    else if(effect.kind==='ward')throw new RuleError('Оберег ещё не реализован; это не Щит');
     else if(effect.kind==='silence')target.silenced=true;
     else if(effect.kind==='bind'){
-      if(target.stunned){target.stunned=false;target.stasis=effect.amount}
+      if(target.stunned||target.stasis){target.stunned=false;target.stasis=effect.amount}
       else target.stunned=true;
     }else throw new RuleError('Неизвестный эффект Техники');
   }
@@ -290,6 +292,13 @@ export function apply(game: Game, command: Command): Game {
       requireRule(card?.kind === 'creature' && card.cost, 'Неверное Существо');
       // Unknown abilities are displayed as inactive in the UI; they never run silently.
       requireRule(Number.isSafeInteger(card.attack) && card.attack! >= 0 && Number.isSafeInteger(card.health) && card.health! > 0, 'Неверные характеристики');
+      const duplicate = card.unique ? [...p.main,...p.auxiliary].find(u=>u.card.name===card.name) : undefined;
+      if(duplicate){
+        requireRule(typeof command.keepExisting==='boolean','Выберите, какую Уникальную оставить');
+        if(command.keepExisting){p.energy=payForCard(p,card.cost);p.hand.splice(command.handIndex,1);sendToDiscard(p,card,!!card.ritualReward);break}
+        const removed=removePermanents(p,[duplicate.objectId]);
+        for(const unit of removed)sendToDiscard(p,unit.card,unit.ritualReward);
+      }
       const zone = card.createdToken ? p.auxiliary : p.main;
       const limit = card.createdToken ? 4 : 8;
       if (zone.length >= limit) {
@@ -319,6 +328,7 @@ export function apply(game: Game, command: Command): Game {
         rewardPool: card.ritual.rewardPool, requiresSource: false, remainingStarts: card.ritual.duration });
       else resolveTechnique(next,command.actor,card,command);
       sendToDiscard(p, card);
+      resolveDeaths(next,collectLethal(next));
       finishIfLethal(next);
       break;
     }
@@ -355,7 +365,7 @@ export function apply(game: Game, command: Command): Game {
       const choices = legend?.card.loyaltyAbilities?.length ? legend.card.loyaltyAbilities : legend?.card.loyaltyAbility ? [legend.card.loyaltyAbility] : [];
       const chosen = command.abilityIndex ?? (legend?.card.loyaltyAbilities?.length ? 1 : 0);
       const ability = Number.isSafeInteger(chosen) && chosen >= 0 ? choices[chosen] : undefined;
-      requireRule(legend && ability && legend.lastActivatedTurn !== next.turn && !legend.stunned && !legend.stasis, 'Способность Легенды недоступна');
+      requireRule(legend && ability && legend.lastActivatedTurn !== next.turn && !legend.stunned && !legend.stasis && !legend.silenced, 'Способность Легенды недоступна');
       requireRule(Number.isSafeInteger(ability.delta) && Number.isSafeInteger(ability.amount) && ability.amount >= 0, 'Неверная способность');
       requireRule(legend.loyalty! + ability.delta >= 0, 'Не хватает Лояльности');
       if (ability.kind === 'recoverCreature')
@@ -424,7 +434,7 @@ export function apply(game: Game, command: Command): Game {
       resolveDeaths(next, dead.map(unit => ({ unit, owner: command.actor })));
       // Cera's one-card bonus is outside and AFTER the sacrifice death sequence.
       // It does not change the five possible reward cards or three offers.
-      if (p.legends.some(unit => unit.card.id === 'violet-цера-ван-троуп' && !unit.stasis && !unit.stunned) && p.deck.length)
+      if (p.legends.some(unit => unit.card.id === 'violet-цера-ван-троуп' && !unit.stasis && !unit.stunned && !unit.silenced) && p.deck.length)
         p.hand.push(p.deck.shift()!);
       next.readyRituals = [];
       if (finishIfLethal(next)) break;
@@ -484,11 +494,11 @@ export function apply(game: Game, command: Command): Game {
       requireRule(next.turn > 0 && next.phase === 'main', 'Недоступная фаза');
       const attacker = [...p.main, ...p.auxiliary].find(c => c.objectId === command.attackerId && c.card.kind === 'creature');
       requireRule(attacker && !attacker.exhausted && !attacker.stunned && !attacker.stasis &&
-        (attacker.enteredTurn < next.turn || attacker.card.haste || attacker.card.zeal && command.target?.kind === 'creature'), 'Атакующий не готов');
+        (attacker.enteredTurn < next.turn || ability(attacker,'haste') || ability(attacker,'zeal') && command.target?.kind === 'creature'), 'Атакующий не готов');
       const defender = (1 - command.actor) as PlayerId;
       requireRule(command.target?.kind === 'player' || command.target?.kind === 'creature' || command.target?.kind === 'legend', 'Неверная цель');
       if (command.target.kind === 'creature') {
-        requireRule([...next.players[defender].main, ...next.players[defender].auxiliary].some(c => c.objectId === command.target.objectId && c.card.kind === 'creature' && !c.card.stealth), 'Цель недоступна');
+        requireRule([...next.players[defender].main, ...next.players[defender].auxiliary].some(c => c.objectId === command.target.objectId && c.card.kind === 'creature' && !ability(c,'stealth')), 'Цель недоступна');
       } else if (command.target.kind === 'legend') {
         requireRule(next.players[defender].legends.some(c => c.objectId === command.target.objectId), 'Легенда недоступна');
       }
@@ -505,8 +515,8 @@ export function apply(game: Game, command: Command): Game {
       const interceptor = command.interceptorId === null ? null : [...p.main, ...p.auxiliary].find(c => c.objectId === command.interceptorId && c.card.kind === 'creature');
       if (command.interceptorId !== null) {
         requireRule(interceptor && !interceptor.exhausted && !interceptor.stasis && interceptor.interceptions === 0, 'Перехватчик недоступен');
-        requireRule(pending.target.kind !== 'creature' || interceptor.card.guard, 'Только Страж перехватывает атаку по Существу');
-        requireRule(!attacker?.card.flying || interceptor.card.flying, 'Наземное Существо не перехватывает Полёт');
+        requireRule(pending.target.kind !== 'creature' || ability(interceptor,'guard'), 'Только Страж перехватывает атаку по Существу');
+        requireRule(!attacker || !ability(attacker,'flying') || ability(interceptor,'flying'), 'Наземное Существо не перехватывает Полёт');
         interceptor.interceptions++;
       }
       const legendTarget = pending.target.kind === 'legend' ? p.legends.find(c => c.objectId === pending.target.objectId) : null;
@@ -519,14 +529,14 @@ export function apply(game: Game, command: Command): Game {
       }
       if (!finishIfLethal(next)) next.phase = 'main';
       if (attacker && [...next.players[next.active].main, ...next.players[next.active].auxiliary].includes(attacker) &&
-          (attacker.attacksMade ?? 0) <= (attacker.card.extraAttacks ?? 0)) attacker.exhausted = false;
+          (attacker.attacksMade ?? 0) <= (ability(attacker,'extraAttacks') ?? 0)) attacker.exhausted = false;
       next.pendingAttack = null;
       break;
     }
     case 'endTurn': {
       requireRule(next.turn > 0 && next.phase === 'main', 'Недоступная фаза');
       p.energy = emptyEnergy();
-      for (const unit of [...p.main, ...p.auxiliary]) {
+      for (const unit of [...p.main, ...p.auxiliary,...p.legends]) {
         unit.stunned = false;
         unit.silenced = false;
         if (unit.stasis) unit.stasis--;
@@ -542,6 +552,7 @@ export function apply(game: Game, command: Command): Game {
       if (p.hand.length <= 8) advance(next);
       break;
     }
+    default: throw new RuleError('Неизвестная команда');
   }
   } catch (error) {
     if (!(error instanceof EffectLimitError)) throw error;

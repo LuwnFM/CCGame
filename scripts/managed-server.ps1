@@ -1,6 +1,7 @@
 # Firewell CCG managed server; run once instead of start-firewell.cmd.
 # Reads only explicit signed-off release manifest from public LuwnFM/CCGame branch.
-# Never updates running unfinished PvP games. Does not persist passwords.
+# Staging only: verifies immutable approved packages; never replaces a running server.
+# Blue/green activation is not implemented. Does not persist passwords.
 param([ValidateRange(1,60)][int]$CheckMinutes = 5)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
@@ -9,8 +10,8 @@ $data = Join-Path $root 'data'
 New-Item -ItemType Directory -Path $data -Force | Out-Null
 $branch = 'codex/initial-rules-core'
 $manifestUrl = 'https://raw.githubusercontent.com/LuwnFM/CCGame/' + $branch + '/release.json'
-$archiveUrl = 'https://github.com/LuwnFM/CCGame/archive/refs/heads/' + $branch + '.zip'
-$installedMarker = Join-Path $data 'managed-release.txt'
+$archiveBase = 'https://github.com/LuwnFM/CCGame/archive/'
+$installedMarker = Join-Path $data 'managed-staged-release.txt'
 $client = 'https://ccgame-omega.vercel.app'
 $env:FIREWELL_DB = Join-Path $data 'firewell.sqlite'
 $env:FIREWELL_CLIENT_ORIGIN = $client
@@ -54,40 +55,50 @@ function Latest-Release {
   $manifest = Invoke-RestMethod -Uri ($manifestUrl + '?t=' + $nonce) -TimeoutSec 20
   if ($manifest.releaseId -notmatch '^firewell-[a-zA-Z0-9._-]{1,48}$') { throw 'Некорректный releaseId.' }
   if ($manifest.branch -ne $branch) { throw 'Несовпадение ветки релиза.' }
-  return $manifest.releaseId
+  if ($manifest.approved -ne $true) { throw 'Релиз не утверждён.' }
+  if ($manifest.commit -notmatch '^[a-f0-9]{40}$') { throw 'Требуется неизменяемый commit SHA.' }
+  if ($manifest.archiveSha256 -notmatch '^[a-f0-9]{64}$') { throw 'Требуется SHA-256 архива.' }
+  if ($manifest.schemaVersion -ne 1) { throw 'Версия схемы не поддерживается.' }
+  return $manifest
 }
-function Install-Release([string]$releaseId) {
-  if ((Active-MatchCount) -gt 0) {
-    Write-Host "Обновление $releaseId ждёт завершения всех матчей." -ForegroundColor Yellow
-    return $false
-  }
-  $temp = Join-Path $env:TEMP ('firewell-managed-' + [guid]::NewGuid().ToString('N'))
+function Stage-Release($manifest) {
+  $releaseId = $manifest.releaseId
+  $staging = Join-Path $root 'staged-releases'
+  New-Item -ItemType Directory -Path $staging -Force | Out-Null
+  $temp = Join-Path $staging ('.prepare-' + [guid]::NewGuid().ToString('N'))
   New-Item -ItemType Directory -Path $temp | Out-Null
   try {
     $zip = Join-Path $temp 'release.zip'
-    Invoke-WebRequest -Uri $archiveUrl -OutFile $zip -UseBasicParsing -TimeoutSec 90
+    $url = $archiveBase + $manifest.commit + '.zip'
+    Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing -TimeoutSec 90
+    if ((Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant() -ne $manifest.archiveSha256) {
+      throw 'Контрольная сумма архива не совпала. Работающий сервер не затронут.'
+    }
     Expand-Archive -Path $zip -DestinationPath (Join-Path $temp 'extracted')
-    $package = Get-ChildItem (Join-Path $temp 'extracted') -Directory | Select-Object -First 1
-    if (-not $package) { throw 'Архив пуст.' }
-    foreach ($required in @('src/server.ts','src/core.ts','web/index.html','release.json','scripts/managed-server.ps1')) {
+    $packages = @(Get-ChildItem (Join-Path $temp 'extracted') -Directory)
+    if ($packages.Count -ne 1) { throw 'Некорректная структура архива.' }
+    $package = $packages[0]
+    foreach ($required in @('src/server.ts','src/core.ts','web/index.html','test/server.test.ts','package.json')) {
       if (-not (Test-Path (Join-Path $package.FullName $required))) { throw "В архиве отсутствует $required" }
     }
-    $archiveManifest = Get-Content (Join-Path $package.FullName 'release.json') -Raw | ConvertFrom-Json
-    if ($archiveManifest.releaseId -ne $releaseId) { throw 'Релиз изменился во время загрузки; повторим позже.' }
-    if ((Active-MatchCount) -gt 0) { return $false }
-    # Never touch player SQLite data, archives, secrets or local backups.
-    foreach ($directory in @('src','web','scripts')) {
-      Copy-Item -Path (Join-Path $package.FullName $directory) -Destination $root -Recurse -Force
-    }
-    foreach ($file in @('package.json','release.json','vercel.json','start-firewell.cmd')) {
-      Copy-Item -Path (Join-Path $package.FullName $file) -Destination (Join-Path $root $file) -Force
-    }
+    $testLog = Join-Path $temp 'tests.log'
+    Push-Location $package.FullName
+    try {
+      $tests = @(Get-ChildItem 'test/*.test.ts' | ForEach-Object { $_.FullName })
+      & $nodePath --experimental-strip-types --test @tests *> $testLog
+      if ($LASTEXITCODE -ne 0) { throw 'Тесты кандидата не прошли; переключения не будет.' }
+      & $nodePath --check web/app.js
+      if ($LASTEXITCODE -ne 0) { throw 'Ошибка синтаксиса клиента.' }
+    } finally { Pop-Location }
+    $destination = Join-Path $staging $releaseId
+    if (Test-Path $destination) { throw 'Каталог релиза уже существует; перезапись запрещена.' }
+    Move-Item -Path $package.FullName -Destination $destination
+    Copy-Item $testLog (Join-Path $destination 'staging-tests.log')
+    $manifest | ConvertTo-Json | Set-Content (Join-Path $destination 'verified-manifest.json') -Encoding UTF8
     Set-Content -Path $installedMarker -Value $releaseId -Encoding UTF8
-    Write-Host "Установлена версия $releaseId; сохранённые данные не затронуты." -ForegroundColor Green
-    return $true
-  } finally {
-    Remove-Item -Recurse -Force $temp -ErrorAction SilentlyContinue
-  }
+    Write-Host "Кандидат $releaseId проверен и сохранён отдельно. Живой сервер продолжает работу."
+    Write-Warning 'Автоматическое переключение новых матчей пока не реализовано. Кандидат не установлен.'
+  } finally { Remove-Item -Recurse -Force $temp -ErrorAction SilentlyContinue }
 }
 function Start-Game {
   $log = Join-Path $data 'managed-server-output.log'
@@ -104,13 +115,8 @@ try {
       try {
         $wanted = Latest-Release
         $current = if (Test-Path $installedMarker) { (Get-Content $installedMarker -Raw).Trim() } else { '' }
-        if ($wanted -ne $current) {
-          if ((Active-MatchCount) -eq 0) {
-            if ($child -and -not $child.HasExited) { Stop-Process -Id $child.Id -Force; $child.WaitForExit(); $child=$null }
-            Install-Release $wanted | Out-Null
-          } else {
-            Write-Host "Новый релиз $wanted ожидает окончания игры; текущий сервер продолжает работать."
-          }
+        if ($wanted.releaseId -ne $current) {
+          Stage-Release $wanted
         }
       } catch { Write-Warning ("Проверка обновления: " + $_.Exception.Message) }
     }
@@ -123,3 +129,4 @@ try {
   if ($child -and -not $child.HasExited) { Stop-Process -Id $child.Id -Force }
   Remove-Item Env:FIREWELL_ALPHA_PASSWORD -ErrorAction SilentlyContinue
 }
+

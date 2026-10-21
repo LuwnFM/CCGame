@@ -78,6 +78,10 @@ function playTechnique(card,index,me,enemy) {
 function detailsText(card,p) {
   const bits=[];
   if(card.attack!==undefined&&card.health!==undefined)bits.push('Сила '+card.attack+' / Здоровье '+card.health);
+  if(p?.silenced)bits.push('Немота');
+  if(p?.stasis)bits.push('Стазис '+p.stasis);
+  if(p?.stunned)bits.push('Ошеломление');
+  if(p?.poison)bits.push('Отрава '+p.poison.strength+'/'+p.poison.ticks);
   if(p?.damage)bits.push('Ранения '+p.damage);
   if(p?.shield)bits.push('Щит '+p.shield);
   if(p?.loyalty!==undefined)bits.push('Лояльность '+p.loyalty);
@@ -358,7 +362,7 @@ function renderGame(ready) {
     const choices=legend.card.loyaltyAbilities?.length?legend.card.loyaltyAbilities:
       legend.card.loyaltyAbility?[legend.card.loyaltyAbility]:[];
     for(const [index,ability] of choices.entries()){
-      const allowed=mine&&legend.lastActivatedTurn!==game.turn&&!legend.stunned&&!legend.stasis&&
+      const allowed=mine&&legend.lastActivatedTurn!==game.turn&&!legend.stunned&&!legend.stasis&&!legend.silenced&&
         legend.loyalty+ability.delta>=0&&
         (ability.kind!=='recoverCreature'||me.discard?.some(c=>c.kind==='creature'))&&
         (ability.kind!=='raiseSacrifice'||me.auxiliary.length<4);
@@ -385,14 +389,14 @@ function renderGame(ready) {
       if(defense){defenderChoice=p.objectId;renderGame(ready)}
       else{selected=p.objectId;renderGame(ready)}
     },p.card.kind!=='creature'||(!defense&&!mine)||!!p.stasis||(!defense&&!!p.stunned)||p.exhausted||
-      (defense&&(p.interceptions>0||(attack?.target?.kind==='creature'&&!p.card.guard)||
-        (incoming?.card.flying&&!p.card.flying))),selected===p.objectId||defenderChoice===p.objectId,p)));
+      (defense&&(p.interceptions>0||(attack?.target?.kind==='creature'&&(!p.card.guard||p.silenced))||
+        (incoming?.card.flying&&!incoming.silenced&&(!p.card.flying||p.silenced)))),selected===p.objectId||defenderChoice===p.objectId,p)));
   }
   for(const [id,zone] of [['enemyBoard',enemy.main],['enemyAux',enemy.auxiliary]])
     $(id).replaceChildren(...zone.map(p=>{
       const el=cardButton(p.card,cardLabel(p),
         ()=>send({type:'attack',attackerId:selected,target:{kind:'creature',objectId:p.objectId}}),
-        !mine||selected===null||p.card.kind!=='creature'||!!p.card.stealth,false,p);
+        !mine||selected===null||p.card.kind!=='creature'||!!p.card.stealth&&!p.silenced&&!p.stasis,false,p);
       if(defense&&p.objectId===attack?.attackerId){
         el.classList.add('incoming-attacker');
         el.setAttribute('aria-label','Атакует '+target+' · '+p.card.name);
@@ -429,6 +433,8 @@ function renderGame(ready) {
         chooseCards('Какую Легенду оставить?',[{card:me.legends.find(p=>p.card.name===c.name).card,label:'Оставить на поле',choose:()=>send({type:'playLegend',handIndex:i,keepExisting:true})},{card:c,label:'Оставить новую',choose:()=>send({type:'playLegend',handIndex:i,keepExisting:false})}]);
       else if(c.kind==='artifact'&&me.auxiliary.some(p=>p.card.name===c.name))
         chooseCards('Какой предмет оставить?',[{card:me.auxiliary.find(p=>p.card.name===c.name).card,label:'Оставить на поле',choose:()=>send({type:'playArtifact',handIndex:i,keepExisting:true})},{card:c,label:'Оставить новый',choose:()=>send({type:'playArtifact',handIndex:i,keepExisting:false})}]);
+      else if(c.kind==='creature'&&c.unique&&[...me.main,...me.auxiliary].some(p=>p.card.name===c.name))
+        chooseCards('Какое Уникальное Существо оставить?',[{card:c,label:'Оставить на поле',choose:()=>send({type:'playCreature',handIndex:i,keepExisting:true})},{card:c,label:'Оставить новое',choose:()=>send({type:'playCreature',handIndex:i,keepExisting:false})}]);
       else if(c.kind==='technique')playTechnique(c,i,me,enemy);
       else if((c.kind==='artifact'||c.kind==='creature'&&c.createdToken)&&me.auxiliary.length>=4){selectedArtifactIndex=i;renderGame(ready)}
       else send({type:c.kind==='domain'?'playDomain':c.kind==='technique'?'playTechnique':c.kind==='legend'?'playLegend':c.kind==='artifact'?'playArtifact':'playCreature',handIndex:i})},

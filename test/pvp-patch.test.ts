@@ -88,3 +88,14 @@ test('old games keep frozen core and original version while new games use update
  assert.equal(continued.rulesVersion,'0.9.13-alpha');
  assert.equal(continued.turn,1);
 });
+
+
+test('First Strike combines Shield, Piercing and Lifesteal without a dead defender reply',()=>{
+ let g=initialGame(player(),player());g.turn=7;g.players[0].hp=20;
+ g.players[0].main=[perm(1,{id:'a',name:'Attacker',kind:'creature',attack:5,health:2,firstStrike:true,piercing:true,lifesteal:true,poisonHit:{strength:1,ticks:2}})];
+ g.players[1].main=[perm(2,{id:'d',name:'Defender',kind:'creature',attack:9,health:2},1)];
+ g=act(g,{type:'attack',actor:0,attackerId:1,target:{kind:'player'}},'strike');
+ g=act(g,{type:'intercept',actor:1,interceptorId:2},'intercept');
+ assert.equal(g.players[0].main[0].damage,0);assert.equal(g.players[1].main.length,0);
+ assert.equal(g.players[1].hp,28);assert.equal(g.players[0].hp,24);
+});

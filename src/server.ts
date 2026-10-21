@@ -8,7 +8,10 @@ import { apply, openingGame, RULES_VERSION, RuleError, type Command, type Game, 
 import { apply as applyLegacy, RuleError as LegacyRuleError } from './legacy/core-v0.9.13.ts';
 const LEGACY_RULES_VERSION = '0.9.13-alpha';
 export function applyForMatch(game: Game, command: Command): Game {
-  if (game.rulesVersion === LEGACY_RULES_VERSION) return applyLegacy(game as any, command as any) as Game;
+  if (game.rulesVersion === LEGACY_RULES_VERSION) {
+    if (command.type === 'rulerDraw') throw new RuleError('Эта способность недоступна в версии старого матча');
+    return applyLegacy(game as any, command as any) as Game;
+  }
   if (game.rulesVersion === RULES_VERSION) return apply(game, command);
   throw new RuleError('Версия правил матча больше не поддерживается');
 }
