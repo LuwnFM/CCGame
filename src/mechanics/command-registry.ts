@@ -66,7 +66,7 @@ registerCommand('playCreature',(next,command)=>{const p=next.players[command.act
       const duplicate = card.unique ? [...p.main,...p.auxiliary].find(u=>u.card.name===card.name) : undefined;
       if(duplicate){
         requireRule(typeof command.keepExisting==='boolean','Выберите, какую Уникальную оставить');
-        if(command.keepExisting){p.energy=payForCard(p,card.cost);p.hand.splice(command.handIndex,1);sendToDiscard(p,card,!!card.ritualReward);break}
+        if(command.keepExisting){p.energy=payForCard(p,card.cost);p.hand.splice(command.handIndex,1);sendToDiscard(p,card,!!card.ritualReward);return;}
         const removed=removePermanents(p,[duplicate.objectId]);
         for(const unit of removed)sendToDiscard(p,unit.card,unit.ritualReward);
       }
