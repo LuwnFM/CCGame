@@ -2,8 +2,9 @@ import { locale, setLocale, cardName, archetypeName, translate, observeLocalizat
 import { renderPublicRules } from './rules.js';
 const $ = id => document.getElementById(id);
 const sessionKey = 'firewell_session', serverKey = 'firewell_server', roomKey = 'firewell_room';
+const hostedClient = location.hostname.endsWith('.vercel.app');
 let token = localStorage.getItem(sessionKey) || '';
-let apiBase = localStorage.getItem(serverKey) || '';
+let apiBase = hostedClient ? '' : (localStorage.getItem(serverKey) || '');
 let room = localStorage.getItem(roomKey) || '';
 let account = null, catalog = [], presets = [], savedDecks = [], deckIds = [], game = null;
 let selected = null, selectedMulligan = new Set(), selectedVictims = new Set(), selectedRitual = null;
@@ -16,11 +17,9 @@ function show(id) {
   for(const pane of ['auth','home','builder','match','rulesPage'])$(pane).classList.toggle('hidden',pane!==id);
 }
 function serverAddress() {
+  if (hostedClient) return ''; // Vercel proxies /api/* to the configured game server.
   const entered = $('apiUrl').value.trim().replace(/\/$/,'');
-  if (!entered) {
-    if (location.hostname.endsWith('.vercel.app')) throw Error('Укажи публичный HTTPS-адрес игрового сервера');
-    return '';
-  }
+  if (!entered) return '';
   const url = new URL(entered);
   if (!['http:','https:'].includes(url.protocol) || url.username || url.password || url.pathname !== '/' || url.search || url.hash)
     throw Error('Укажи только адрес сервера, без пути');
@@ -411,6 +410,11 @@ $('skip').onclick=()=>send({type:'intercept',interceptorId:null});
 $('end').onclick=()=>send({type:'endTurn'});
 function tick(){if(!game?.deadlineAt){$('timer').textContent='';return}const left=Math.max(0,Math.ceil((game.deadlineAt-Date.now())/1000));$('timer').textContent='⏱ '+Math.floor(left/60)+':'+String(left%60).padStart(2,'0')}
 $('apiUrl').value=apiBase;
+if (hostedClient) {
+  $('apiUrl').closest('label').style.display='none';
+  $('apiHint').style.display='none';
+  localStorage.removeItem(serverKey); // Ignore any obsolete manually entered tunnel URL.
+}
 show('auth');
 if(token)api('/api/me').then(async data=>{setAccount(data.account);await loadData();await refresh()}).catch(()=>{token='';localStorage.removeItem(sessionKey);show('auth')});
 observeLocalization();
