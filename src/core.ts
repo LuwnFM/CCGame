@@ -2,7 +2,7 @@
 import { mulligan } from './setup.ts';
 import { eligibleVictims, nextRandom, planRitual, type RitualEffect } from './ritual.ts';
 import { damage, resolveCombat } from './mechanics/combat.ts';
-export const RULES_VERSION = '0.9.13-alpha';
+export const RULES_VERSION = '0.9.14-alpha';
 export type PlayerId = 0 | 1;
 export type Aspect = 'red' | 'blue' | 'green' | 'gold' | 'violet';
 export type Energy = Aspect | 'neutral';
