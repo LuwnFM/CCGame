@@ -4,6 +4,8 @@ import {apply,initialGame,player,RuleError,type Card,type Command,type Game} fro
 import {registerEffect,registeredEffects} from '../src/mechanics/effects-registry.ts';
 import {registerCommand,registeredCommands} from '../src/mechanics/command-router.ts';
 import {registerCombatHook} from '../src/mechanics/combat-hooks.ts';
+import {registerTrait,registeredTraits} from '../src/mechanics/trait-registry.ts';
+import {ability} from '../src/mechanics/abilities.ts';
 import {onGameEvent} from '../src/mechanics/events.ts';
 
 /** This file is an actual third-party style module-augmentation test. Neither
@@ -69,4 +71,21 @@ test('combat and turn lifecycle accept detachable feature hooks',()=>{
   next=command(next,{type:'endTurn',actor:0});
   assert.deepEqual(seen,[1]);
  }finally{stopHit();stopTurn()}
+});
+
+test('new passive keyword needs just declaration augmentation and trait registration, not a kernel switch',()=>{
+  const card:Card={id:'custom-resilience',name:'Защитник',kind:'creature',attack:1,health:2,resilience:3};
+  const permanent={objectId:99,card,exhausted:false,damage:0,shield:0,interceptions:0,enteredTurn:1};
+  assert.equal(ability(permanent,'resilience'),undefined,'Unregistered keyword must be inert');
+  const stop=registerTrait('resilience',unit=>unit.card.resilience);
+  try{
+    assert.ok(registeredTraits().includes('resilience'));
+    assert.equal(ability(permanent,'resilience'),3);
+    permanent.silenced=true;
+    assert.equal(ability(permanent,'resilience'),undefined,'Nemota suppresses custom traits');
+    permanent.silenced=false;
+    permanent.stasis=1;
+    assert.equal(ability(permanent,'resilience'),undefined,'Stasis suppresses custom traits');
+  }finally{stop()}
+  assert.equal(ability(permanent,'resilience'),undefined,'Unload leaves no effect');
 });
