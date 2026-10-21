@@ -14,18 +14,18 @@ type Unit = { name: string; cost: number; attack: number; health: number; traits
 type Theme = { plain: Unit[]; effects: Unit[]; legends: [string, string]; item: string };
 const themes: Record<ArchetypeId, Theme> = {
   red: {
-    plain: [['Горный ополченец',1,2,1],['Рудокоп стали',2,2,2],['Стрелок перевала',2,3,1],['Кузнец заставы',3,3,3],['Всадник хребта',4,4,3],['Тяжёлый пехотинец',5,5,5]].map(unit),
-    effects: [['Разведчик с перевала',1,1,1,{haste:true}],['Рыцарь горной стражи',2,2,3,{guard:true}],['Мастер первого удара',3,3,2,{firstStrike:true}],['Таранный всадник',3,3,3,{piercing:true}],['Пламенный авангард',4,4,2,{haste:true}],['Капитан дозора',4,3,5,{guard:true,firstStrike:true}],['Молотобоец королевства',5,5,4,{piercing:true}],['Двукратный натиск',6,5,5,{extraAttacks:1}]].map(unit),
+    plain: [['Горный ополченец',1,2,1],['Рудокоп стали',2,2,2],['Стрелок перевала',2,3,1],['Кузнец заставы',3,3,3],['Всадник хребта',4,4,2],['Тяжёлый пехотинец',5,5,5]].map(unit),
+    effects: [['Разведчик с перевала',1,1,1,{haste:true}],['Рыцарь горной стражи',2,2,3,{guard:true}],['Мастер первого удара',3,3,2,{firstStrike:true}],['Таранный всадник',3,3,2,{piercing:true,zeal:true}],['Пламенный авангард',4,4,2,{haste:true}],['Капитан дозора',4,3,4,{guard:true,firstStrike:true}],['Молотобоец королевства',5,5,3,{piercing:true,zeal:true}],['Двукратный натиск',6,5,4,{extraAttacks:1}]].map(unit),
     legends: ['Командор стального рубежа','Хранитель горного прохода'], item:'Знамя горной стражи',
   },
   blue: {
     plain: [['Матрос Талдрейка',1,1,2],['Доковый плотник',2,2,2],['Курсант аэродрома',2,2,3],['Палубный дозорный',3,3,2],['Штурманская команда',4,3,4],['Бортовой ветеран',5,4,5]].map(unit),
-    effects: [['Быстрый курьер',1,1,2,{flying:true}],['Сторожевой дирижабль',2,2,3,{flying:true}],['Воздушный перехватчик',3,2,4,{flying:true,guard:true}],['Небесный дуэлянт',3,3,3,{flying:true}],['Штурмовой пилот',4,4,3,{flying:true,firstStrike:true}],['Капитан флотилии',4,3,5,{guard:true,flying:true}],['Палубный дуэлянт',5,4,5,{extraAttacks:1}],['Флагманский десант',6,5,6,{flying:true,extraAttacks:1}]].map(unit),
+    effects: [['Быстрый курьер',1,1,2,{flying:true}],['Сторожевой дирижабль',2,2,3,{flying:true}],['Воздушный перехватчик',3,2,4,{flying:true,guard:true}],['Небесный дуэлянт',3,3,3,{onEntry:{kind:'stunEnemy',amount:1}}],['Штурмовой пилот',4,4,3,{flying:true,firstStrike:true}],['Капитан флотилии',4,3,5,{guard:true,onEntry:{kind:'stunEnemy',amount:1}}],['Палубный дуэлянт',5,4,5,{extraAttacks:1}],['Флагманский десант',6,5,6,{flying:true,extraAttacks:1}]].map(unit),
     legends: ['Адмирал талдрейкского неба','Мастер воздушных путей'], item:'Навигационный кристалл флотилии',
   },
   green: {
     plain: [['Суварский следопыт',1,1,2],['Лесной подмастерье',2,2,2],['Страж тропы',2,2,3],['Садовый зверь',3,3,3],['Суварский охотник',4,4,4],['Древесный исполин',5,5,5]].map(unit),
-    effects: [['Живучий зверёк',1,1,2,{lifesteal:true}],['Защитник чащи',2,2,3,{guard:true}],['Хищник Сувара',3,3,2,{poisonHit:{strength:1,ticks:2}}],['Целитель рощи',3,2,4,{lifesteal:true}],['Лесная дозорная',4,4,3,{stealth:true}],['Корневой бастион',4,3,6,{guard:true,shield:1}],['Дикий оплот',5,4,5,{lifesteal:true}],['Страж зелёного рубежа',6,6,6,{guard:true}]].map(unit),
+    effects: [['Живучий зверёк',1,1,2,{lifesteal:true}],['Защитник чащи',2,2,3,{guard:true}],['Хищник Сувара',3,3,2,{poisonHit:{strength:1,ticks:2}}],['Целитель рощи',3,2,4,{lifesteal:true}],['Лесная дозорная',4,4,3,{stealth:true}],['Корневой бастион',4,3,5,{guard:true,shield:1}],['Дикий оплот',5,4,4,{lifesteal:true}],['Страж зелёного рубежа',6,6,5,{guard:true}]].map(unit),
     legends: ['Старейшина рода Кайров','Защитница суварских рощ'], item:'Знамя дома Кайров',
   },
   gold: {
@@ -135,7 +135,7 @@ export function testDeck(id: ArchetypeId): Card[] {
     // Two exclusive choices per turn: modest +1 Loyalty, or the stronger -2 Loyalty power.
     // Keep loyaltyAbility for saved legacy matches and older clients.
     loyaltyAbilities:[
-      {delta:1,kind:'healRuler',amount:1},
+      {delta:1,kind:(id==='violet' ? i===1 : i===0)?'summonSignature':'healRuler',amount:1},
       id==='violet'
         ? i===0 ? {delta:-2,kind:'recoverCreature',amount:1} : {delta:-2,kind:'raiseSacrifice',amount:1}
         : i===0 ? {delta:-2,kind:'healRuler',amount:4} : {delta:-2,kind:'damageOpponent',amount:2}
