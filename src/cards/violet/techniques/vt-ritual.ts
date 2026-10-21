@@ -25,8 +25,8 @@ export default {
         "aspects": [
           "violet"
         ],
-        "attack": 4,
-        "health": 4,
+        "attack": 5,
+        "health": 5,
         "shield": 1,
         "lore": {
           "state": "Искажение",
@@ -43,7 +43,7 @@ export default {
         "aspects": [
           "violet"
         ],
-        "attack": 5,
+        "attack": 7,
         "health": 3,
         "firstStrike": true,
         "lore": {
@@ -62,7 +62,7 @@ export default {
           "violet"
         ],
         "attack": 3,
-        "health": 6,
+        "health": 8,
         "guard": true,
         "lore": {
           "state": "Искажение",
@@ -79,8 +79,8 @@ export default {
         "aspects": [
           "violet"
         ],
-        "attack": 4,
-        "health": 4,
+        "attack": 5,
+        "health": 5,
         "lifesteal": true,
         "lore": {
           "state": "Искажение",
@@ -97,8 +97,8 @@ export default {
         "aspects": [
           "violet"
         ],
-        "attack": 3,
-        "health": 3,
+        "attack": 4,
+        "health": 4,
         "createdToken": true,
         "poisonHit": {
           "strength": 1,
