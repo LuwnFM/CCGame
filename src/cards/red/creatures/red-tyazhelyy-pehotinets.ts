@@ -14,6 +14,7 @@ export default {
   },
   "attack": 5,
   "health": 5,
+  "piercing": true,
   "lore": {
     "state": "Стальное королевство",
     "organization": "Горная стража",
