@@ -1,20 +1,13 @@
-/** Firewell CCG rules. No client or network state is trusted. */
-import { mulligan } from './setup.ts';
+/** Firewell CCG transactional kernel. All mechanics and commands are registered modules. */
 import type {DeathEffect,EntryEffect,LoyaltyEffect,TechniqueEffect} from './mechanics/effect-contracts.ts';
 import type {Command} from './mechanics/command-contracts.ts';
+import type {RitualEffect} from './ritual.ts';
 import {executeCommand} from './mechanics/command-registry.ts';
-import { eligibleVictims, nextRandom, planRitual, type RitualEffect } from './ritual.ts';
-import { ability } from './mechanics/abilities.ts';
-import { damage, resolveCombat } from './mechanics/combat.ts';
-import { emptyEnergy, payForCard } from './mechanics/energy.ts';
-import { tickStatusesAtTurnStart } from './mechanics/statuses.ts';
-import { activateLegend } from './mechanics/legends.ts';
-import { enterTrigger, resolveTechnique } from './mechanics/techniques.ts';
-import { EffectLimitError, MAX_EFFECT_OPERATIONS, removePermanents, collectLethal, resolveDeaths, finishIfLethal } from './mechanics/death-queue.ts';
-import {drawCards,leaveCard,moveCard,takeCard,placePermanent} from './mechanics/zones.ts';
-import {emitGameEvent} from './mechanics/events.ts';
-export { MAX_EFFECT_OPERATIONS } from './mechanics/death-queue.ts';
-export { validateDeck } from './mechanics/deck-rules.ts';
+import {emptyEnergy} from './mechanics/energy.ts';
+import {leaveCard} from './mechanics/zones.ts';
+import {EffectLimitError,MAX_EFFECT_OPERATIONS} from './mechanics/limits.ts';
+export {MAX_EFFECT_OPERATIONS} from './mechanics/limits.ts';
+export {validateDeck} from './mechanics/deck-rules.ts';
 export const RULES_VERSION = '0.9.15-alpha';
 export type PlayerId = 0 | 1;
 export type Aspect = 'red' | 'blue' | 'green' | 'gold' | 'violet';
