@@ -20,7 +20,7 @@ export function advance(game:Game):void {
   // A defender's per-opponent-turn intercept limit resets when that opponent starts.
   for (const creature of game.players[1 - game.active].main) creature.interceptions = 0;
   for (const creature of game.players[1 - game.active].auxiliary) creature.interceptions = 0;
-  drawCards(p,1);
+  drawCards(p,1,game,game.active);
   tickStatusesAtTurnStart(p);
   resolveDeaths(game, collectLethal(game));
   if (finishIfLethal(game)) return;
