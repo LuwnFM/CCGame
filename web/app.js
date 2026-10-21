@@ -662,7 +662,7 @@ if (hostedClient) {
 show('auth');
 checkGameServer();
 setInterval(checkGameServer,20000);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden){checkGameServer();refresh()}else if(token)api('/api/presence/away',{}).catch(()=>{})});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){checkGameServer();refresh()} /* Hidden sessions expire via server TTL; don't issue unload-time requests rejected by mobile WebKit. */ });
 if(token)api('/api/me').then(async data=>{setAccount(data.account);await loadData();await refresh()}).catch(()=>{token='';localStorage.removeItem(sessionKey);show('auth')});
 observeLocalization();
 setInterval(()=>{if(!document.hidden)refresh()},2500);setInterval(tick,1000);setInterval(updateChatCooldown,250);
