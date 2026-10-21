@@ -23,10 +23,12 @@ jobs:
         run: node --check web/app.js
       - name: Install browser test runner
         run: npm install --no-save playwright@1.57.0
-      - name: Install headless Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Install Chromium, Firefox and WebKit
+        run: npx playwright install --with-deps chromium firefox webkit
       - name: Browser end-to-end smoke
         run: node --experimental-strip-types test/browser-e2e.mjs
+      - name: Firefox and WebKit viewport smoke
+        run: node --experimental-strip-types test/browser-crossplatform.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
