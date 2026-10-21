@@ -3,8 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --experimental-strip-types --test test/*.test.ts",
-    "start": "node --experimental-strip-types src/server.ts"
+    "test": "node --experimental-strip-types --test $(find test -maxdepth 1 -name '*.test.ts' ! -name 'simulation.test.ts' | sort)",
+    "start": "node --experimental-strip-types src/server.ts",
+    "test:balance": "node --experimental-strip-types --test test/simulation.test.ts"
   },
-  "engines": { "node": ">=24" }
+  "engines": {
+    "node": ">=24"
+  }
 }
