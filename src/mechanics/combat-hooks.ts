@@ -8,13 +8,14 @@ export type CombatContext={
 export type CombatHook=(context:CombatContext)=>void;
 const stages=new Map<CombatStage,Array<{id:string;priority:number;handler:CombatHook}>>();
 /** Deterministic hook ordering: numeric priority then stable string ID. */
-export function registerCombatHook(stage:CombatStage,id:string,handler:CombatHook,priority=0):void{
+export function registerCombatHook(stage:CombatStage,id:string,handler:CombatHook,priority=0):()=>void{
   if(!id||!Number.isSafeInteger(priority))throw new RuleError('Неверный боевой модуль');
   const list=stages.get(stage)??[];
   if(list.some(x=>x.id===id))throw new RuleError('Боевой модуль зарегистрирован повторно: '+id);
   list.push({id,priority,handler});
   list.sort((a,b)=>a.priority-b.priority||a.id.localeCompare(b.id,'en'));
   stages.set(stage,list);
+  return ()=>{const at=list.findIndex(x=>x.id===id&&x.handler===handler);if(at>=0)list.splice(at,1)};
 }
 export function runCombatHooks(stage:CombatStage,ctx:CombatContext):void{
   for(const {handler} of stages.get(stage)??[])handler(ctx);
