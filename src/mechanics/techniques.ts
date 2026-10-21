@@ -12,7 +12,7 @@ for(const channel of ['entry','technique'] as const){
   });
   registerEffect(channel,'draw',({game,actor,amount})=>{
     requireRule(numeric(amount!,channel==='entry'?4:8),'Неверный добор');
-    drawCards(game.players[actor],amount!);
+    drawCards(game.players[actor],amount!,game,actor);
   });
 }
 registerEffect('entry','summon',({game,actor,cards})=>summon(game,actor,cards??[]));
@@ -48,7 +48,7 @@ registerEffect('technique','reanimate',({game,actor,discardIndex})=>{
   requireRule(Number.isSafeInteger(discardIndex)&&owner.discard[discardIndex!]?.kind==='creature',
     'Выберите Существо из сброса');
   requireRule(owner.main.length<8,'Нет места для воскрешённого Существа');
-  const card=takeCard(owner,'discard',discardIndex!);
+  const card=takeCard(owner,'discard',discardIndex!,game,actor);
   const unit=placePermanent(game,actor,'main',card);
   emitGameEvent(game,{type:'revive',owner:actor,cardId:card.id,objectId:unit.objectId,from:'discard',to:'main'});
   enterTrigger(game,actor,card,'discard');
