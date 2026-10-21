@@ -5,8 +5,6 @@ import type {Card} from '../core.ts';
  */
 export interface EntryEffectSpecs {
   summon:{cards:Card[]};
-  summonSkeleton:{amount:number}; // historical alias
-  summonBonePair:{amount:number}; // historical alias
   healRuler:{amount:number};
   draw:{amount:number};
   stunEnemy:{amount:number};
@@ -27,8 +25,6 @@ export interface LoyaltyEffectSpecs {
   damageOpponent:{amount:number};
   draw:{amount:number};
   recoverCreature:{amount:number};
-  raiseSacrifice:{amount:number}; // historical alias
-  summonSignature:{amount:number}; // historical alias
   summon:{cards:Card[];completeRitual?:boolean};
 }
 export interface DeathEffectSpecs {
@@ -41,3 +37,4 @@ export type EntryEffect=Variant<EntryEffectSpecs>;
 export type TechniqueEffect=Variant<TechniqueEffectSpecs>;
 export type LoyaltyEffect={delta:number}&Variant<LoyaltyEffectSpecs>;
 export type DeathEffect=Variant<DeathEffectSpecs>;
+
