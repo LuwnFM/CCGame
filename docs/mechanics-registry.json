@@ -1,0 +1,750 @@
+{
+  "schemaVersion": 1,
+  "version": "0.9.15-alpha",
+  "note": "Inventory of server registrations, not complete rules or UI coverage; legacy/manual means UI must be audited",
+  "mechanics": [
+    {
+      "kind": "bind",
+      "type": "effect",
+      "channels": [
+        "technique"
+      ],
+      "params": [
+        "amount"
+      ],
+      "targetRules": "see handler and rules",
+      "timing": [
+        "technique"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Сковывание",
+      "en": "bind",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    },
+    {
+      "kind": "cleanse",
+      "type": "effect",
+      "channels": [
+        "technique"
+      ],
+      "params": [
+        "amount"
+      ],
+      "targetRules": "see handler and rules",
+      "timing": [
+        "technique"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Очищение",
+      "en": "cleanse",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    },
+    {
+      "kind": "damageAllCreatures",
+      "type": "effect",
+      "channels": [
+        "death"
+      ],
+      "params": [
+        "amount"
+      ],
+      "targetRules": "see handler and rules",
+      "timing": [
+        "death"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Урон всем существам",
+      "en": "damageAllCreatures",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    },
+    {
+      "kind": "damageController",
+      "type": "effect",
+      "channels": [
+        "death"
+      ],
+      "params": [
+        "amount"
+      ],
+      "targetRules": "see handler and rules",
+      "timing": [
+        "death"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Урон владельцу",
+      "en": "damageController",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    },
+    {
+      "kind": "damageOpponent",
+      "type": "effect",
+      "channels": [
+        "technique",
+        "loyalty",
+        "death"
+      ],
+      "params": [
+        "amount"
+      ],
+      "targetRules": "see handler and rules",
+      "timing": [
+        "technique",
+        "loyalty",
+        "death"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Урон противнику",
+      "en": "damageOpponent",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    },
+    {
+      "kind": "draw",
+      "type": "effect",
+      "channels": [
+        "entry",
+        "technique",
+        "loyalty"
+      ],
+      "params": [
+        "amount"
+      ],
+      "targetRules": "see handler and rules",
+      "timing": [
+        "entry",
+        "technique",
+        "loyalty"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Добор",
+      "en": "draw",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    },
+    {
+      "kind": "healRuler",
+      "type": "effect",
+      "channels": [
+        "entry",
+        "technique",
+        "loyalty"
+      ],
+      "params": [
+        "amount"
+      ],
+      "targetRules": "see handler and rules",
+      "timing": [
+        "entry",
+        "technique",
+        "loyalty"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Лечение Владетеля",
+      "en": "healRuler",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    },
+    {
+      "kind": "raiseSacrifice",
+      "type": "effect",
+      "channels": [
+        "loyalty"
+      ],
+      "params": [
+        "amount"
+      ],
+      "targetRules": "see handler and rules",
+      "timing": [
+        "loyalty"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Ритуальный призыв (адаптер)",
+      "en": "raiseSacrifice",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": true
+    },
+    {
+      "kind": "reanimate",
+      "type": "effect",
+      "channels": [
+        "technique"
+      ],
+      "params": [
+        "amount"
+      ],
+      "targetRules": "see handler and rules",
+      "timing": [
+        "technique"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Воскрешение",
+      "en": "reanimate",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    },
+    {
+      "kind": "recoverCreature",
+      "type": "effect",
+      "channels": [
+        "loyalty"
+      ],
+      "params": [
+        "amount"
+      ],
+      "targetRules": "see handler and rules",
+      "timing": [
+        "loyalty"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Возврат существа",
+      "en": "recoverCreature",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    },
+    {
+      "kind": "silence",
+      "type": "effect",
+      "channels": [
+        "technique"
+      ],
+      "params": [
+        "amount"
+      ],
+      "targetRules": "see handler and rules",
+      "timing": [
+        "technique"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Немота",
+      "en": "silence",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    },
+    {
+      "kind": "stasisEnemy",
+      "type": "effect",
+      "channels": [
+        "entry"
+      ],
+      "params": [
+        "amount"
+      ],
+      "targetRules": "see handler and rules",
+      "timing": [
+        "entry"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Стазис",
+      "en": "stasisEnemy",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    },
+    {
+      "kind": "stunEnemy",
+      "type": "effect",
+      "channels": [
+        "entry"
+      ],
+      "params": [
+        "amount"
+      ],
+      "targetRules": "see handler and rules",
+      "timing": [
+        "entry"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Ошеломление",
+      "en": "stunEnemy",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    },
+    {
+      "kind": "summon",
+      "type": "effect",
+      "channels": [
+        "entry",
+        "loyalty"
+      ],
+      "params": [
+        "cards"
+      ],
+      "targetRules": "see handler and rules",
+      "timing": [
+        "entry",
+        "loyalty"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Призыв",
+      "en": "summon",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    },
+    {
+      "kind": "summonBonePair",
+      "type": "effect",
+      "channels": [
+        "entry"
+      ],
+      "params": [
+        "amount"
+      ],
+      "targetRules": "see handler and rules",
+      "timing": [
+        "entry"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Призыв костей (адаптер)",
+      "en": "summonBonePair",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": true
+    },
+    {
+      "kind": "summonSignature",
+      "type": "effect",
+      "channels": [
+        "loyalty"
+      ],
+      "params": [
+        "amount"
+      ],
+      "targetRules": "see handler and rules",
+      "timing": [
+        "loyalty"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Именной призыв (адаптер)",
+      "en": "summonSignature",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": true
+    },
+    {
+      "kind": "summonSkeleton",
+      "type": "effect",
+      "channels": [
+        "entry"
+      ],
+      "params": [
+        "amount"
+      ],
+      "targetRules": "see handler and rules",
+      "timing": [
+        "entry"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Призыв скелета (адаптер)",
+      "en": "summonSkeleton",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": true
+    },
+    {
+      "kind": "ward",
+      "type": "effect",
+      "channels": [
+        "technique"
+      ],
+      "params": [
+        "amount"
+      ],
+      "targetRules": "see handler and rules",
+      "timing": [
+        "technique"
+      ],
+      "implemented": false,
+      "ui": "blocked",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Оберег",
+      "en": "ward",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    },
+    {
+      "kind": "auraAttack",
+      "type": "trait",
+      "channels": [],
+      "params": [
+        "auraAttack"
+      ],
+      "targetRules": "permanent",
+      "timing": [
+        "continuous/combat"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Аура атаки",
+      "en": "auraAttack",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    },
+    {
+      "kind": "cannotAttack",
+      "type": "trait",
+      "channels": [],
+      "params": [
+        "cannotAttack"
+      ],
+      "targetRules": "permanent",
+      "timing": [
+        "continuous/combat"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Не может атаковать",
+      "en": "cannotAttack",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    },
+    {
+      "kind": "extraAttacks",
+      "type": "trait",
+      "channels": [],
+      "params": [
+        "extraAttacks"
+      ],
+      "targetRules": "permanent",
+      "timing": [
+        "continuous/combat"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Ещё удар!",
+      "en": "extraAttacks",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    },
+    {
+      "kind": "firstStrike",
+      "type": "trait",
+      "channels": [],
+      "params": [
+        "firstStrike"
+      ],
+      "targetRules": "permanent",
+      "timing": [
+        "continuous/combat"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Первый удар",
+      "en": "firstStrike",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    },
+    {
+      "kind": "flying",
+      "type": "trait",
+      "channels": [],
+      "params": [
+        "flying"
+      ],
+      "targetRules": "permanent",
+      "timing": [
+        "continuous/combat"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Полёт",
+      "en": "flying",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    },
+    {
+      "kind": "guard",
+      "type": "trait",
+      "channels": [],
+      "params": [
+        "guard"
+      ],
+      "targetRules": "permanent",
+      "timing": [
+        "continuous/combat"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Страж",
+      "en": "guard",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    },
+    {
+      "kind": "haste",
+      "type": "trait",
+      "channels": [],
+      "params": [
+        "haste"
+      ],
+      "targetRules": "permanent",
+      "timing": [
+        "continuous/combat"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Мгновенная атака",
+      "en": "haste",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    },
+    {
+      "kind": "lifesteal",
+      "type": "trait",
+      "channels": [],
+      "params": [
+        "lifesteal"
+      ],
+      "targetRules": "permanent",
+      "timing": [
+        "continuous/combat"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Похищение жизни",
+      "en": "lifesteal",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    },
+    {
+      "kind": "majestic",
+      "type": "trait",
+      "channels": [],
+      "params": [
+        "majestic"
+      ],
+      "targetRules": "permanent",
+      "timing": [
+        "continuous/combat"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Величественный",
+      "en": "majestic",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    },
+    {
+      "kind": "piercing",
+      "type": "trait",
+      "channels": [],
+      "params": [
+        "piercing"
+      ],
+      "targetRules": "permanent",
+      "timing": [
+        "continuous/combat"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Пробивание",
+      "en": "piercing",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    },
+    {
+      "kind": "poisonHit",
+      "type": "trait",
+      "channels": [],
+      "params": [
+        "poisonHit"
+      ],
+      "targetRules": "permanent",
+      "timing": [
+        "continuous/combat"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Отрава",
+      "en": "poisonHit",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    },
+    {
+      "kind": "sacrifice",
+      "type": "trait",
+      "channels": [],
+      "params": [
+        "sacrifice"
+      ],
+      "targetRules": "permanent",
+      "timing": [
+        "continuous/combat"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Жертва",
+      "en": "sacrifice",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    },
+    {
+      "kind": "shield",
+      "type": "trait",
+      "channels": [],
+      "params": [
+        "shield"
+      ],
+      "targetRules": "permanent",
+      "timing": [
+        "continuous/combat"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Щит",
+      "en": "shield",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    },
+    {
+      "kind": "stealth",
+      "type": "trait",
+      "channels": [],
+      "params": [
+        "stealth"
+      ],
+      "targetRules": "permanent",
+      "timing": [
+        "continuous/combat"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Скрытность",
+      "en": "stealth",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    },
+    {
+      "kind": "zeal",
+      "type": "trait",
+      "channels": [],
+      "params": [
+        "zeal"
+      ],
+      "targetRules": "permanent",
+      "timing": [
+        "continuous/combat"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "mechanics-modularity"
+      ],
+      "ru": "Рвение",
+      "en": "zeal",
+      "introducedIn": "<=0.9.15-alpha",
+      "deprecatedAlias": false
+    }
+  ]
+}
