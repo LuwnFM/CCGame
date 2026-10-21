@@ -44,6 +44,9 @@ test('registration, permanent ID, case-insensitive login, rename and feedback',a
     assert.equal(relog.body.account.id,first.account.id);
     assert.equal((await request('/api/feedback',first.token,{category:'bug',text:'Проверка ошибки в игре'})).status,201);
     assert.equal((await request('/api/chat',first.token,{text:'Привет всем'})).status,201);
+    const single=await request('/api/lobby',other.token);
+    assert.equal(single.body.online,1);
+    await request('/api/lobby',first.token);
     const lobby=await request('/api/lobby',other.token);
     assert.equal(lobby.body.online,2);
     assert.equal(lobby.body.chat[0].accountId,first.account.id);
