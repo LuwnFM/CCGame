@@ -139,6 +139,7 @@ function traitDescriptions(card) {
     ['stealth','Скрытность: Существо нельзя выбрать целью атаки'],
     ['haste','Мгновенная атака: может атаковать в ход выхода'],
     ['zeal','Рвение: может сразу атаковать Существо'],
+    ['untiring','Неутомимость: не истощается при атаке, но не получает дополнительных атак'],
     ['sacrifice','Жертва: подходит для ритуального принесения в жертву'],
     ['majestic','Величественный: нельзя вытеснить из зоны']];
   const result=traits.filter(([k])=>card[k]).map(([,txt])=>txt);
@@ -183,7 +184,7 @@ function cardButton(card, label, onClick, disabled = false, active = false, perm
   element.append(textElement('small',label));
   const flags = [['unique','Уникальная'],['guard','Страж'],['flying','Полёт'],['firstStrike','Первый удар'],
     ['piercing','Пробивание'],['lifesteal','Похищение жизни'],['stealth','Скрытность'],['majestic','Величественный'],
-    ['sacrifice','Жертва'],['haste','Мгновенная атака'],['zeal','Рвение']]
+    ['sacrifice','Жертва'],['haste','Мгновенная атака'],['zeal','Рвение'],['untiring','Неутомимость']]
     .filter(([flag])=>card[flag]).map(([,name])=>name);
   if(card.ritual)flags.push('Ритуал '+card.ritual.threshold);
   if(card.poisonHit)flags.push('Отрава '+card.poisonHit.strength+'/'+card.poisonHit.ticks);
