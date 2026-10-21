@@ -103,6 +103,7 @@ try {
   }, code);
   assert.deepEqual(visibility, { own: true, enemyHidden: true });
   await a.locator('#hand .card').filter({ hasText: /владение/i }).first().click();
+  await a.locator('#domainDetails summary').click();
   await a.locator('#myDomains button').first().waitFor({ state: 'visible' });
   await a.locator('#myDomains button').first().click();
   await a.waitForFunction(() => document.querySelector('#myInfo')?.textContent.includes('red:1'));
@@ -112,6 +113,7 @@ try {
     return button && !button.disabled && !document.querySelector('#match').classList.contains('hidden');
   }, null, { timeout: 12000 });
   await b.locator('#hand .card').filter({ hasText: /владение/i }).first().click();
+  await b.locator('#domainDetails summary').click();
   await b.locator('#myDomains button').first().waitFor({ state: 'visible' });
   // Inject a battle-ready server state to verify the entire client -> command -> server -> board path.
   // The same browser sessions and authenticated room are preserved.
@@ -129,6 +131,7 @@ try {
   await a.locator('#hero').click();
   await b.waitForFunction(() => !document.querySelector('#skip').disabled, null, {timeout:15000});
   await b.locator('#myBoard .card').first().click();
+  await b.locator('#confirmDefense').click();
   await a.waitForFunction(() => document.querySelector('#myBoard .card')?.textContent.includes('4/3'), null, {timeout:15000});
   const finalRow = app.db.prepare('SELECT game FROM rooms WHERE code=?').get(code);
   const afterCombat = JSON.parse(finalRow.game);
