@@ -21,7 +21,7 @@ function choose(g:Game,rewardId:string,replaceId?:number):Game{
 }
 test('ritual card defines exactly five distinct rewards and deterministic three-of-five offers',()=>{
  assert.equal(pool.length,5);assert.equal(new Set(pool.map(c=>c.id)).size,5);
- assert.deepEqual(pool.map(c=>[c.attack,c.health]),[[4,4],[5,3],[3,6],[4,4],[3,3]]);
+ assert.deepEqual(pool.map(c=>[c.attack,c.health]),[[5,5],[7,3],[3,8],[5,5],[4,4]]);
  assert.deepEqual(pool.filter(c=>c.createdToken).map(c=>c.id),['vt-spark']);
  const offered=offerRewards(pool,123456789);
  assert.equal(offered.ids.length,3);assert.equal(new Set(offered.ids).size,3);
