@@ -49,19 +49,34 @@ test('starter catalog covers the implemented card mechanics and two loyalty choi
   }
   for(const kind of ['cleanse','silence','bind'])
     assert.ok(Object.values(decks).some(cards=>cards.some(card=>card.techniqueEffect?.kind===kind)),kind);
-  assert.equal(testDeck('blue').filter(card=>card.name==='Небесный дуэлянт' && card.flying && card.extraAttacks===1).length,2);
+  assert.equal(testDeck('blue').filter(card=>card.name==='Небесный дуэлянт' && card.flying && !card.extraAttacks).length,2);
+  assert.equal(testDeck('blue').filter(card=>card.name==='Палубный дуэлянт' && !card.flying && card.extraAttacks===1).length,2);
 });
-test('blue Flying creature with Ещё удар! (1) can attack twice in one turn',()=>{
-  const card=testDeck('blue').find(card=>card.name==='Небесный дуэлянт')!;
+test('blue Ещё удар! (1) creature can attack twice in one turn',()=>{
+  const card=testDeck('blue').find(card=>card.name==='Палубный дуэлянт')!;
   let g=step(initialGame(player(),player()),{type:'startTurn',actor:0},'blue-start');
   g.players[0].main.push({objectId:1,card,exhausted:false,damage:0,shield:0,enteredTurn:0,interceptions:0,attacksMade:0});
   for(let i=0;i<2;i++){
     g=step(g,{type:'attack',actor:0,attackerId:1,target:{kind:'player'}},'blue-attack-'+i);
     g=step(g,{type:'intercept',actor:1,interceptorId:null},'blue-defend-'+i);
   }
-  assert.equal(g.players[1].hp,26);
+  assert.equal(g.players[1].hp,22);
   assert.equal(g.players[0].main[0].exhausted,true);
   assert.throws(()=>step(g,{type:'attack',actor:0,attackerId:1,target:{kind:'player'}},'blue-third'),/не готов/);
+});
+test('blue Flying attacker requires a Flying interceptor',()=>{
+  const deck=testDeck('blue');
+  const flyer=deck.find(card=>card.name==='Небесный дуэлянт')!;
+  const guard=deck.find(card=>card.name==='Капитан флотилии')!;
+  let g=step(initialGame(player(),player()),{type:'startTurn',actor:0},'fly-start');
+  g.players[0].main.push({objectId:1,card:flyer,exhausted:false,damage:0,shield:0,enteredTurn:0,interceptions:0});
+  g.players[1].main.push({objectId:2,card:{...guard,flying:false},exhausted:false,damage:0,shield:0,enteredTurn:0,interceptions:0});
+  g=step(g,{type:'attack',actor:0,attackerId:1,target:{kind:'player'}},'fly-attack');
+  assert.throws(()=>step(g,{type:'intercept',actor:1,interceptorId:2},'ground-block'),/Полёт/);
+  g.players[1].main[0].card=guard;
+  g=step(g,{type:'intercept',actor:1,interceptorId:2},'flying-block');
+  assert.equal(g.players[1].hp,30);
+  assert.equal(g.players[1].main[0].interceptions,1);
 });
 test('every starter Legend offers balanced +1 and -2 choices, exclusive each turn',()=>{
   const fallen:Card={id:'fallen',name:'Павший страж',kind:'creature',attack:2,health:2};
