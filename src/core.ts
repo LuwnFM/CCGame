@@ -5,6 +5,7 @@ import type {RitualEffect} from './ritual.ts';
 import {executeCommand} from './mechanics/command-registry.ts';
 import {emptyEnergy} from './mechanics/energy.ts';
 import {leaveCard} from './mechanics/zones.ts';
+import {emitGameEvent} from './mechanics/events.ts';
 import {EffectLimitError,MAX_EFFECT_OPERATIONS} from './mechanics/limits.ts';
 export {MAX_EFFECT_OPERATIONS} from './mechanics/limits.ts';
 export {validateDeck} from './mechanics/deck-rules.ts';
@@ -125,6 +126,7 @@ export function apply(game: Game, command: Command): Game {
   if ((next.operationsUsed = (next.operationsUsed ?? 0) + 1) > MAX_EFFECT_OPERATIONS)
     throw new EffectLimitError('Превышен бюджет операций за ход; матч приостановлен');
   executeCommand(next,command);
+  emitGameEvent(next,{type:'commandApplied',owner:command.actor,commandType:command.type});
   
   } catch (error) {
     if (!(error instanceof EffectLimitError)) throw error;
