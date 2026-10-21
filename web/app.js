@@ -73,6 +73,7 @@ function textElement(tag, value, className = '') {
 function initials(name) { return [...name.replace(/[^\p{L}\p{N}]/gu,'')].slice(0,2).join('').toUpperCase() || 'FW'; }
 function abilityText(ability) {
   if(!ability)return 'Пока нет активной способности';
+  if(ability.kind==='summon')return (ability.delta>0?'+':'')+ability.delta+' лояльности · Призвать: '+ability.cards.map(c=>c.name+' '+c.attack+'/'+c.health).join(', ');
   const effects={healRuler:'Восстановить '+ability.amount+' HP Владетелю',
     damageOpponent:'Нанести '+ability.amount+' урона Владетелю противника',
     draw:'Взять карт: '+ability.amount, recoverCreature:'Вернуть Существо из сброса в руку',
@@ -81,6 +82,7 @@ function abilityText(ability) {
   return (ability.delta>0?'+':'')+ability.delta+' лояльности · '+(effects[ability.kind]||ability.kind);
 }
 function effectText(e) {
+  if(e.kind==='summon')return 'Призвать: '+e.cards.map(c=>c.name+' '+c.attack+'/'+c.health).join(', ');
   const descriptions={summonSkeleton:'Призвать скелетов 1/1 с Жертвой: ',stunEnemy:'Ошеломить Существо противника: ',stasisEnemy:'Наложить Стазис на Существо противника: ',healRuler:'Восстановить HP Владетелю: ',draw:'Взять карт: ',damageOpponent:'Урон Владетелю соперника: ',damageController:'Урон своему Владетелю: ',damageAllCreatures:'Урон всем Существам: ',reanimate:'Вернуть Существо из своего сброса на поле: ',cleanse:'Снять отрицательные статусы: ',silence:'Подавить способности: ',bind:'Сковывание: '};
   return (descriptions[e.kind]||e.kind+' ')+e.amount;
 }
@@ -403,7 +405,7 @@ function renderGame(ready) {
       const allowed=mine&&legend.lastActivatedTurn!==game.turn&&!legend.stunned&&!legend.stasis&&!legend.silenced&&
         legend.loyalty+ability.delta>=0&&
         (ability.kind!=='recoverCreature'||me.discard?.some(c=>c.kind==='creature'))&&
-        (!['raiseSacrifice','summonSignature'].includes(ability.kind)||me.auxiliary.length<4);
+        (!['raiseSacrifice','summonSignature','summon'].includes(ability.kind)||me.auxiliary.length<4);
       actions.append(button(abilityText(ability),()=>{
         if(ability.kind==='recoverCreature'){
           const picker=$('discardPicker');
