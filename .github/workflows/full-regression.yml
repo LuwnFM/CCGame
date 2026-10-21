@@ -1,8 +1,6 @@
 name: Firewell Full Regression
 on:
   workflow_dispatch:
-  push:
-    branches: ['codex/card-architecture-final-20261022']
 
 permissions:
   contents: read
