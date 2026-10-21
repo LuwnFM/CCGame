@@ -1,6 +1,9 @@
 import {test} from 'node:test';
 import {strict as assert} from 'node:assert';
 import {readFileSync,existsSync} from 'node:fs';
+// Initialize the game kernel and its static mechanic bootstrap before reading registries.
+// Importing effects-registry directly before core can trigger an ESM initialization cycle.
+import '../src/core.ts';
 import {CARD_CATALOG} from '../src/cards/catalog.ts';
 import {registeredEffects} from '../src/mechanics/effects-registry.ts';
 import {registeredTraits} from '../src/mechanics/trait-registry.ts';
