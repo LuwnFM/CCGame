@@ -17,7 +17,7 @@ export type Energy = Aspect | 'neutral';
 export type Cost = { colored: Partial<Record<Aspect, number>>; generic: number };
 export type RitualSpec = { color: Aspect | 'neutral'; threshold: number; duration: number; rewardPool: [Card, Card, Card, Card, Card] };
 export type DeathEffect = { kind: 'damageController' | 'damageOpponent' | 'damageAllCreatures'; amount: number };
-export type EntryEffect = { kind: 'summonSkeleton' | 'healRuler' | 'draw'; amount: number };
+export type EntryEffect = { kind: 'summonSkeleton' | 'healRuler' | 'draw' | 'stunEnemy'; amount: number };
 export type TechniqueEffect = { kind: 'reanimate' | 'damageOpponent' | 'healRuler' | 'draw' | 'cleanse' | 'ward' | 'silence' | 'bind'; amount: number };
 export type Card = {
   id: string;
@@ -43,6 +43,7 @@ export type Card = {
   poisonHit?: { strength: number; ticks: number };
   shield?: number;
   majestic?: boolean;
+  cannotAttack?: boolean;
   ritualReward?: boolean;
   createdToken?: boolean;
   sacrifice?: boolean;
@@ -52,8 +53,8 @@ export type Card = {
   secondChance?: EntryEffect;
   techniqueEffect?: TechniqueEffect;
   loyalty?: number;
-  loyaltyAbility?: { delta: number; kind: 'healRuler' | 'damageOpponent' | 'draw' | 'recoverCreature' | 'raiseSacrifice'; amount: number };
-  loyaltyAbilities?: readonly { delta: number; kind: 'healRuler' | 'damageOpponent' | 'draw' | 'recoverCreature' | 'raiseSacrifice'; amount: number }[];
+  loyaltyAbility?: { delta: number; kind: 'healRuler' | 'damageOpponent' | 'draw' | 'recoverCreature' | 'raiseSacrifice' | 'summonSignature'; amount: number };
+  loyaltyAbilities?: readonly { delta: number; kind: 'healRuler' | 'damageOpponent' | 'draw' | 'recoverCreature' | 'raiseSacrifice' | 'summonSignature'; amount: number }[];
   auraAttack?: number;
   lore?: { state: string; organization: string; summary?: string; note?: string };
   // Abilities need a separately specified resolver, never arbitrary card scripts.
@@ -87,7 +88,7 @@ export type Command =
   | { type: 'startTurn'; actor: PlayerId; expectedRevision: number; key: string }
   | { type: 'playDomain'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number }
   | { type: 'tapDomain'; actor: PlayerId; expectedRevision: number; key: string; objectId: number }
-  | { type: 'playCreature'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number; replaceId?: number; keepExisting?: boolean }
+  | { type: 'playCreature'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number; targetId?: number; replaceId?: number; keepExisting?: boolean }
   | { type: 'playTechnique'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number; targetId?: number; discardIndex?: number }
   | { type: 'rulerDraw'; actor: PlayerId; expectedRevision: number; key: string }
   | { type: 'playLegend'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number; keepExisting?: boolean }
@@ -206,7 +207,7 @@ export function apply(game: Game, command: Command): Game {
       p.energy = energy; p.hand.splice(command.handIndex, 1);
       zone.push({ objectId: next.nextObjectId++, card, exhausted: !card.haste && !card.zeal, damage: 0, shield: card.shield ?? 0,
         interceptions: 0, enteredTurn: next.turn, sacrifice: card.sacrifice, ritualReward: !!card.ritualReward, attacksMade: 0 });
-      enterTrigger(next,command.actor,card,'hand');
+      enterTrigger(next,command.actor,card,'hand',command.targetId);
       break;
     }
     case 'playTechnique': {
@@ -349,7 +350,7 @@ export function apply(game: Game, command: Command): Game {
     case 'attack': {
       requireRule(next.turn > 0 && next.phase === 'main', 'Недоступная фаза');
       const attacker = [...p.main, ...p.auxiliary].find(c => c.objectId === command.attackerId && c.card.kind === 'creature');
-      requireRule(attacker && !attacker.exhausted && !attacker.stunned && !attacker.stasis &&
+      requireRule(attacker && !attacker.card.cannotAttack && !attacker.exhausted && !attacker.stunned && !attacker.stasis &&
         (attacker.enteredTurn < next.turn || ability(attacker,'haste') || ability(attacker,'zeal') && command.target?.kind === 'creature'), 'Атакующий не готов');
       const defender = (1 - command.actor) as PlayerId;
       requireRule(command.target?.kind === 'player' || command.target?.kind === 'creature' || command.target?.kind === 'legend', 'Неверная цель');
