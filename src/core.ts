@@ -40,6 +40,7 @@ export type Card = {
   onDeath?: DeathEffect;
   loyalty?: number;
   loyaltyAbility?: { delta: number; kind: 'healRuler' | 'damageOpponent' | 'draw' | 'recoverCreature' | 'raiseSacrifice'; amount: number };
+  loyaltyAbilities?: readonly { delta: number; kind: 'healRuler' | 'damageOpponent' | 'draw' | 'recoverCreature' | 'raiseSacrifice'; amount: number }[];
   auraAttack?: number;
   lore?: { state: string; organization: string; note?: string };
   // Abilities need a separately specified resolver, never arbitrary card scripts.
@@ -75,7 +76,7 @@ export type Command =
   | { type: 'playCreature'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number; replaceId?: number }
   | { type: 'playTechnique'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number }
   | { type: 'playLegend'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number; keepExisting?: boolean }
-  | { type: 'activateLegend'; actor: PlayerId; expectedRevision: number; key: string; objectId: number; discardIndex?: number }
+  | { type: 'activateLegend'; actor: PlayerId; expectedRevision: number; key: string; objectId: number; discardIndex?: number; abilityIndex?: number }
   | { type: 'playArtifact'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number; replaceId?: number; keepExisting?: boolean }
   | { type: 'chooseRitual'; actor: PlayerId; expectedRevision: number; key: string; effectId: string; objectIds: number[] }
   | { type: 'chooseReward'; actor: PlayerId; expectedRevision: number; key: string; rewardId: string; replaceId?: number; keepExisting?: boolean }
@@ -124,6 +125,33 @@ export function validateDeck(deck: readonly Card[]): string[] {
 }
 function requireRule(ok: unknown, message: string): asserts ok {
   if (!ok) throw new RuleError(message);
+}
+/** Automatically exhaust the minimum necessary ready Domains when the energy pool is short.
+ * Colored requirements are reserved first; generic energy prefers neutral, then other colors.
+ * Changes occur only on apply()'s cloned game, so invalid actions never exhaust Domains.
+ */
+function payForCard(owner: Player, cost: Cost): Record<Energy, number> {
+  const available = { ...owner.energy };
+  const ready = owner.domains.filter(d => !d.exhausted && d.card.produces);
+  const tap = (energy: Energy) => {
+    const domain = ready.find(d => d.card.produces === energy && !d.exhausted);
+    if (!domain) return false;
+    domain.exhausted = true;
+    available[energy]++;
+    return true;
+  };
+  for (const color of energies.slice(0, 5) as Aspect[]) {
+    const required = cost.colored[color] ?? 0;
+    while (available[color] < required && tap(color)) {}
+    requireRule(available[color] >= required, 'Не хватает цветной Энергии');
+    available[color] -= required;
+  }
+  let total = energies.reduce((n,color)=>n+available[color],0);
+  for (const color of ['neutral', 'red', 'blue', 'green', 'gold', 'violet'] as Energy[]) {
+    while (total < cost.generic && tap(color)) total++;
+  }
+  requireRule(total >= cost.generic, 'Не хватает Энергии');
+  return pay(available, { colored: {}, generic: cost.generic });
 }
 function pay(pool: Record<Energy, number>, cost: Cost): Record<Energy, number> {
   const result = { ...pool };
@@ -208,7 +236,7 @@ export function apply(game: Game, command: Command): Game {
         zone.splice(zone.indexOf(replaced), 1);
         sendToDiscard(p, replaced.card, replaced.ritualReward);
       }
-      const energy = pay(p.energy, card.cost);
+      const energy = payForCard(p, card.cost);
       p.energy = energy; p.hand.splice(command.handIndex, 1);
       zone.push({ objectId: next.nextObjectId++, card, exhausted: !card.haste && !card.zeal, damage: 0, shield: card.shield ?? 0,
         interceptions: 0, enteredTurn: next.turn, sacrifice: card.sacrifice, ritualReward: !!card.ritualReward, attacksMade: 0 });
@@ -219,7 +247,7 @@ export function apply(game: Game, command: Command): Game {
       const card = p.hand[command.handIndex];
       requireRule(card?.kind === 'technique' && card.cost && card.ritual, 'Неверная Техника');
       requireRule(Number.isSafeInteger(card.ritual.duration) && card.ritual.duration > 0, 'Неверный срок Ритуала');
-      p.energy = pay(p.energy, card.cost);
+      p.energy = payForCard(p, card.cost);
       p.hand.splice(command.handIndex, 1);
       p.rituals.push({ id: `ritual-${next.nextObjectId++}`, color: card.ritual.color, threshold: card.ritual.threshold,
         rewardPool: card.ritual.rewardPool, requiresSource: false, remainingStarts: card.ritual.duration });
@@ -232,7 +260,7 @@ export function apply(game: Game, command: Command): Game {
       requireRule(card?.kind === 'legend' && card.cost && Number.isSafeInteger(card.loyalty) && card.loyalty! > 0, 'Неверная Легенда');
       const sameLegend = p.legends.find(legend => legend.card.name === card.name);
       requireRule(!sameLegend || typeof command.keepExisting === 'boolean', 'Выберите, какую одноимённую Легенду оставить');
-      p.energy = pay(p.energy, card.cost);
+      p.energy = payForCard(p, card.cost);
       p.hand.splice(command.handIndex, 1);
       if (sameLegend) {
         if (command.keepExisting) { sendToDiscard(p, card); break; }
@@ -246,7 +274,9 @@ export function apply(game: Game, command: Command): Game {
     case 'activateLegend': {
       requireRule(next.turn > 0 && next.phase === 'main', 'Недоступная фаза');
       const legend = p.legends.find(unit => unit.objectId === command.objectId);
-      const ability = legend?.card.loyaltyAbility;
+      const choices = legend?.card.loyaltyAbilities?.length ? legend.card.loyaltyAbilities : legend?.card.loyaltyAbility ? [legend.card.loyaltyAbility] : [];
+      const chosen = command.abilityIndex ?? (legend?.card.loyaltyAbilities?.length ? 1 : 0);
+      const ability = Number.isSafeInteger(chosen) && chosen >= 0 ? choices[chosen] : undefined;
       requireRule(legend && ability && legend.lastActivatedTurn !== next.turn && !legend.stunned && !legend.stasis, 'Способность Легенды недоступна');
       requireRule(Number.isSafeInteger(ability.delta) && Number.isSafeInteger(ability.amount) && ability.amount >= 0, 'Неверная способность');
       requireRule(legend.loyalty! + ability.delta >= 0, 'Не хватает Лояльности');
@@ -294,7 +324,7 @@ export function apply(game: Game, command: Command): Game {
         p.auxiliary.splice(p.auxiliary.indexOf(replaced), 1);
         sendToDiscard(p, replaced.card, replaced.ritualReward);
       }
-      p.energy = pay(p.energy, card.cost);
+      p.energy = payForCard(p, card.cost);
       p.hand.splice(command.handIndex, 1);
       if (sameItem) {
         if (command.keepExisting) { sendToDiscard(p, card); break; }
