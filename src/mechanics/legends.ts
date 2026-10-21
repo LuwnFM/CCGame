@@ -3,7 +3,6 @@ import {eligibleVictims} from '../ritual.ts';
 import {finishIfLethal} from './death-queue.ts';
 import {invokeEffect,registerEffect} from './effects-registry.ts';
 import {drawCards,summon,transferCard,departPermanent} from './zones.ts';
-import {SIGNATURE_TOKENS,CERA_SERVANT} from '../cards/tokens.ts';
 function requireRule(ok:unknown,message:string):asserts ok{if(!ok)throw new RuleError(message)}
 const number=(n:number)=>Number.isSafeInteger(n)&&n>=0&&n<=8;
 /** Legendary actions are validated once, then resolved through the same registry as card effects. */

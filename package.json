@@ -5,8 +5,12 @@
   "scripts": {
     "test": "node scripts/run-fast-tests.mjs",
     "start": "node --experimental-strip-types src/server.ts",
-    "test:balance": "node --experimental-strip-types --test test/simulation.test.ts",
-    "test:browser:all": "node --experimental-strip-types test/browser-e2e.mjs && node --experimental-strip-types test/browser-crossplatform.mjs"
+    "test:balance": "node scripts/sync-card-catalog.mjs && node --experimental-strip-types --test test/simulation.test.ts",
+    "test:browser:all": "node --experimental-strip-types test/browser-e2e.mjs && node --experimental-strip-types test/browser-crossplatform.mjs",
+    "cards:sync": "node scripts/sync-card-catalog.mjs",
+    "cards:check": "node scripts/sync-card-catalog.mjs --check",
+    "pretest": "npm run cards:sync",
+    "prestart": "npm run cards:sync"
   },
   "engines": {
     "node": ">=24"

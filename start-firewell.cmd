@@ -34,5 +34,11 @@ echo.
 echo Сервер и клиент: http://localhost:3000
 echo Для телефона используйте http://IP-компьютера:3000 в той же сети.
 echo Не закрывайте это окно во время игры.
+node scripts/sync-card-catalog.mjs
+if errorlevel 1 (
+  echo Ошибка каталога карт.
+  pause
+  exit /b 1
+)
 node --experimental-strip-types src/server.ts
 pause

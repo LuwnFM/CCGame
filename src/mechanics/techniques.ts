@@ -2,7 +2,6 @@ import {RuleError,type Card,type Game,type PlayerId} from '../core.ts';
 import {registerEffect,invokeEffect} from './effects-registry.ts';
 import {summon,drawCards,placePermanent,takeCard} from './zones.ts';
 import {emitGameEvent,onGameEvent} from './events.ts';
-import {SKELETON,BONE_BLADE,BONE_GUARD} from '../cards/tokens.ts';
 function requireRule(ok:unknown,message:string):asserts ok{if(!ok)throw new RuleError(message)}
 const numeric=(n:number,max:number)=>Number.isSafeInteger(n)&&n>=0&&n<=max;
 /** The entry/revival trigger is processed by the shared deterministic event queue. */
