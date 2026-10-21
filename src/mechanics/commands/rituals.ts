@@ -9,7 +9,7 @@ import {emptyEnergy,payForCard} from '../energy.ts';
 import {activateLegend} from '../legends.ts';
 import {enterTrigger,resolveTechnique} from '../techniques.ts';
 import {removePermanents,collectLethal,resolveDeaths,finishIfLethal} from '../death-queue.ts';
-import {drawCards,leaveCard,moveCard,takeCard,placePermanent,departPermanent,addCard} from '../zones.ts';
+import {drawCards,leaveCard,moveCard,takeCard,placePermanent,departPermanent,addCard,discardDetached} from '../zones.ts';
 import {emitGameEvent} from '../events.ts';
 import {advance} from '../turns.ts';
 registerCommand('chooseRitual',(next,command)=>{const p=next.players[command.actor];
@@ -24,7 +24,7 @@ registerCommand('chooseRitual',(next,command)=>{const p=next.players[command.act
       // Cera's one-card bonus is outside and AFTER the sacrifice death sequence.
       // It does not change the five possible reward cards or three offers.
       if (p.legends.some(unit => unit.card.id === 'violet-цера-ван-троуп' && !unit.stasis && !unit.stunned && !unit.silenced) && p.deck.length)
-        drawCards(p,1);
+        drawCards(p,1,next,command.actor);
       next.readyRituals = [];
       if (finishIfLethal(next)) return;
       next.pendingReward = { owner: command.actor, offeredIds: plan.offeredRewardIds, pool: [...ready.effect.rewardPool] as PendingReward['pool'] };
@@ -47,7 +47,7 @@ registerCommand('chooseReward',(next,command)=>{const p=next.players[command.act
       if (sameUnique) {
         requireRule(typeof command.keepExisting === 'boolean', 'Выберите, какую Уникальную оставить');
         if (command.keepExisting) {
-          sendToDiscard(p, reward, true);
+          discardDetached(next,command.actor,reward,true);
           next.pendingReward = null; next.phase = 'main';
           return;
         }
