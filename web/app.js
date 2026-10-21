@@ -54,6 +54,27 @@ function abilityText(ability) {
     raiseSacrifice:'Создать Жертву 2/2 во вспомогательной зоне'};
   return (ability.delta>0?'+':'')+ability.delta+' лояльности · '+(effects[ability.kind]||ability.kind);
 }
+function effectText(e) {
+  const descriptions={summonSkeleton:'Призвать скелетов 1/1 с Жертвой: ',healRuler:'Восстановить HP Владетелю: ',draw:'Взять карт: ',damageOpponent:'Урон Владетелю соперника: ',damageController:'Урон своему Владетелю: ',damageAllCreatures:'Урон всем Существам: ',reanimate:'Вернуть Существо из своего сброса на поле: ',cleanse:'Снять отрицательные статусы: ',silence:'Подавить способности: ',bind:'Сковывание: '};
+  return (descriptions[e.kind]||e.kind+' ')+e.amount;
+}
+function chooseCards(title,choices) {
+  $('choiceTitle').textContent=title;
+  $('choiceCards').replaceChildren(...choices.map(x=>cardButton(x.card,x.label,()=>{$('choiceDialog').close();x.choose()})));
+  if(!choices.length)$('choiceCards').append(textElement('p','Нет подходящих карт'));
+  $('choiceDialog').showModal();
+}
+$('choiceCancel').onclick=()=>$('choiceDialog').close();
+$('rulerDraw').onclick=()=>send({type:'rulerDraw'});
+function playTechnique(card,index,me,enemy) {
+  const e=card.techniqueEffect;
+  if(e?.kind==='reanimate') {
+    chooseCards('Вернуть Существо на поле',(me.discard||[]).flatMap((c,i)=>c.kind==='creature'?[{card:c,label:'Воскресить',choose:()=>send({type:'playTechnique',handIndex:index,discardIndex:i})}]:[]));
+  } else if(['cleanse','silence','bind'].includes(e?.kind)) {
+    const side=e.kind==='cleanse'?me:enemy;
+    chooseCards('Выбери цель Техники',[...side.main,...side.auxiliary,...side.legends].filter(p=>e.kind==='bind'?p.card.kind==='creature':true).map(p=>({card:p.card,label:cardLabel(p),choose:()=>send({type:'playTechnique',handIndex:index,targetId:p.objectId})})));
+  } else send({type:'playTechnique',handIndex:index});
+}
 function detailsText(card,p) {
   const bits=[];
   if(card.attack!==undefined&&card.health!==undefined)bits.push('Сила '+card.attack+' / Здоровье '+card.health);
@@ -82,7 +103,10 @@ function traitDescriptions(card) {
   if(card.poisonHit)result.push('Отрава '+card.poisonHit.strength+' / '+card.poisonHit.ticks);
   if(card.extraAttacks)result.push('Дополнительные атаки: '+card.extraAttacks);
   if(card.ritual)result.push('Ритуал: нужно Жертв '+card.ritual.threshold);
-  if(card.onDeath)result.push('После гибели: '+card.onDeath.kind+' ('+card.onDeath.amount+')');
+  if(card.onDeath)result.push('Последнее слово: '+effectText(card.onDeath));
+  if(card.onEntry)result.push('Вступление: '+effectText(card.onEntry));
+  if(card.secondChance)result.push('Второй шанс: '+effectText(card.secondChance));
+  if(card.techniqueEffect)result.push(effectText(card.techniqueEffect));
   if(card.loyaltyAbilities?.length)result.push(...card.loyaltyAbilities.map(abilityText));
   else if(card.loyaltyAbility)result.push(abilityText(card.loyaltyAbility));
   if(card.abilities?.length)result.push('Ещё не реализовано: '+card.abilities.join(', '));
@@ -248,7 +272,7 @@ function cardLabel(p) {
   return stats+(p.shield?' · Щит '+p.shield:'')+(p.exhausted?' · истощено':'');
 }
 function renderGame(ready) {
-  if (hostedClient && game?.rulesVersion === '0.9.13-alpha' && !location.pathname.includes('/versions/0.9.13/')) {
+  if (game?.rulesVersion === '0.9.13-alpha' && !location.pathname.includes('/versions/0.9.13/')) {
     location.replace('/versions/0.9.13/index.html'); return;
   }
   $('roomLabel').textContent='Комната '+room;
@@ -260,6 +284,7 @@ function renderGame(ready) {
   }
   const seat=game.seat, me=game.players[seat], enemy=game.players[1-seat];
   const mine=game.active===seat&&game.phase==='main', defense=game.phase==='intercept'&&game.pendingAttack?.defender===seat;
+  $('rulerDraw').disabled=!mine||me.hp<=2||me.handCount>3||me.deckCount<2||me.lastRulerDrawTurn===game.turn;
   const attack=defense?game.pendingAttack:null;
   const incoming=attack?[...enemy.main,...enemy.auxiliary].find(p=>p.objectId===attack.attackerId):null;
   const attackKey=attack?game.turn+':'+attack.attackerId+':'+JSON.stringify(attack.target):null;
@@ -270,7 +295,7 @@ function renderGame(ready) {
   $('attackAlert').classList.toggle('hidden',!defense);
   $('myPlayarea').classList.toggle('under-attack',defense);
   $('attackDetails').textContent=defense?(incoming?.card.name||'Противник')+' атакует '+target:'';
-  $('attackAlert').querySelector('span:last-child').textContent=defenderChoice!==null?
+  $('attackHint').textContent=defenderChoice!==null?
     'Выбран защитник. Подтверди выбор или нажми на другое Существо.':
     'Нажми на своего доступного защитника. Для отказа нажми «Не защищать».';
   $('confirmDefense').classList.toggle('hidden',!defense||defenderChoice===null);
@@ -401,9 +426,10 @@ function renderGame(ready) {
   $('hand').replaceChildren(...(me.hand||[]).map((c,i)=>cardButton(c,kindName(c.kind)+(c.cost?' · '+(c.cost.generic+Object.values(c.cost.colored).reduce((a,b)=>a+b,0))+' энергии':''),
     ()=>{if(game.phase==='discard')send({type:'discard',handIndex:i});
       else if(c.kind==='legend'&&me.legends.some(p=>p.card.name===c.name))
-        send({type:'playLegend',handIndex:i,keepExisting:confirm('Оставить уже находящуюся на поле Легенду?')});
+        chooseCards('Какую Легенду оставить?',[{card:me.legends.find(p=>p.card.name===c.name).card,label:'Оставить на поле',choose:()=>send({type:'playLegend',handIndex:i,keepExisting:true})},{card:c,label:'Оставить новую',choose:()=>send({type:'playLegend',handIndex:i,keepExisting:false})}]);
       else if(c.kind==='artifact'&&me.auxiliary.some(p=>p.card.name===c.name))
-        send({type:'playArtifact',handIndex:i,keepExisting:confirm('Оставить уже находящийся на поле предмет?')});
+        chooseCards('Какой предмет оставить?',[{card:me.auxiliary.find(p=>p.card.name===c.name).card,label:'Оставить на поле',choose:()=>send({type:'playArtifact',handIndex:i,keepExisting:true})},{card:c,label:'Оставить новый',choose:()=>send({type:'playArtifact',handIndex:i,keepExisting:false})}]);
+      else if(c.kind==='technique')playTechnique(c,i,me,enemy);
       else if((c.kind==='artifact'||c.kind==='creature'&&c.createdToken)&&me.auxiliary.length>=4){selectedArtifactIndex=i;renderGame(ready)}
       else send({type:c.kind==='domain'?'playDomain':c.kind==='technique'?'playTechnique':c.kind==='legend'?'playLegend':c.kind==='artifact'?'playArtifact':'playCreature',handIndex:i})},
     !(mine||game.phase==='discard'&&game.active===seat))));
@@ -544,3 +570,4 @@ if(token)api('/api/me').then(async data=>{setAccount(data.account);await loadDat
 observeLocalization();
 setInterval(refresh,2500);setInterval(tick,1000);setInterval(updateChatCooldown,250);
 updateChatCooldown();
+

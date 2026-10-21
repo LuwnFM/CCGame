@@ -125,7 +125,7 @@ export function validateDeck(deck: readonly Card[]): string[] {
   if (new Set(deck.filter(c => c.kind === 'legend').map(c => c.name)).size > 3) issues.push('Не более трёх разных Легенд');
   const counts = new Map<string, number>();
   for (const c of deck) counts.set(c.name, (counts.get(c.name) ?? 0) + 1);
-  for (const c of deck) if (!(c.kind === 'domain' && c.basic) && (counts.get(c.name) ?? 0) > (c.unique || c.kind === 'legend' ? 1 : c.kind === 'creature' ? 2 : 3)) {
+  for (const c of deck) if (!(c.kind === 'domain' && c.basic) && (counts.get(c.name) ?? 0) > (c.unique || c.kind === 'legend' ? 1 : 3)) {
     issues.push(`Превышен лимит копий: ${c.name}`); counts.delete(c.name);
   }
   return issues;
@@ -643,3 +643,4 @@ function finishIfLethal(game: Game): boolean {
   game.phase = 'finished';
   return true;
 }
+

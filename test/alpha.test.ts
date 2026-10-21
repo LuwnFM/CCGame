@@ -23,12 +23,12 @@ test('all six alpha decks are legal, with a playable violet Technique', () => {
     assert.equal(cards.length, 70);
     assert.deepEqual(validateDeck(cards), []);
     assert.equal(cards.filter(c => c.kind === 'domain').length, 26);
-    assert.equal(cards.filter(c => c.kind === 'creature' && !c.guard && !c.flying && !c.firstStrike && !c.piercing && !c.lifesteal && !c.haste && !c.zeal && !c.extraAttacks && !c.stealth && !c.poisonHit && !c.shield && !c.sacrifice && !c.onDeath).length, 18);
+    assert.equal(cards.filter(c => c.kind === 'creature' && !c.guard && !c.flying && !c.firstStrike && !c.piercing && !c.lifesteal && !c.haste && !c.zeal && !c.extraAttacks && !c.stealth && !c.poisonHit && !c.shield && !c.sacrifice && !c.onDeath && !c.onEntry && !c.secondChance).length, 18);
     assert.equal(cards.filter(c => c.kind === 'legend').length, 2);
     assert.equal(cards.filter(c => c.kind === 'artifact' && c.unique).length, 1);
     assert.ok(cards.every(c => c.lore?.organization === archetype.organization));
   }
-  assert.equal(testDeck('violet').filter(card => card.kind === 'technique').length, 3);
+  assert.equal(testDeck('violet').filter(card => card.kind === 'technique' && card.ritual).length, 3);
   assert.ok(testDeck('violet').some(card => card.name === 'Колдрейк Шоу'));
   assert.ok(testDeck('violet').some(card => card.name === 'Драгнир и Иммельсторн'));
 });
@@ -257,3 +257,4 @@ test('Coldrake Shaw returns a creature from discard to hand, never free-plays it
   assert.equal(g.players[0].main.length,0);
   assert.equal(g.players[0].legends[0].loyalty,2);
 });
+

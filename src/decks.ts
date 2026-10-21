@@ -44,6 +44,23 @@ const themes: Record<ArchetypeId, Theme> = {
     legends: ['Верховный хранитель Данте','Мейстер Глерторул'], item:'Полевое знамя Ордена',
   },
 };
+// New starter identities keep the agreed 18/70 vanilla share and two-copy limit.
+const extraPlain: Record<ArchetypeId, string[]> = {
+ red:['Гонец горной стражи','Рабочий литейного двора','Караульный рудника'],
+ blue:['Сигнальщик причала','Такелажник флотилии','Смотритель ангара'],
+ green:['Собиратель трав','Суварский лесоруб','Сторож питомника'],
+ gold:['Вестовой короны','Кузнец Ивелтина','Дозорный бастиона'],
+ violet:['Смотритель крипты','Переписчик сокровищницы','Ключник Ван Троупов'],
+ neutral:['Гонец Хранителей','Снабженец утремера','Архивный смотритель'],
+};
+const extraEffects: Record<ArchetypeId, Unit[]> = {
+ red:[unit(['Последний дозорный',3,2,3,{onDeath:{kind:'damageOpponent',amount:1}}]),unit(['Снабженец горной стражи',4,3,3,{onEntry:{kind:'draw',amount:1}}])],
+ blue:[unit(['Летописец флотилии',3,2,2,{onEntry:{kind:'draw',amount:1}}]),unit(['Небесный завещатель',4,3,3,{flying:true,onDeath:{kind:'damageOpponent',amount:1}}])],
+ green:[unit(['Травница Кайров',3,2,3,{onEntry:{kind:'healRuler',amount:2}}]),unit(['Вернувшийся следопыт',4,3,4,{secondChance:{kind:'healRuler',amount:2}}])],
+ gold:[unit(['Госпитальер короны',3,2,3,{onEntry:{kind:'healRuler',amount:2}}]),unit(['Верный до конца',4,3,4,{guard:true,onDeath:{kind:'damageOpponent',amount:1}}])],
+ violet:[unit(['Ученик Церы',3,2,2,{onEntry:{kind:'summonSkeleton',amount:1},sacrifice:true}]),unit(['Некромант родовой крипты',4,3,3,{secondChance:{kind:'summonSkeleton',amount:2},sacrifice:true}])],
+ neutral:[unit(['Летописец Ордена',3,2,2,{onEntry:{kind:'draw',amount:1}}]),unit(['Последний часовой',4,3,4,{onDeath:{kind:'damageOpponent',amount:1}}])],
+};
 function unit(entry: (string | number | Partial<Card>)[]): Unit {
   const [name, cost, attack, health, traits] = entry;
   return { name: name as string, cost: cost as number, attack: attack as number, health: health as number, traits: traits as Partial<Card> | undefined };
@@ -91,8 +108,10 @@ export function testDeck(id: ArchetypeId): Card[] {
         ?'Слуга культа Ван Троупов: нежить, культ или реликтовая механика; игровая интерпретация.'
         :'Обитатель владений Ван Троупов; игровое имя, не подтверждённое в вики.'}:lore,
   })));
-  const vanilla = creatures(theme.plain, Array(6).fill(3));
-  const effects = creatures(theme.effects, theme.effects.map((_,i)=>i===theme.effects.length-1?2:3));
+  const plain = [...theme.plain,...extraPlain[id].map((name,i)=>({...theme.plain[i],name}))];
+  const vanilla = creatures(plain, plain.map(()=>2));
+  const effectUnits = [...theme.effects,...extraEffects[id]];
+  const effects = creatures(effectUnits, effectUnits.map(()=>2));
   const legends: Card[] = theme.legends.map((name,i)=>({id:identifier(id,name),name,
     ...(id==='violet'?{nameEn:i===0?'Coldrake Shaw':'Cera Van Troupe'}:{}),
     kind:'legend',aspects:id==='neutral'?[]:[id],
@@ -115,7 +134,13 @@ export function testDeck(id: ArchetypeId): Card[] {
     unique:true,cost:cost(id,3),auraAttack:1,lore};
   const techniques: Card[] = id==='violet' ? Array.from({length:3},():Card=>({id:'vt-ritual',name:'Призыв забытой реликвии',kind:'technique',aspects:['violet'],
     cost:cost('violet',3),ritual:{color:'violet',threshold:3,duration:2,rewardPool:rewardPool()},lore})) : [];
-  const deck = [...domains,...vanilla,...effects,...techniques,...legends,artifact];
+  const spellNames: Record<ArchetypeId,string> = {red:'Залп горной стражи',blue:'Донесение флотилии',green:'Настой Кайров',gold:'Помощь госпитальеров',violet:'Возвращение из крипты',neutral:'Полевое снабжение'};
+  const spellEffects: Record<ArchetypeId,NonNullable<Card['techniqueEffect']>> = {
+    red:{kind:'damageOpponent',amount:2},blue:{kind:'draw',amount:2},green:{kind:'healRuler',amount:4},
+    gold:{kind:'healRuler',amount:4},violet:{kind:'reanimate',amount:1},neutral:{kind:'draw',amount:2}};
+  const spells:Card[]=Array.from({length:id==='violet'?2:3},()=>({id:identifier(id,spellNames[id]),name:spellNames[id],
+    kind:'technique',aspects:id==='neutral'?[]:[id],cost:cost(id,id==='violet'?5:3),techniqueEffect:spellEffects[id],lore}));
+  const deck = [...domains,...vanilla,...effects,...techniques,...spells,...legends,artifact];
   const issues = validateDeck(deck);
   if (issues.length) throw new Error(`${id}: ${issues.join('; ')}`);
   return deck;
@@ -144,3 +169,4 @@ export const EXTRA_DOMAINS: readonly Card[] = (Object.keys(additionalNames) as A
     lore:{state:ARCHETYPES.find(a=>a.id===color)!.state,organization:ARCHETYPES.find(a=>a.id===color)!.organization,
       note:'Новое игровое название недвижимости для расширенного каталога; не заявлено каноническим объектом на карте мира.'},
   })));
+

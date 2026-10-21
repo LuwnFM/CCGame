@@ -5,7 +5,7 @@ import { gzipSync, gunzipSync } from 'node:zlib';
 import { DatabaseSync } from 'node:sqlite';
 import type { Command, Game } from './core.ts';
 const sha=(value:string|Buffer)=>createHash('sha256').update(value).digest('hex');
-const safe=new Set(['type','handIndex','objectId','discardIndex','keepExisting','indices','attackerId','target','interceptorId','effectId','objectIds','rewardId','replaceId']);
+const safe=new Set(['abilityIndex','targetId','type','handIndex','objectId','discardIndex','keepExisting','indices','attackerId','target','interceptorId','effectId','objectIds','rewardId','replaceId']);
 export class MatchHistory {
  private folder:string|null;
  private db:DatabaseSync;
@@ -77,3 +77,4 @@ export function analyzeArchive(file:string){
   commands:actions,actionsTotal:log.events.length,timeoutCount,turns:log.finalState.turn,
   hp:log.finalState.players.map((p:{hp:number})=>p.hp),sha256:sha(bytes),bytes:bytes.length};
 }
+

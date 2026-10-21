@@ -48,7 +48,7 @@ function timers(before: Game, after: Game, row: Room, now: number) {
   }
   return { deadline, turn, started, banks: JSON.stringify(banks) };
 }
-function timeoutCommand(game: Game): { command: Command; seed: number } {
+export function timeoutCommand(game: Game): { command: Command; seed: number } {
   let seed = game.seed ?? 1;
   const roll = (size: number) => { const r = nextRandom(seed, size); seed = r.seed; return r.value; };
   const common = { expectedRevision: game.revision, key: `timeout-${game.revision}` };
@@ -122,7 +122,7 @@ function view(game: Game, seat: PlayerId, row?: Room) {
     players: game.players.map((p, i) => ({ hp: p.hp, hand: i === seat ? p.hand : undefined,
       handCount: p.hand.length, deckCount: p.deck.length, discardCount: p.discard.length, discard: i === seat ? p.discard : undefined,
       erasedCount: p.erased.length, domains: p.domains, main: p.main, auxiliary: p.auxiliary, legends: p.legends,
-      energy: p.energy, domainsPlayed: p.domainsPlayed, rituals: p.rituals.map(r => ({ id: r.id, color: r.color, threshold: r.threshold, remainingStarts: r.remainingStarts })) }))
+      lastRulerDrawTurn: p.lastRulerDrawTurn, energy: p.energy, domainsPlayed: p.domainsPlayed, rituals: p.rituals.map(r => ({ id: r.id, color: r.color, threshold: r.threshold, remainingStarts: r.remainingStarts })) }))
   };
 }
 export function createApp(options: { databasePath: string; accessPassword: string; clientOrigin?: string }) {
@@ -165,6 +165,7 @@ export function createApp(options: { databasePath: string; accessPassword: strin
   const updateRoom = db.prepare('UPDATE rooms SET game=?, deadline=?, turn_deadline=?, intercept_started=?, intercept_banks=? WHERE code=?');
   function commitGame(code:string,row:Room,before:Game,next:Game,now:number,
     source:'player'|'timeout',command:Command){
+    if(next.revision<=before.revision)return;
     const timing=timers(before,next,row,now);
     updateRoom.run(JSON.stringify(next),timing.deadline,timing.turn,timing.started,timing.banks,code);
     if(next.revision>before.revision)history.record(code,source,command,before,next,now);
@@ -359,7 +360,7 @@ export function createApp(options: { databasePath: string; accessPassword: strin
       if (req.method === 'POST' && action === 'commands') {
         if (!row.guest) throw new RuleError('Ожидание второго игрока');
         const input = await body(req);
-        if (!input || typeof input !== 'object' || !['mulligan', 'playDomain', 'tapDomain', 'playCreature', 'playTechnique', 'playLegend', 'activateLegend', 'playArtifact', 'chooseRitual', 'chooseReward', 'attack', 'intercept', 'endTurn', 'discard'].includes(input.type))
+        if (!input || typeof input !== 'object' || !['rulerDraw', 'mulligan', 'playDomain', 'tapDomain', 'playCreature', 'playTechnique', 'playLegend', 'activateLegend', 'playArtifact', 'chooseRitual', 'chooseReward', 'attack', 'intercept', 'endTurn', 'discard'].includes(input.type))
           throw new RuleError('Недопустимая команда');
         db.exec('BEGIN IMMEDIATE');
         try {
@@ -387,3 +388,4 @@ if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).
   const port = Number(process.env.PORT ?? 3000);
   app.server.listen(port, process.env.FIREWELL_BIND ?? '127.0.0.1', () => process.stdout.write(`Firewell CCG: http://localhost:${port}\n`));
 }
+
