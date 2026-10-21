@@ -15,7 +15,7 @@ export default {
   "attack": 5,
   "health": 6,
   "guard": true,
-  "shield": 1,
+  "shield": 2,
   "lore": {
     "state": "Королевство Ивелтин",
     "organization": "Королевские рыцари",

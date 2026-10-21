@@ -13,7 +13,7 @@ export default {
     "generic": 1
   },
   "attack": 2,
-  "health": 3,
+  "health": 4,
   "guard": true,
   "lore": {
     "state": "Королевство Сувар",
