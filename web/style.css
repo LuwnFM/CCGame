@@ -76,6 +76,13 @@ button.domain-chip.spent{opacity:.4;text-decoration:line-through}
  #match>.top{position:sticky;top:0;z-index:3;padding:9px 12px}
  .attack-alert{position:sticky;top:90px;z-index:4;max-height:220px;overflow:auto}
 }
+@media(max-width:360px){
+ .board{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .board .card{min-height:92px;padding:8px}
+ .board .card b{font-size:.81rem;overflow-wrap:anywhere}
+ .board .card small{font-size:.72rem}
+ .slot-placeholder{min-height:26px}
+}
 
 /* API health is independent of player session */
 .connection-status{display:inline-flex;align-items:center;gap:7px;white-space:normal}
