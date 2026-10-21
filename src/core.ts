@@ -8,7 +8,7 @@ import { tickStatusesAtTurnStart } from './mechanics/statuses.ts';
 import { activateLegend } from './mechanics/legends.ts';
 import { enterTrigger, resolveTechnique } from './mechanics/techniques.ts';
 import { EffectLimitError, MAX_EFFECT_OPERATIONS, removePermanents, collectLethal, resolveDeaths, finishIfLethal } from './mechanics/death-queue.ts';
-import {drawCards,leaveCard,moveCard,takeCard,takePermanent,placePermanent} from './mechanics/zones.ts';
+import {drawCards,leaveCard,moveCard,takeCard,placePermanent} from './mechanics/zones.ts';
 import {emitGameEvent} from './mechanics/events.ts';
 export { MAX_EFFECT_OPERATIONS } from './mechanics/death-queue.ts';
 export { validateDeck } from './mechanics/deck-rules.ts';
@@ -360,7 +360,6 @@ export function apply(game: Game, command: Command): Game {
       attacker.exhausted = true; attacker.attacksMade = (attacker.attacksMade ?? 0) + 1;
       next.pendingAttack = { attackerId: attacker.objectId, target: command.target, defender };
       next.phase = 'intercept';
-      emitGameEvent(next,{type:'combatResolved',owner:command.actor,objectId:attacker.objectId});
       break;
     }
     case 'intercept': {
