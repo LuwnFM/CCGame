@@ -23,6 +23,7 @@ registerCommand('attack',(next,command)=>{const p=next.players[command.actor];
       requireRule(next.turn > 0 && next.phase === 'main', 'Недоступная фаза');
       const attacker = [...p.main, ...p.auxiliary].find(c => c.objectId === command.attackerId && c.card.kind === 'creature');
       requireRule(attacker && !isAttackProhibited(attacker) && !attacker.exhausted && !attacker.stunned && !attacker.stasis &&
+        (attacker.attacksMade??0)<1+(ability(attacker,'extraAttacks')??0) &&
         (attacker.enteredTurn < next.turn || hasImmediateAttack(attacker) || hasCreatureOnlyImmediateAttack(attacker,command.target?.kind)), 'Атакующий не готов');
       const defender = (1 - command.actor) as PlayerId;
       requireRule(command.target?.kind === 'player' || command.target?.kind === 'creature' || command.target?.kind === 'legend', 'Неверная цель');
@@ -31,7 +32,7 @@ registerCommand('attack',(next,command)=>{const p=next.players[command.actor];
       } else if (command.target.kind === 'legend') {
         requireRule(next.players[defender].legends.some(c => c.objectId === command.target.objectId), 'Легенда недоступна');
       }
-      attacker.exhausted = true; attacker.attacksMade = (attacker.attacksMade ?? 0) + 1;
+      attacker.exhausted = !ability(attacker,'untiring'); attacker.attacksMade = (attacker.attacksMade ?? 0) + 1;
       next.pendingAttack = { attackerId: attacker.objectId, target: command.target, defender };
       next.phase = 'intercept';
       return;

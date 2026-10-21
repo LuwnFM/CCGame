@@ -36,6 +36,7 @@ export interface Card {
   haste?: boolean;
   zeal?: boolean;
   extraAttacks?: number;
+  untiring?: boolean;
   stealth?: boolean;
   poisonHit?: { strength: number; ticks: number };
   shield?: number;
