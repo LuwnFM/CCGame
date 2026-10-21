@@ -63,7 +63,16 @@ test('288 seeded matches exercise every ordered starter pairing and preserve fie
             if(!type)continue;
             try {
               const discardIndex=g.players[actor].discard.findIndex(c=>c.kind==='creature');
-              const next=step(g,{type,actor,handIndex:index,...(hand[index].techniqueEffect?.kind==='reanimate'?{discardIndex}: {})},serial++);
+              const effect=hand[index].techniqueEffect?.kind;
+              const targetSide=effect==='cleanse'?g.players[actor]:g.players[enemy];
+              const target=effect==='cleanse'
+                ? [...targetSide.main,...targetSide.auxiliary].find(x=>x.poison||x.stasis||x.stunned||x.silenced)
+                : ['silence','bind'].includes(effect||'')
+                  ? [...targetSide.main,...targetSide.auxiliary].find(x=>x.card.kind==='creature'&&!x.stasis&&!x.silenced)
+                  : undefined;
+              if(['cleanse','silence','bind'].includes(effect||'')&&!target)continue;
+              const next=step(g,{type,actor,handIndex:index,
+                ...(effect==='reanimate'?{discardIndex}: {}),...(target?{targetId:target.objectId}:{})},serial++);
               g=next;played=true;
               if(kind==='legend')legends++;if(kind==='artifact')artifacts++;
               break;
@@ -99,4 +108,5 @@ test('288 seeded matches exercise every ordered starter pairing and preserve fie
     `coverage: combats=${combat} legends=${legends} artifacts=${artifacts} actions=${actions}`);
   console.log(`288 simulated matches: ${actions} operations, ${combat} combats, ${legends} legends, ${artifacts} artifacts, ${rituals} rituals`);
 });
+
 

@@ -47,6 +47,8 @@ test('starter catalog covers the implemented card mechanics and two loyalty choi
     for(const legend of cards.filter(card=>card.kind==='legend'))
       assert.deepEqual(legend.loyaltyAbilities?.map(choice=>Math.sign(choice.delta)),[1,-1]);
   }
+  for(const kind of ['cleanse','silence','bind'])
+    assert.ok(Object.values(decks).some(cards=>cards.some(card=>card.techniqueEffect?.kind===kind)),kind);
 });
 test('First Strike prevents retaliation, and Poison pauses for Stasis then resumes', () => {
   let g = step(initialGame(player(),player()),{type:'startTurn',actor:0},'start');

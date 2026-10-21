@@ -157,9 +157,17 @@ export function testDeck(id: ArchetypeId): Card[] {
   const spells:Card[]=Array.from({length:2},()=>({id:identifier(id,spellNames[id]),name:spellNames[id],
     kind:'technique',aspects:id==='neutral'?[]:[id],cost:cost(id,id==='violet'?5:3),techniqueEffect:spellEffects[id],
     lore:{...lore,summary:`${spellNames[id]} помогает ${archetype.organization} переломить ход боя.`}}));
-  const finalSpell:Card = {id:identifier(id,spellNames[id]+' резервы'),name:spellNames[id]+' · Резервы',
-    kind:'technique',aspects:id==='neutral'?[]:[id],cost:cost(id,id==='violet'?5:3),techniqueEffect:spellEffects[id],
-    lore:{...lore,summary:`Резервный отряд ${archetype.organization} повторяет проверенный приём.`}};
+  const utility: Partial<Record<ArchetypeId,{name:string;effect:NonNullable<Card['techniqueEffect']>}>> = {
+    blue:{name:'Приказ тишины',effect:{kind:'silence',amount:1}},
+    green:{name:'Очищение рощи',effect:{kind:'cleanse',amount:1}},
+    gold:{name:'Приют госпитальеров',effect:{kind:'cleanse',amount:1}},
+    violet:{name:'Печать оков',effect:{kind:'bind',amount:2}},
+    neutral:{name:'Указ Хранителей',effect:{kind:'silence',amount:1}},
+  };
+  const utilityName=utility[id]?.name??spellNames[id]+' · Резервы';
+  const finalSpell:Card = {id:identifier(id,utilityName),name:utilityName,
+    kind:'technique',aspects:id==='neutral'?[]:[id],cost:cost(id,3),techniqueEffect:utility[id]?.effect??spellEffects[id],
+    lore:{...lore,summary:`${utilityName} помогает ${archetype.organization} удержать инициативу.`}};
   const deck = [...domains,...vanilla,...effects,...techniques,...spells,finalSpell,...legends,artifact];
   const issues = validateDeck(deck);
   if (issues.length) throw new Error(`${id}: ${issues.join('; ')}`);
