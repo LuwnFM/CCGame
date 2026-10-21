@@ -17,7 +17,7 @@ export type Energy = Aspect | 'neutral';
 export type Cost = { colored: Partial<Record<Aspect, number>>; generic: number };
 export type RitualSpec = { color: Aspect | 'neutral'; threshold: number; duration: number; rewardPool: [Card, Card, Card, Card, Card] };
 export type DeathEffect = { kind: 'damageController' | 'damageOpponent' | 'damageAllCreatures'; amount: number };
-export type EntryEffect = { kind: 'summonSkeleton' | 'healRuler' | 'draw' | 'stunEnemy'; amount: number };
+export type EntryEffect = { kind: 'summonSkeleton' | 'healRuler' | 'draw' | 'stunEnemy' | 'stasisEnemy'; amount: number };
 export type TechniqueEffect = { kind: 'reanimate' | 'damageOpponent' | 'healRuler' | 'draw' | 'cleanse' | 'ward' | 'silence' | 'bind'; amount: number };
 export type Card = {
   id: string;
