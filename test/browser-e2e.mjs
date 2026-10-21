@@ -177,6 +177,7 @@ try {
   assert.equal(await b.locator('#attackAlert #skip').isVisible(),true);
   assert.match(await b.locator('#attackDetails').innerText(),/Атакующий теста.*Владетел/);
   assert.equal(await b.locator('#enemyBoard .incoming-attacker').count(),1);
+  await b.screenshot({path:join(artifacts,'alpha-incoming-attack-mobile.png'),fullPage:true});
   await b.locator('#myBoard .card').first().click();
   checkpoint("defense selected");
   assert.equal(await b.locator('#confirmDefense').isVisible(),true);
@@ -233,6 +234,10 @@ try {
   assert.ok(matchWidth.body<=matchWidth.viewport+5,JSON.stringify(matchWidth));
   await b.screenshot({ path: join(artifacts, 'alpha-match-mobile.png'), fullPage: true });
   await a.screenshot({ path: join(artifacts, 'alpha-match-desktop.png'), fullPage: true });
+  await b.setViewportSize({width:320,height:700});
+  const smallWidth=await b.evaluate(()=>({body:document.documentElement.scrollWidth,viewport:innerWidth}));
+  assert.ok(smallWidth.body<=smallWidth.viewport+5,JSON.stringify(smallWidth));
+  await b.screenshot({path:join(artifacts,'alpha-match-small-phone.png'),fullPage:true});
   // Vercel-like static client on a separate origin: browser CORS and bearer auth.
   checkpoint("mobile reload, responsive match, screenshots passed");
   const staticSite=createServer(async (req,res)=>{
