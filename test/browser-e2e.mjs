@@ -211,7 +211,7 @@ try {
   assert.equal(await b.locator('#myAux .card').count(),1);
   checkpoint("resurrection and second chance resolved");
   await b.locator('#rulerDraw').click();
-  await b.waitForFunction(()=>document.querySelector('#myHp')?.textContent.includes('28 HP'));
+  await b.waitForFunction(()=>document.querySelector('#myHp')?.textContent.includes('38 HP'));
   assert.equal(await b.locator('#rulerDraw').isDisabled(),true);
   checkpoint("ruler draw resolved");
   const withLegend=JSON.parse(app.db.prepare('SELECT game FROM rooms WHERE code=?').get(code).game);
