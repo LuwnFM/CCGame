@@ -74,3 +74,11 @@ button.domain-chip.spent{opacity:.4;text-decoration:line-through}
  #match>.top{position:sticky;top:0;z-index:3;padding:9px 12px}
  .attack-alert{position:sticky;top:90px;z-index:4;max-height:220px;overflow:auto}
 }
+
+/* API health is independent of player session */
+.connection-status{display:inline-flex;align-items:center;gap:7px;white-space:normal}
+.connection-status:before{content:'';width:8px;height:8px;border-radius:50%;background:#a5a8b2;flex:none}
+.connection-status[data-state="online"]{color:#91dfad;border-color:#478a60;background:#1b352b}
+.connection-status[data-state="online"]:before{background:#69d28d}
+.connection-status[data-state="offline"]{color:#ffb0b6;border-color:#a94f5d;background:#412330}
+.connection-status[data-state="offline"]:before{background:#ff6573}
