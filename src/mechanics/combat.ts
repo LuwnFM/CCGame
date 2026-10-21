@@ -5,12 +5,11 @@ import {applyPoisonFromHit} from './traits/poisonHit.ts';
 import {interceptedOverflow} from './traits/piercing.ts';
 import {strikeOrder} from './traits/firstStrike.ts';
 import {alliedAuraBonus} from './traits/auraAttack.ts';
+import {absorbShield} from './traits/shield.ts';
 import type { Game, Permanent, Player, PlayerId } from '../core.ts';
 
 export function damage(target: Permanent, amount: number): number {
-  const absorbed = Math.min(target.shield, amount);
-  target.shield -= absorbed;
-  const dealt = Math.max(0, amount - absorbed);
+  const dealt = absorbShield(target,amount);
   target.damage += dealt;
   return dealt;
 }
@@ -21,10 +20,9 @@ export function totalAttack(owner: Player, creature: Permanent): number {
 function woundLegend(target: Permanent, raw: number): number {
   if (raw <= 0) return 0;
   const reduced = Math.max(1, Math.floor(raw / 2));
-  const absorbed = Math.min(target.shield, reduced);
-  target.shield -= absorbed;
-  const actual = Math.min(Math.max(0, target.loyalty ?? 0), reduced - absorbed);
-  target.loyalty! -= reduced - absorbed;
+  const actualDamage=absorbShield(target,reduced);
+  const actual = Math.min(Math.max(0, target.loyalty ?? 0), actualDamage);
+  target.loyalty! -= actualDamage;
   return actual;
 }
 
