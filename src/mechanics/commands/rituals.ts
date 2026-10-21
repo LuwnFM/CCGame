@@ -1,0 +1,82 @@
+import {registerCommand} from '../command-router.ts';
+import {requireRule} from './shared.ts';
+import {RuleError,sendToDiscard,type Game,type Command,type PendingReward,type ReadyRitual,type PlayerId} from '../../core.ts';
+import {mulligan} from '../../setup.ts';
+import {eligibleVictims,nextRandom,planRitual} from '../../ritual.ts';
+import {ability} from '../abilities.ts';
+import {resolveCombat} from '../combat.ts';
+import {emptyEnergy,payForCard} from '../energy.ts';
+import {activateLegend} from '../legends.ts';
+import {enterTrigger,resolveTechnique} from '../techniques.ts';
+import {removePermanents,collectLethal,resolveDeaths,finishIfLethal} from '../death-queue.ts';
+import {drawCards,leaveCard,moveCard,takeCard,placePermanent,departPermanent,addCard} from '../zones.ts';
+import {emitGameEvent} from '../events.ts';
+import {advance} from '../turns.ts';
+registerCommand('chooseRitual',(next,command)=>{const p=next.players[command.actor];
+      requireRule(next.phase === 'ritual' && next.readyRituals, 'Сейчас нет выбора Ритуала');
+      const ready = next.readyRituals.find(r => r.effect.id === command.effectId);
+      requireRule(ready, 'Ритуал не готов');
+      requireRule(Array.isArray(command.objectIds) && command.objectIds.every(id => ready.eligibleIds.includes(id)), 'Недопустимые Жертвы');
+      const plan = planRitual(p, ready.effect, command.objectIds, next.seed ?? 1);
+      next.seed = plan.seedAfter;
+      const dead = removePermanents(p, plan.chosenObjectIds);
+      resolveDeaths(next, dead.map(unit => ({ unit, owner: command.actor })));
+      // Cera's one-card bonus is outside and AFTER the sacrifice death sequence.
+      // It does not change the five possible reward cards or three offers.
+      if (p.legends.some(unit => unit.card.id === 'violet-цера-ван-троуп' && !unit.stasis && !unit.stunned && !unit.silenced) && p.deck.length)
+        drawCards(p,1);
+      next.readyRituals = [];
+      if (finishIfLethal(next)) return;
+      next.pendingReward = { owner: command.actor, offeredIds: plan.offeredRewardIds, pool: [...ready.effect.rewardPool] as PendingReward['pool'] };
+      next.phase = 'reward';
+      return;
+});
+
+registerCommand('chooseReward',(next,command)=>{const p=next.players[command.actor];
+      requireRule(next.phase === 'reward' && next.pendingReward?.owner === command.actor, 'Сейчас нет выбора награды');
+      const pending = next.pendingReward;
+      requireRule(pending.offeredIds.includes(command.rewardId), 'Награда не предложена');
+      let reward = structuredClone(pending.pool.find(card => card.id === command.rewardId)!);
+      requireRule(reward.kind === 'creature', 'Наградой должно быть Существо');
+      reward.ritualReward = true;
+      const zone = reward.createdToken ? p.auxiliary : p.main;
+      const limit = reward.createdToken ? 4 : 8;
+      // Unique-name collisions follow the ordinary explicit-survivor rule.
+      // This is not a failed placement and must not cause a five-card reroll.
+      const sameUnique = reward.unique ? [...p.main, ...p.auxiliary].find(unit => unit.card.name === reward.name) : undefined;
+      if (sameUnique) {
+        requireRule(typeof command.keepExisting === 'boolean', 'Выберите, какую Уникальную оставить');
+        if (command.keepExisting) {
+          sendToDiscard(p, reward, true);
+          next.pendingReward = null; next.phase = 'main';
+          return;
+        }
+        departPermanent(next,command.actor,sameUnique.objectId);
+      }
+      if (zone.length >= limit) {
+        const replacement = zone.find(unit => unit.objectId === command.replaceId && !unit.card.majestic);
+        if (replacement) {
+          const removed = removePermanents(p, [replacement.objectId]);
+          if (reward.createdToken) {
+            // Ordinary auxiliary displacement is departure, not death.
+            for(const unit of removed){
+              const target=leaveCard(p,unit.card,!!unit.ritualReward);
+              emitGameEvent(next,{type:'zoneMoved',owner:command.actor,cardId:unit.card.id,objectId:unit.objectId,from:'detached',to:target});
+            }
+          } else resolveDeaths(next, removed.map(unit => ({ unit, owner: command.actor })));
+        } else if (zone.some(unit => !unit.card.majestic)) throw new RuleError('Выберите заменяемое Существо');
+      }
+      if (finishIfLethal(next)) { next.pendingReward = null; return; }
+      if (zone.length >= limit) {
+        const roll = nextRandom(next.seed ?? 1, pending.pool.length); next.seed = roll.seed;
+        reward = { ...structuredClone(pending.pool[roll.value]), ritualReward: true };
+        // An unplaceable reward goes to hand as a playable card, including temporary token cards.
+        // Use printed cost where present; otherwise give generated rewards a zero-cost fallback.
+        reward.cost ??= { colored: {}, generic: 0 };
+        addCard(next,command.actor,'hand',reward,'ritual');
+      } else {
+        placePermanent(next,command.actor,reward.createdToken?'auxiliary':'main',reward,{ritualReward:true});
+      }
+      next.pendingReward = null; next.phase = 'main';
+      return;
+});

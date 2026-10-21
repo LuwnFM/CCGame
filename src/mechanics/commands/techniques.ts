@@ -1,0 +1,30 @@
+import {registerCommand} from '../command-router.ts';
+import {requireRule} from './shared.ts';
+import {RuleError,sendToDiscard,type Game,type Command,type PendingReward,type ReadyRitual,type PlayerId} from '../../core.ts';
+import {mulligan} from '../../setup.ts';
+import {eligibleVictims,nextRandom,planRitual} from '../../ritual.ts';
+import {ability} from '../abilities.ts';
+import {resolveCombat} from '../combat.ts';
+import {emptyEnergy,payForCard} from '../energy.ts';
+import {activateLegend} from '../legends.ts';
+import {enterTrigger,resolveTechnique} from '../techniques.ts';
+import {removePermanents,collectLethal,resolveDeaths,finishIfLethal} from '../death-queue.ts';
+import {drawCards,leaveCard,moveCard,takeCard,placePermanent,departPermanent,addCard} from '../zones.ts';
+import {emitGameEvent} from '../events.ts';
+import {advance} from '../turns.ts';
+registerCommand('playTechnique',(next,command)=>{const p=next.players[command.actor];
+      requireRule(next.turn > 0 && next.phase === 'main', 'Недоступная фаза');
+      const card = p.hand[command.handIndex];
+      requireRule(card?.kind === 'technique' && card.cost && (card.ritual||card.techniqueEffect), 'Неверная Техника');
+      // Validate targets before committing costs; apply() works on a transactionally cloned game.
+      if(card.ritual)requireRule(Number.isSafeInteger(card.ritual.duration) && card.ritual.duration > 0, 'Неверный срок Ритуала');
+      p.energy = payForCard(p, card.cost);
+      takeCard(p,'hand',command.handIndex);
+      if(card.ritual)p.rituals.push({ id: `ritual-${next.nextObjectId++}`, color: card.ritual.color, threshold: card.ritual.threshold,
+        rewardPool: card.ritual.rewardPool, requiresSource: false, remainingStarts: card.ritual.duration });
+      else resolveTechnique(next,command.actor,card,command);
+      sendToDiscard(p, card);
+      resolveDeaths(next,collectLethal(next));
+      finishIfLethal(next);
+      return;
+});
