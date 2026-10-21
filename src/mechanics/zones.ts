@@ -58,17 +58,20 @@ export function movePermanent(game:Game,actor:PlayerId,from:BoardZone,to:BoardZo
   emitGameEvent(game,{type:'zoneMoved',owner:actor,cardId:unit.card.id,objectId:unit.objectId,from,to});
 }
 /** Remove from a battlefield zone, either as death (caller queues Last Word) or departure. */
-export function takePermanent(game:Game,actor:PlayerId,id:number,zones:readonly BoardZone[]=['main','auxiliary']):Permanent{
-  const owner=game.players[actor];
+export function takePlayerPermanent(owner:Game['players'][number],id:number,zones:readonly BoardZone[]=['main','auxiliary']):Permanent{
   for(const z of zones){
     const index=owner[z].findIndex(unit=>unit.objectId===id);
-    if(index>=0){
-      const unit=owner[z].splice(index,1)[0];
-      emitGameEvent(game,{type:'zoneMoved',owner:actor,cardId:unit.card.id,objectId:unit.objectId,from:z,to:'detached'});
-      return unit;
-    }
+    if(index>=0)return owner[z].splice(index,1)[0];
   }
   throw new RuleError('Объект покинул поле');
+}
+export function takePermanent(game:Game,actor:PlayerId,id:number,zones:readonly BoardZone[]=['main','auxiliary']):Permanent{
+  const owner=game.players[actor];
+  const from=zones.find(z=>owner[z].some(unit=>unit.objectId===id));
+  if(!from)throw new RuleError('Объект покинул поле');
+  const unit=takePlayerPermanent(owner,id,[from]);
+  emitGameEvent(game,{type:'zoneMoved',owner:actor,cardId:unit.card.id,objectId:unit.objectId,from,to:'detached'});
+  return unit;
 }
 /** Shared placement for any physical card, independent of how it entered the board. */
 export function placePermanent(game:Game,actor:PlayerId,zone:BoardZone,card:Card,extra:Partial<Permanent>={}):Permanent{
@@ -110,4 +113,9 @@ export function departPermanent(game:Game,actor:PlayerId,objectId:number,zones:r
   const destination=leaveCard(game.players[actor],unit.card,!!unit.ritualReward);
   emitGameEvent(game,{type:'zoneMoved',owner:actor,cardId:unit.card.id,objectId:unit.objectId,from:'detached',to:destination});
   return unit;
+}
+
+export function addCard(game:Game,actor:PlayerId,to:CardZone,card:Card,from:string='generated'):void{
+  game.players[actor][to].push(card);
+  emitGameEvent(game,{type:'zoneMoved',owner:actor,cardId:card.id,from,to});
 }
