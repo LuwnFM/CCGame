@@ -4,3 +4,11 @@
 node_modules/
 .env
 data/
+
+# Private local game state, chat and match records
+admin-exports/
+match-archives/
+backups/
+artifacts/
+.env.local
+.env.*.local

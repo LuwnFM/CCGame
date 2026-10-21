@@ -45,7 +45,11 @@ export class MatchHistory {
   if(!this.folder)return null;
   const m=this.db.prepare('SELECT * FROM match_history WHERE room=?').get(room) as any;
   if(!m?.finished_at)return null;
-  if(m.archive_path&&m.archive_sha256&&existsSync(m.archive_path))return {path:m.archive_path,sha256:m.archive_sha256};
+  if(m.archive_path&&m.archive_sha256&&existsSync(m.archive_path)){
+    const actual=sha(readFileSync(m.archive_path));
+    if(actual===m.archive_sha256)return {path:m.archive_path,sha256:m.archive_sha256};
+    // A mismatched or damaged archive is recreated from the authoritative DB.
+  }
   const row=this.db.prepare('SELECT game FROM rooms WHERE code=?').get(room) as {game:string}|undefined;
   if(!row)return null;
   const log={format:'firewell-match-v1',room,startedAt:m.started_at,finishedAt:m.finished_at,

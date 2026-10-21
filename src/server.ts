@@ -147,7 +147,11 @@ export function createApp(options: { databasePath: string; accessPassword: strin
   if (!sessionColumns.has('user_id')) db.exec('ALTER TABLE sessions ADD COLUMN user_id TEXT');
   const social = new Social(db);
   const history = new MatchHistory(db, options.databasePath);
-  history.archiveCompleted();
+  function archiveSafely() {
+    try { history.archiveCompleted(); }
+    catch(error) { console.error('Match archive failed; SQLite journal remains intact for retry:', error); }
+  }
+  archiveSafely();
   const selectSession = db.prepare('SELECT user_id FROM sessions WHERE id=? AND expires>?');
   const selectRoom = db.prepare('SELECT * FROM rooms WHERE code=?');
   const insertRoom = db.prepare('INSERT INTO rooms (code,host,guest,game,host_deck) VALUES (?, ?, NULL, ?, ?)');
@@ -335,7 +339,7 @@ export function createApp(options: { databasePath: string; accessPassword: strin
         let current: Room;
         try { current = settleExpired(code, selectRoom.get(code) as Room, Date.now()); db.exec('COMMIT'); }
         catch (error) { db.exec('ROLLBACK'); throw error; }
-        history.archiveCompleted();
+        archiveSafely();
         return json(res, 200, { code, ready: !!current.guest, game: current.guest ? view(JSON.parse(current.game), seat, current) : null });
       }
       if (req.method === 'POST' && action === 'commands') {
@@ -353,7 +357,7 @@ export function createApp(options: { databasePath: string; accessPassword: strin
           }
           commitGame(code,current,before,next,Date.now(),'player',{...input,actor:seat} as Command);
           db.exec('COMMIT');
-          history.archiveCompleted();
+          archiveSafely();
           return json(res, 200, { game: view(next, seat, selectRoom.get(code) as Room) });
         } catch (error) { db.exec('ROLLBACK'); throw error; }
       }
