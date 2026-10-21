@@ -49,7 +49,7 @@ test('starter catalog covers the implemented card mechanics and two loyalty choi
   }
   for(const kind of ['cleanse','silence','bind'])
     assert.ok(Object.values(decks).some(cards=>cards.some(card=>card.techniqueEffect?.kind===kind)),kind);
-  assert.equal(testDeck('blue').filter(card=>card.name==='Небесный дуэлянт' && card.flying && !card.extraAttacks).length,2);
+  assert.equal(testDeck('blue').filter(card=>card.name==='Небесный дуэлянт' && !card.flying && card.onEntry?.kind==='stunEnemy').length,2);
   assert.equal(testDeck('blue').filter(card=>card.name==='Палубный дуэлянт' && !card.flying && card.extraAttacks===1).length,2);
 });
 test('blue Ещё удар! (1) creature can attack twice in one turn',()=>{
@@ -66,8 +66,8 @@ test('blue Ещё удар! (1) creature can attack twice in one turn',()=>{
 });
 test('blue Flying attacker requires a Flying interceptor',()=>{
   const deck=testDeck('blue');
-  const flyer=deck.find(card=>card.name==='Небесный дуэлянт')!;
-  const guard=deck.find(card=>card.name==='Капитан флотилии')!;
+  const flyer=deck.find(card=>card.name==='Быстрый курьер')!;
+  const guard=deck.find(card=>card.name==='Воздушный перехватчик')!;
   let g=step(initialGame(player(),player()),{type:'startTurn',actor:0},'fly-start');
   g.players[0].main.push({objectId:1,card:flyer,exhausted:false,damage:0,shield:0,enteredTurn:0,interceptions:0});
   g.players[1].main.push({objectId:2,card:{...guard,flying:false},exhausted:false,damage:0,shield:0,enteredTurn:0,interceptions:0});
@@ -85,7 +85,8 @@ test('every starter Legend offers balanced +1 and -2 choices, exclusive each tur
     assert.equal(small.delta,1,legend.name);
     assert.equal(strong.delta,-2,legend.name);
     assert.ok((legend.loyalty??0)>=2,legend.name);
-    assert.ok(small.amount<=1 && strong.amount<=4,legend.name);
+    assert.ok((small.kind==='summon' ? small.cards.length===1 : small.amount<=1) &&
+      (strong.kind==='summon' ? strong.cards.length<=4 : strong.amount<=4),legend.name);
     for(const abilityIndex of [0,1]){
       let g=step(initialGame(player(),player()),{type:'startTurn',actor:0},legend.id+'-start-'+abilityIndex);
       g.players[0].hp=20;
