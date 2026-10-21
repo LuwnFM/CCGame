@@ -32,18 +32,6 @@ export function collectLethal(game: Game): Death[] {
   // Active player resolves their simultaneous deaths first; stable ordering by object id.
   return dead.sort((a, b) => (a.owner === game.active ? 0 : 1) - (b.owner === game.active ? 0 : 1) || a.unit.objectId - b.unit.objectId);
 }
-registerEffect('death','damageController',({game,actor,amount})=>{
-  if(!Number.isSafeInteger(amount)||amount!<0)throw new RuleError('Неверный эффект гибели');
-  game.players[actor].hp-=amount!;
-});
-registerEffect('death','damageOpponent',({game,actor,amount})=>{
-  if(!Number.isSafeInteger(amount)||amount!<0)throw new RuleError('Неверный эффект гибели');
-  game.players[(1-actor) as PlayerId].hp-=amount!;
-});
-registerEffect('death','damageAllCreatures',({game,amount})=>{
-  if(!Number.isSafeInteger(amount)||amount!<0)throw new RuleError('Неверный эффект гибели');
-  for(const side of game.players)for(const unit of [...side.main,...side.auxiliary])damage(unit,amount!);
-});
 /** Last Word resolves from the same event stream as Entry and Second Chance. */
 onGameEvent('death',(game,event)=>{
   if(!event.source||event.suppressed)return;
