@@ -1,3 +1,4 @@
+import {SKELETON} from '../src/cards/tokens.ts';
 import {test} from 'node:test';
 import {strict as assert} from 'node:assert';
 import {apply,initialGame,player,validateDeck,type Card,type Game,type Command} from '../src/core.ts';
@@ -17,7 +18,7 @@ test('starter creatures have at most two copies; custom decks still allow three 
  }
 });
 test('Entry and Second Chance use distinct origins; partial skeleton summon respects four slots',()=>{
- const necromancer:Card={...unit,onEntry:{kind:'summonSkeleton',amount:1},secondChance:{kind:'summonSkeleton',amount:2}};
+ const necromancer:Card={...unit,onEntry:{kind:'summon',cards:[SKELETON]},secondChance:{kind:'summon',cards:[SKELETON,SKELETON]}};
  let g=initialGame(player([],[necromancer,cast]),player());g.turn=1;
  g=act(g,{type:'playCreature',handIndex:0});assert.equal(g.players[0].auxiliary.length,1);
  const dead=g.players[0].main.pop()!;g.players[0].discard.push(dead.card);
