@@ -9,6 +9,8 @@ export type Energy = Aspect | 'neutral';
 export type Cost = { colored: Partial<Record<Aspect, number>>; generic: number };
 export type RitualSpec = { color: Aspect | 'neutral'; threshold: number; duration: number; rewardPool: [Card, Card, Card, Card, Card] };
 export type DeathEffect = { kind: 'damageController' | 'damageOpponent' | 'damageAllCreatures'; amount: number };
+export type EntryEffect = { kind: 'summonSkeleton' | 'healRuler' | 'draw'; amount: number };
+export type TechniqueEffect = { kind: 'reanimate' | 'damageOpponent' | 'healRuler' | 'draw' | 'cleanse' | 'ward' | 'silence' | 'bind'; amount: number };
 export type Card = {
   id: string;
   name: string;
@@ -38,6 +40,9 @@ export type Card = {
   sacrifice?: boolean;
   ritual?: RitualSpec;
   onDeath?: DeathEffect;
+  onEntry?: EntryEffect;
+  secondChance?: EntryEffect;
+  techniqueEffect?: TechniqueEffect;
   loyalty?: number;
   loyaltyAbility?: { delta: number; kind: 'healRuler' | 'damageOpponent' | 'draw' | 'recoverCreature' | 'raiseSacrifice'; amount: number };
   loyaltyAbilities?: readonly { delta: number; kind: 'healRuler' | 'damageOpponent' | 'draw' | 'recoverCreature' | 'raiseSacrifice'; amount: number }[];
@@ -48,12 +53,13 @@ export type Card = {
 };
 export type Permanent = { objectId: number; card: Card; exhausted: boolean; damage: number; shield: number; enteredTurn: number; interceptions: number;
   sacrifice?: boolean; stunned?: boolean; stasis?: number; ritualReward?: boolean; loyalty?: number; lastActivatedTurn?: number;
-  attacksMade?: number; poison?: { strength: number; ticks: number } };
+  attacksMade?: number; silenced?: boolean; poison?: { strength: number; ticks: number } };
 export type Player = {
   hp: number; deck: Card[]; hand: Card[]; discard: Card[]; erased: Card[];
   domains: Permanent[]; main: Permanent[]; auxiliary: Permanent[]; legends: Permanent[];
   energy: Record<Energy, number>; domainsPlayed: number;
   rituals: (RitualEffect & { remainingStarts: number })[];
+  lastRulerDrawTurn?: number;
 };
 export type ReadyRitual = { effect: RitualEffect; eligibleIds: number[] };
 export type PendingReward = { owner: PlayerId; offeredIds: string[]; pool: [Card, Card, Card, Card, Card] };
@@ -74,7 +80,8 @@ export type Command =
   | { type: 'playDomain'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number }
   | { type: 'tapDomain'; actor: PlayerId; expectedRevision: number; key: string; objectId: number }
   | { type: 'playCreature'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number; replaceId?: number }
-  | { type: 'playTechnique'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number }
+  | { type: 'playTechnique'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number; targetId?: number; discardIndex?: number }
+  | { type: 'rulerDraw'; actor: PlayerId; expectedRevision: number; key: string }
   | { type: 'playLegend'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number; keepExisting?: boolean }
   | { type: 'activateLegend'; actor: PlayerId; expectedRevision: number; key: string; objectId: number; discardIndex?: number; abilityIndex?: number }
   | { type: 'playArtifact'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number; replaceId?: number; keepExisting?: boolean }
@@ -118,7 +125,7 @@ export function validateDeck(deck: readonly Card[]): string[] {
   if (new Set(deck.filter(c => c.kind === 'legend').map(c => c.name)).size > 3) issues.push('Не более трёх разных Легенд');
   const counts = new Map<string, number>();
   for (const c of deck) counts.set(c.name, (counts.get(c.name) ?? 0) + 1);
-  for (const c of deck) if (!(c.kind === 'domain' && c.basic) && (counts.get(c.name) ?? 0) > (c.unique || c.kind === 'legend' ? 1 : 3)) {
+  for (const c of deck) if (!(c.kind === 'domain' && c.basic) && (counts.get(c.name) ?? 0) > (c.unique || c.kind === 'legend' ? 1 : c.kind === 'creature' ? 2 : 3)) {
     issues.push(`Превышен лимит копий: ${c.name}`); counts.delete(c.name);
   }
   return issues;
@@ -130,6 +137,63 @@ function requireRule(ok: unknown, message: string): asserts ok {
  * Colored requirements are reserved first; generic energy prefers neutral, then other colors.
  * Changes occur only on apply()'s cloned game, so invalid actions never exhaust Domains.
  */
+/** Deterministic created tokens always occupy auxiliary slots; never overflow. */
+function spawnSkeleton(game: Game, actor: PlayerId, count: number, source: Card): void {
+  requireRule(Number.isSafeInteger(count) && count >= 0 && count <= 4, 'Неверное число призываемых');
+  const owner=game.players[actor];
+  for(let i=0;i<count && owner.auxiliary.length<4;i++){
+    const card:Card={id:'violet-skeleton-token',name:'Призванный скелет',kind:'creature',
+      aspects:['violet'],attack:1,health:1,createdToken:true,sacrifice:true,
+      lore:{state:'Искажение',organization:'Некроманты',note:'Токен 1/1; исчезает вместо попадания в Сброс.'}};
+    owner.auxiliary.push({objectId:game.nextObjectId++,card,damage:0,shield:0,exhausted:true,
+      interceptions:0,enteredTurn:game.turn,sacrifice:true,attacksMade:0});
+  }
+}
+/** Only entered-from-hand and revived-from-discard cards receive the corresponding trigger. */
+function enterTrigger(game:Game,actor:PlayerId,card:Card,origin:'hand'|'discard'):void{
+  const effect=origin==='hand'?card.onEntry:card.secondChance;
+  if(!effect)return;
+  if((game.operationsUsed=(game.operationsUsed??0)+1)>MAX_EFFECT_OPERATIONS)
+    throw new EffectLimitError('Превышен бюджет Вступления/Второго шанса');
+  requireRule(Number.isSafeInteger(effect.amount) && effect.amount>=0&&effect.amount<=4,'Неверное Вступление');
+  if(effect.kind==='summonSkeleton')spawnSkeleton(game,actor,effect.amount,card);
+  else if(effect.kind==='healRuler')game.players[actor].hp=Math.min(30,game.players[actor].hp+effect.amount);
+  else if(effect.kind==='draw')for(let i=0;i<effect.amount&&game.players[actor].deck.length;i++)
+      game.players[actor].hand.push(game.players[actor].deck.shift()!);
+  else throw new RuleError('Неизвестный эффект при входе');
+}
+function getCreature(player:Player,id:number|undefined):Permanent|undefined{
+ return [...player.main,...player.auxiliary].find(unit=>unit.objectId===id&&unit.card.kind==='creature');
+}
+function resolveTechnique(game:Game,actor:PlayerId,card:Card,command:{targetId?:number;discardIndex?:number}):void{
+  const effect=card.techniqueEffect!;
+  const owner=game.players[actor];
+  const enemy=game.players[(1-actor) as PlayerId];
+  requireRule(Number.isSafeInteger(effect.amount)&&effect.amount>=0&&effect.amount<=8,'Неверная Техника');
+  if(effect.kind==='damageOpponent')enemy.hp-=effect.amount;
+  else if(effect.kind==='healRuler')owner.hp=Math.min(30,owner.hp+effect.amount);
+  else if(effect.kind==='draw')for(let i=0;i<effect.amount&&owner.deck.length;i++)owner.hand.push(owner.deck.shift()!);
+  else if(effect.kind==='reanimate'){
+    requireRule(Number.isSafeInteger(command.discardIndex) && !!owner.discard[command.discardIndex!] &&
+      owner.discard[command.discardIndex!].kind==='creature','Выберите Существо из сброса');
+    requireRule(owner.main.length<8,'Нет места для воскрешённого Существа');
+    const revived=owner.discard[command.discardIndex!]!;
+    owner.discard.splice(command.discardIndex!,1);
+    owner.main.push({objectId:game.nextObjectId++,card:revived,damage:0,shield:revived.shield??0,
+      exhausted:true,interceptions:0,enteredTurn:game.turn,sacrifice:revived.sacrifice,attacksMade:0});
+    enterTrigger(game,actor,revived,'discard');
+  }else {
+    const target=effect.kind==='silence'||effect.kind==='bind'?getCreature(enemy,command.targetId):getCreature(owner,command.targetId);
+    requireRule(target,'Выберите допустимое Существо');
+    if(effect.kind==='cleanse'){target.poison=undefined;target.stunned=false;target.stasis=undefined;target.silenced=false}
+    else if(effect.kind==='ward')target.shield+=effect.amount;
+    else if(effect.kind==='silence')target.silenced=true;
+    else if(effect.kind==='bind'){
+      if(target.stunned){target.stunned=false;target.stasis=effect.amount}
+      else target.stunned=true;
+    }else throw new RuleError('Неизвестный эффект Техники');
+  }
+}
 function payForCard(owner: Player, cost: Cost): Record<Energy, number> {
   const available = { ...owner.energy };
   const ready = owner.domains.filter(d => !d.exhausted && d.card.produces);
@@ -240,18 +304,32 @@ export function apply(game: Game, command: Command): Game {
       p.energy = energy; p.hand.splice(command.handIndex, 1);
       zone.push({ objectId: next.nextObjectId++, card, exhausted: !card.haste && !card.zeal, damage: 0, shield: card.shield ?? 0,
         interceptions: 0, enteredTurn: next.turn, sacrifice: card.sacrifice, ritualReward: !!card.ritualReward, attacksMade: 0 });
+      enterTrigger(next,command.actor,card,'hand');
       break;
     }
     case 'playTechnique': {
       requireRule(next.turn > 0 && next.phase === 'main', 'Недоступная фаза');
       const card = p.hand[command.handIndex];
-      requireRule(card?.kind === 'technique' && card.cost && card.ritual, 'Неверная Техника');
-      requireRule(Number.isSafeInteger(card.ritual.duration) && card.ritual.duration > 0, 'Неверный срок Ритуала');
+      requireRule(card?.kind === 'technique' && card.cost && (card.ritual||card.techniqueEffect), 'Неверная Техника');
+      // Validate targets before committing costs; apply() works on a transactionally cloned game.
+      if(card.ritual)requireRule(Number.isSafeInteger(card.ritual.duration) && card.ritual.duration > 0, 'Неверный срок Ритуала');
       p.energy = payForCard(p, card.cost);
       p.hand.splice(command.handIndex, 1);
-      p.rituals.push({ id: `ritual-${next.nextObjectId++}`, color: card.ritual.color, threshold: card.ritual.threshold,
+      if(card.ritual)p.rituals.push({ id: `ritual-${next.nextObjectId++}`, color: card.ritual.color, threshold: card.ritual.threshold,
         rewardPool: card.ritual.rewardPool, requiresSource: false, remainingStarts: card.ritual.duration });
+      else resolveTechnique(next,command.actor,card,command);
       sendToDiscard(p, card);
+      finishIfLethal(next);
+      break;
+    }
+    case 'rulerDraw': {
+      requireRule(next.turn>0 && next.phase==='main','Недоступная фаза');
+      requireRule(p.lastRulerDrawTurn!==next.turn,'Способность Владетеля уже применена');
+      requireRule(p.hp>2,'Недостаточно здоровья Владетеля');
+      requireRule(p.hand.length<=3,'Для добора должно быть не больше 3 карт в руке');
+      requireRule(p.deck.length>=2,'В колоде должно быть не менее двух карт');
+      p.hp-=2;p.lastRulerDrawTurn=next.turn;
+      p.hand.push(p.deck.shift()!,p.deck.shift()!);
       break;
     }
     case 'playLegend': {
@@ -450,6 +528,7 @@ export function apply(game: Game, command: Command): Game {
       p.energy = emptyEnergy();
       for (const unit of [...p.main, ...p.auxiliary]) {
         unit.stunned = false;
+        unit.silenced = false;
         if (unit.stasis) unit.stasis--;
       }
       if (p.hand.length > 8) { next.phase = 'discard'; break; }
@@ -544,7 +623,7 @@ function resolveDeaths(game: Game, initial: Death[]): void {
     if ((game.operationsUsed = (game.operationsUsed ?? 0) + 1) > MAX_EFFECT_OPERATIONS)
       throw new EffectLimitError('Превышен бюджет обязательных эффектов; матч приостановлен');
     const { unit, owner } = queue.shift()!;
-    const effect = unit.stasis ? undefined : unit.card.onDeath;
+    const effect = unit.stasis || unit.silenced ? undefined : unit.card.onDeath;
     if (effect) {
       if (!Number.isSafeInteger(effect.amount) || effect.amount < 0) throw new RuleError('Неверный эффект гибели');
       if (effect.kind === 'damageController') game.players[owner].hp -= effect.amount;
