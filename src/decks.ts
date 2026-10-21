@@ -1,4 +1,5 @@
 import { validateDeck, type Aspect, type Card, type Cost } from './core.ts';
+import {SKELETON,BONE_BLADE,BONE_GUARD,CERA_SERVANT,SIGNATURE_TOKENS} from './cards/tokens.ts';
 
 export type ArchetypeId = Aspect | 'neutral';
 export const ARCHETYPES: readonly { id: ArchetypeId; name: string; state: string; organization: string }[] = [
@@ -58,7 +59,7 @@ const extraEffects: Record<ArchetypeId, Unit[]> = {
  blue:[unit(['Летописец флотилии',3,2,2,{onEntry:{kind:'draw',amount:1}}]),unit(['Небесный завещатель',4,3,3,{flying:true,onDeath:{kind:'damageOpponent',amount:1}}])],
  green:[unit(['Травница Кайров',3,2,3,{onEntry:{kind:'healRuler',amount:2}}]),unit(['Вернувшийся следопыт',4,3,4,{secondChance:{kind:'healRuler',amount:2}}])],
  gold:[unit(['Госпитальер короны',3,2,3,{onEntry:{kind:'healRuler',amount:2}}]),unit(['Верный до конца',4,3,4,{guard:true,onDeath:{kind:'damageOpponent',amount:1}}])],
- violet:[unit(['Ученик Некроманта',5,2,3,{onEntry:{kind:'summonBonePair',amount:2},secondChance:{kind:'summonSkeleton',amount:1},sacrifice:true}]),unit(['Некромант родовой крипты',4,3,3,{secondChance:{kind:'summonSkeleton',amount:2},sacrifice:true}])],
+ violet:[unit(['Ученик Некроманта',5,2,3,{onEntry:{kind:'summon',cards:[BONE_BLADE,BONE_GUARD]},secondChance:{kind:'summon',cards:[SKELETON]},sacrifice:true}]),unit(['Некромант родовой крипты',4,3,3,{secondChance:{kind:'summon',cards:[SKELETON,SKELETON]},sacrifice:true}])],
  neutral:[unit(['Летописец Ордена',3,2,2,{onEntry:{kind:'draw',amount:1}}]),unit(['Последний часовой',4,3,4,{onDeath:{kind:'damageOpponent',amount:1}}])],
 };
 function unit(entry: (string | number | Partial<Card>)[]): Unit {
@@ -135,13 +136,15 @@ export function testDeck(id: ArchetypeId): Card[] {
     // Two exclusive choices per turn: modest +1 Loyalty, or the stronger -2 Loyalty power.
     // Keep loyaltyAbility for saved legacy matches and older clients.
     loyaltyAbilities:[
-      {delta:1,kind:(id==='violet' ? i===1 : i===0)?'summonSignature':'healRuler',amount:1},
+      (id==='violet' ? i===1 : i===0)
+        ? {delta:1,kind:'summon',cards:[SIGNATURE_TOKENS[id]]}
+        : {delta:1,kind:'healRuler',amount:1},
       id==='violet'
-        ? i===0 ? {delta:-2,kind:'recoverCreature',amount:1} : {delta:-2,kind:'raiseSacrifice',amount:1}
+        ? i===0 ? {delta:-2,kind:'recoverCreature',amount:1} : {delta:-2,kind:'summon',cards:[CERA_SERVANT],completeRitual:true}
         : i===0 ? {delta:-2,kind:'healRuler',amount:4} : {delta:-2,kind:'damageOpponent',amount:2}
     ] as NonNullable<Card['loyaltyAbilities']>,
     loyaltyAbility:id==='violet'
-      ? i===0 ? {delta:-2,kind:'recoverCreature',amount:1} : {delta:-2,kind:'raiseSacrifice',amount:1}
+      ? i===0 ? {delta:-2,kind:'recoverCreature',amount:1} : {delta:-2,kind:'summon',cards:[CERA_SERVANT],completeRitual:true}
       : i===0 ? {delta:-2,kind:'healRuler',amount:4} : {delta:-2,kind:'damageOpponent',amount:2},
     lore:id==='violet'?{...lore,summary:i===0?'Лич Колдрейк Шоу возвращает погибших слуг в строй.':'Цера Ван Троуп собирает ритуальную свиту умертвий.',note:i===0
       ?'Колдрейк Шоу — лич. Возвращает Существо из сброса в руку; игровая трактовка некромантии.'
