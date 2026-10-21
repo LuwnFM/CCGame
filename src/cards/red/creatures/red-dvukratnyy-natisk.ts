@@ -10,10 +10,10 @@ export default {
     "colored": {
       "red": 1
     },
-    "generic": 5
+    "generic": 7
   },
-  "attack": 5,
-  "health": 4,
+  "attack": 4,
+  "health": 7,
   "extraAttacks": 1,
   "lore": {
     "state": "Стальное королевство",

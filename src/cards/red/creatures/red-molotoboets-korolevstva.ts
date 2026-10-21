@@ -13,7 +13,7 @@ export default {
     "generic": 4
   },
   "attack": 5,
-  "health": 3,
+  "health": 2,
   "piercing": true,
   "zeal": true,
   "lore": {
