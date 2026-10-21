@@ -4,8 +4,8 @@ import {registerEffect,invokeEffect} from './effects-registry.ts';
 import {emitGameEvent} from './events.ts';
 import { damage } from './combat.ts';
 
-export class EffectLimitError extends Error {}
-export const MAX_EFFECT_OPERATIONS = 128;
+import {EffectLimitError,MAX_EFFECT_OPERATIONS} from './limits.ts';
+export {EffectLimitError,MAX_EFFECT_OPERATIONS} from './limits.ts';
 type Death = { unit: Permanent; owner: PlayerId };
 export function removePermanents(owner: Player, ids: readonly number[]): Permanent[] {
   const removed: Permanent[] = [];
