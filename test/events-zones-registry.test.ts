@@ -70,6 +70,6 @@ test('death queue handles card departure and Last Word via registry',()=>{
  const g=initialGame(player(),player());g.turn=1;
  placePermanent(g,0,'main',dead,{damage:2,exhausted:false});
  const after=step(g,{type:'endTurn'});
- assert.equal(after.players[1].hp,28);
+ assert.equal(after.players[1].hp,38);
  assert.deepEqual(after.players[0].discard.map(c=>c.id),['bomb']);
 });

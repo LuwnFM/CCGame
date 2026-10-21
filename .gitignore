@@ -12,3 +12,6 @@ backups/
 artifacts/
 .env.local
 .env.*.local
+
+# Saved local snapshots created by start-firewell-clean.cmd
+local-reset-backups/

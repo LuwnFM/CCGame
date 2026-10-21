@@ -60,7 +60,7 @@ test('blue Ещё удар! (1) creature can attack twice in one turn',()=>{
     g=step(g,{type:'attack',actor:0,attackerId:1,target:{kind:'player'}},'blue-attack-'+i);
     g=step(g,{type:'intercept',actor:1,interceptorId:null},'blue-defend-'+i);
   }
-  assert.equal(g.players[1].hp,22);
+  assert.equal(g.players[1].hp,32);
   assert.equal(g.players[0].main[0].exhausted,true);
   assert.throws(()=>step(g,{type:'attack',actor:0,attackerId:1,target:{kind:'player'}},'blue-third'),/не готов/);
 });
@@ -75,7 +75,7 @@ test('blue Flying attacker requires a Flying interceptor',()=>{
   assert.throws(()=>step(g,{type:'intercept',actor:1,interceptorId:2},'ground-block'),/Полёт/);
   g.players[1].main[0].card=guard;
   g=step(g,{type:'intercept',actor:1,interceptorId:2},'flying-block');
-  assert.equal(g.players[1].hp,30);
+  assert.equal(g.players[1].hp,40);
   assert.equal(g.players[1].main[0].interceptions,1);
 });
 test('every starter Legend offers balanced +1 and -2 choices, exclusive each turn',()=>{
@@ -128,8 +128,8 @@ test('ritual snapshots both zones, resolves a negative death effect before offer
   assert.throws(() => step(g, { type: 'chooseRitual', actor: 0, effectId: effect.id, objectIds: [1, 1, 3] }, 'bad'), /разных/);
   const previous = g;
   g = step(g, { type: 'chooseRitual', actor: 0, effectId: effect.id, objectIds: [1, 2, 3] }, 'ritual');
-  assert.equal(previous.players[0].hp, 30);
-  assert.equal(g.players[0].hp, 28);
+  assert.equal(previous.players[0].hp, 40);
+  assert.equal(g.players[0].hp, 38);
   assert.equal(g.players[0].main.length, 0);
   assert.equal(g.players[0].auxiliary.length, 0);
   assert.equal(g.players[0].discard.length, 3);
@@ -148,7 +148,7 @@ test('replacement dies with consequences; a filled all-Majestic field sends rero
   assert.throws(() => step(g, { type: 'chooseReward', actor: 0, rewardId: choice }, 'bad'), /заменяемое/);
   g.players[0].main[0].card.onDeath = { kind: 'damageController', amount: 3 };
   g = step(g, { type: 'chooseReward', actor: 0, rewardId: choice, replaceId: 20 }, 'replace');
-  assert.equal(g.players[0].hp, 25);
+  assert.equal(g.players[0].hp, 35);
   assert.equal(g.players[0].main.length, 8);
   assert.equal(g.players[0].erased.length, 0);
   const another = ready();
@@ -167,7 +167,7 @@ test('operation overflow pauses and rolls the entire lethal ritual back', () => 
   assert.equal(paused.winner, null);
   assert.equal(paused.players[0].main.length, 2);
   assert.equal(paused.players[0].auxiliary.length, 1);
-  assert.equal(paused.players[0].hp, 30);
+  assert.equal(paused.players[0].hp, 40);
   assert.equal(paused.seed, g.seed);
   assert.equal(paused.pendingReward, undefined);
 });
@@ -196,13 +196,13 @@ test('unique auxiliary item boosts combat and can displace a token without death
   for (let i = 2; i <= 4; i++) g.players[0].auxiliary.push(victim(i));
   assert.throws(() => step(g, { type: 'playArtifact', actor: 0, handIndex: 0 }, 'blocked'), /Вытеснения/);
   g = step(g, { type: 'playArtifact', actor: 0, handIndex: 0, replaceId: 1 }, 'artifact');
-  assert.equal(g.players[0].hp, 30);
+  assert.equal(g.players[0].hp, 40);
   assert.equal(g.players[0].erased.length, 1);
   assert.equal(g.players[0].auxiliary.length, 4);
   g.players[0].main.push({ ...victim(5), card: { ...victim(5).card, attack: 2 }, enteredTurn: 0 });
   g = step(g, { type: 'attack', actor: 0, attackerId: 5, target: { kind: 'player' } }, 'a');
   g = step(g, { type: 'intercept', actor: 1, interceptorId: null }, 'i');
-  assert.equal(g.players[1].hp, 27);
+  assert.equal(g.players[1].hp, 37);
 });
 test('same-name Legends and unique items require an explicit survivor and discard without death',()=>{
   const legend:Card={id:'hero',name:'Герой',kind:'legend',unique:true,cost:{colored:{},generic:0},
@@ -240,7 +240,7 @@ test('ritual reward token in hand uses auxiliary zone and legal displacement, ne
   assert.equal(g.players[0].main.length,8);
   assert.equal(g.players[0].auxiliary.length,4);
   assert.equal(g.players[0].auxiliary.some(unit=>unit.card.id===token.id),true);
-  assert.equal(g.players[0].hp,30);
+  assert.equal(g.players[0].hp,40);
   assert.equal(g.players[0].erased.length,1);
   assert.equal(g.players[0].hand.length,0);
 });
@@ -273,12 +273,12 @@ test('duplicate Unique ritual reward requires survivor choice, never fakes a dea
   const kept=step(ritual,{type:'chooseReward',actor:0,rewardId,keepExisting:true},'keep-old');
   assert.equal(kept.players[0].main.find(x=>x.card.id===rewardId)?.objectId,100);
   assert.equal(kept.players[0].erased.length,1);
-  assert.equal(kept.players[0].hp,28);
+  assert.equal(kept.players[0].hp,38);
   assert.equal(kept.phase,'main');
   const replaced=step(ritual,{type:'chooseReward',actor:0,rewardId,keepExisting:false},'use-new');
   assert.equal(replaced.players[0].main.filter(x=>x.card.id===rewardId).length,1);
   assert.notEqual(replaced.players[0].main.find(x=>x.card.id===rewardId)?.objectId,100);
-  assert.equal(replaced.players[0].hp,28);
+  assert.equal(replaced.players[0].hp,38);
   assert.equal(replaced.players[0].discard.some(c=>c.id===rewardId),true);
   assert.equal(replaced.phase,'main');
 });

@@ -73,10 +73,10 @@ try {
   await a.locator('#languageToggle').click();
   await a.getByText('Open deck builder').waitFor({state:'visible'});
   await a.locator('#rulesOpen').click();
-  await a.locator('#rulesContent').getByText(/Cera Van Troupe/).first().waitFor();
+  await a.locator('#rulesContent').getByText(/Legends and Loyalty/).first().waitFor();
   await a.locator('#rulesContent').getByText(/exactly 70 cards/i).waitFor();
   await a.locator('#languageToggle').click();
-  await a.locator('#rulesContent').getByText(/Цера Ван Троуп/).first().waitFor();
+  await a.locator('#rulesContent').getByText(/Легенды и Лояльность/).first().waitFor();
   await a.locator('#rulesClose').click();
   await a.locator('#chatText').fill('Привет из браузерного теста');
   await a.locator('#chatForm button').click();
@@ -189,8 +189,8 @@ try {
   assert.equal(afterCombat.phase,'main');
   assert.equal(afterCombat.players[0].main[0].damage,1);
   assert.equal(afterCombat.players[1].main.length,0);
-  assert.equal(afterCombat.players[0].hp,30);
-  assert.equal(afterCombat.players[1].hp,30);
+  assert.equal(afterCombat.players[0].hp,40);
+  assert.equal(afterCombat.players[1].hp,40);
   // Inspect an enemy card on mobile; unavailable actions must remain inspectable.
   checkpoint("battle resolved; inspecting enemy card");
   await b.locator('#enemyBoard .card .inspect-card').first().click();
@@ -211,7 +211,7 @@ try {
   assert.equal(await b.locator('#myAux .card').count(),1);
   checkpoint("resurrection and second chance resolved");
   await b.locator('#rulerDraw').click();
-  await b.waitForFunction(()=>document.querySelector('#myHp')?.textContent.includes('28 HP'));
+  await b.waitForFunction(()=>document.querySelector('#myHp')?.textContent.includes('38 HP'));
   assert.equal(await b.locator('#rulerDraw').isDisabled(),true);
   checkpoint("ruler draw resolved");
   const withLegend=JSON.parse(app.db.prepare('SELECT game FROM rooms WHERE code=?').get(code).game);
