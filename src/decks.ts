@@ -15,17 +15,17 @@ type Theme = { plain: Unit[]; effects: Unit[]; legends: [string, string]; item: 
 const themes: Record<ArchetypeId, Theme> = {
   red: {
     plain: [['Горный ополченец',1,2,1],['Рудокоп стали',2,2,2],['Стрелок перевала',2,3,1],['Кузнец заставы',3,3,3],['Всадник хребта',4,4,3],['Тяжёлый пехотинец',5,5,5]].map(unit),
-    effects: [['Разведчик с перевала',1,2,1,{haste:true}],['Рыцарь горной стражи',2,2,3,{guard:true}],['Мастер первого удара',3,3,2,{firstStrike:true}],['Таранный всадник',3,3,3,{piercing:true}],['Пламенный авангард',4,4,2,{haste:true}],['Капитан дозора',4,3,5,{guard:true,firstStrike:true}],['Молотобоец королевства',5,5,4,{piercing:true}],['Двукратный натиск',6,5,5,{extraAttacks:1}]].map(unit),
+    effects: [['Разведчик с перевала',1,1,1,{haste:true}],['Рыцарь горной стражи',2,2,3,{guard:true}],['Мастер первого удара',3,3,2,{firstStrike:true}],['Таранный всадник',3,3,3,{piercing:true}],['Пламенный авангард',4,4,2,{haste:true}],['Капитан дозора',4,3,5,{guard:true,firstStrike:true}],['Молотобоец королевства',5,5,4,{piercing:true}],['Двукратный натиск',6,5,5,{extraAttacks:1}]].map(unit),
     legends: ['Командор стального рубежа','Хранитель горного прохода'], item:'Знамя горной стражи',
   },
   blue: {
     plain: [['Матрос Талдрейка',1,1,2],['Доковый плотник',2,2,2],['Курсант аэродрома',2,2,3],['Палубный дозорный',3,3,2],['Штурманская команда',4,3,4],['Бортовой ветеран',5,4,5]].map(unit),
-    effects: [['Быстрый курьер',1,1,1,{flying:true}],['Сторожевой дирижабль',2,2,2,{flying:true}],['Воздушный перехватчик',3,2,4,{flying:true,guard:true}],['Тихий разведчик',3,3,2,{stealth:true}],['Штурмовой пилот',4,4,3,{flying:true,firstStrike:true}],['Капитан флотилии',4,3,5,{guard:true}],['Небесный налётчик',5,5,4,{flying:true}],['Флагманский десант',6,5,6,{flying:true,extraAttacks:1}]].map(unit),
+    effects: [['Быстрый курьер',1,1,2,{flying:true}],['Сторожевой дирижабль',2,2,3,{flying:true}],['Воздушный перехватчик',3,2,4,{flying:true,guard:true}],['Тихий разведчик',3,3,2,{stealth:true}],['Штурмовой пилот',4,4,3,{flying:true,firstStrike:true}],['Капитан флотилии',4,3,5,{guard:true}],['Небесный налётчик',5,5,4,{flying:true}],['Флагманский десант',6,5,6,{flying:true,extraAttacks:1}]].map(unit),
     legends: ['Адмирал талдрейкского неба','Мастер воздушных путей'], item:'Навигационный кристалл флотилии',
   },
   green: {
     plain: [['Суварский следопыт',1,1,2],['Лесной подмастерье',2,2,2],['Страж тропы',2,2,3],['Садовый зверь',3,3,3],['Суварский охотник',4,4,4],['Древесный исполин',5,5,5]].map(unit),
-    effects: [['Живучий зверёк',1,1,2,{lifesteal:true}],['Защитник чащи',2,2,3,{guard:true}],['Хищник Сувара',3,3,2,{poisonHit:{strength:1,ticks:2}}],['Целитель рощи',3,2,4,{lifesteal:true}],['Лесная дозорная',4,4,3,{stealth:true}],['Корневой бастион',4,3,6,{guard:true,shield:1}],['Дикий оплот',5,5,5,{lifesteal:true}],['Страж зелёного рубежа',6,6,6,{guard:true}]].map(unit),
+    effects: [['Живучий зверёк',1,1,2,{lifesteal:true}],['Защитник чащи',2,2,3,{guard:true}],['Хищник Сувара',3,3,2,{poisonHit:{strength:1,ticks:2}}],['Целитель рощи',3,2,4,{lifesteal:true}],['Лесная дозорная',4,4,3,{stealth:true}],['Корневой бастион',4,3,6,{guard:true,shield:1}],['Дикий оплот',5,4,5,{lifesteal:true}],['Страж зелёного рубежа',6,6,6,{guard:true}]].map(unit),
     legends: ['Старейшина рода Кайров','Защитница суварских рощ'], item:'Знамя дома Кайров',
   },
   gold: {
@@ -35,7 +35,7 @@ const themes: Record<ArchetypeId, Theme> = {
   },
   violet: {
     plain: [['Искатель сокровищницы',1,1,2],['Подручный Ван Троупов',2,2,2],['Сторож подвала',2,2,3],['Шифровальщик реликвий',3,3,2],['Сборщик механизмов',4,4,4],['Хранитель тайника',5,5,5]].map(unit),
-    effects: [['Зовущий забытых',1,1,2,{sacrifice:true}],['Призрачный агент',2,2,2,{sacrifice:true,stealth:true}],['Хранитель неисправностей',2,2,3,{sacrifice:true,onDeath:{kind:'damageOpponent',amount:1}}],['Разведчик искажения',3,3,2,{sacrifice:true,haste:true}],['Оператор механизмов',4,3,4,{sacrifice:true,onDeath:{kind:'damageAllCreatures',amount:1}}],['Вестник Шоу',4,4,3,{sacrifice:true,poisonHit:{strength:1,ticks:2}}],['Страж забытого архива',5,4,5,{guard:true,sacrifice:true}]].map(unit),
+    effects: [['Зовущий забытых',1,2,2,{sacrifice:true}],['Призрачный агент',2,2,3,{sacrifice:true,stealth:true}],['Хранитель неисправностей',2,2,3,{sacrifice:true,onDeath:{kind:'damageOpponent',amount:1}}],['Разведчик искажения',3,3,2,{sacrifice:true,haste:true}],['Оператор механизмов',4,3,4,{sacrifice:true,onDeath:{kind:'damageAllCreatures',amount:1}}],['Вестник Шоу',4,4,3,{sacrifice:true,poisonHit:{strength:1,ticks:2}}],['Страж забытого архива',5,4,5,{guard:true,sacrifice:true}]].map(unit),
     legends: ['Колдрейк Шоу','Цера Ван Троуп'], item:'Драгнир и Иммельсторн',
   },
   neutral: {
@@ -74,7 +74,7 @@ function rewardPool(): [Card,Card,Card,Card,Card] {
     {id:'vt-guardian',name:'Реликтовый страж Ван Троупов',nameEn:'Van Troupe Relic Sentinel',kind:'creature',aspects:['violet'],attack:3,health:6,guard:true},
     {id:'vt-specter',name:'Умертвие родовой крипты',nameEn:'Ancestral Crypt Revenant',kind:'creature',aspects:['violet'],attack:4,health:4,lifesteal:true},
     {id:'vt-spark',name:'Искра фамильной сокровищницы',nameEn:'Family Vault Spark',kind:'creature',aspects:['violet'],attack:3,health:3,createdToken:true,poisonHit:{strength:1,ticks:2}},
-  ].map(card => ({...card, lore:{state:'Искажение', organization:'Дом Ван Троуп',
+  ].map(card => ({...card, lore:{state:'Искажение', organization:'Дом Ван Троуп',summary:`${card.name} откликается на ритуал сокровищницы.`,
     note:'Награда ритуала из сокровищницы и некромантских артофактов Ван Троупов; название — игровая адаптация.'}})) as [Card,Card,Card,Card,Card];
 }
 export function testDeck(id: ArchetypeId): Card[] {
@@ -90,23 +90,39 @@ export function testDeck(id: ArchetypeId): Card[] {
     neutral:['Опорный двор Ордена','Keepers Chapterhouse'],
   };
   const neutralNames: [string,string] = ['Страннический стан Ордена','Keepers Wayfarer Camp'];
+  const domainSites: Record<ArchetypeId,string[]> = {
+    red:['Кузня рубежа','Рудный двор'],blue:['Ветровой причал','Мастерская штурманов'],
+    green:['Тропа Кайров','Сторожевой лес'],gold:['Двор рыцарей','Смотровая башня'],
+    violet:['Реликтовый подвал','Мавзолей рода'],neutral:[
+      'Полевой архив','Дозорная стоянка','Дом путников','Склад припасов','Караульный стан',
+      'Скрипторий Ордена','Смотровой пост','Школа Хранителей','Палатка лекаря','Мастеровой двор','Зал совета'],
+  };
+  // Thirteen different sites, two copies each. General deck rules still permit
+  // unlimited basic Domains; the preset itself keeps every card at two copies.
+  const sites = id==='neutral'
+    ? [basicNames[id][0],neutralNames[0],...domainSites.neutral]
+    : [basicNames[id][0],...additionalNames[id],...domainSites[id]];
+  const siteNamesEn = id==='neutral'
+    ? [basicNames[id][1],neutralNames[1],...domainSites.neutral.map((_,i)=>`Keepers Site ${i+1}`)]
+    : [basicNames[id][1],...additionalNamesEn[id],...domainSites[id].map((_,i)=>`${id} Outpost ${i+1}`)];
   const domains: Card[] = Array.from({length:26},(_,i):Card=>{
-    const colored = id!=='neutral' || i<3;
-    const label=colored?basicNames[id]:neutralNames;
+    const site=Math.floor(i/2), colored=id!=='neutral'||site===0;
+    const name=sites[site];
     return {
-      id: `${id}-domain-${colored?(id==='neutral'?'gold':id):'neutral'}`,
-      name:label[0],nameEn:label[1],
+      id: `${id}-domain-${site}`,
+      name,nameEn:siteNamesEn[site],
       kind:'domain',basic:true,
       produces:colored?(id==='neutral'?'gold':id):'neutral',
-      lore:{...lore,note:'Название базового Владения — игровая адаптация лорной недвижимости, не утверждение о конкретной карте мира.'},
+      lore:{...lore,summary:`${name} обеспечивает ${archetype.organization} энергией и укрытием.`,
+        note:'Название базового Владения — игровая адаптация лорной недвижимости, не утверждение о конкретной карте мира.'},
     };
   });
   const creatures = (entries: Unit[], copies: number[]) => entries.flatMap((entry,i) => Array.from({length:copies[i]},(): Card => ({
     id:identifier(id,entry.name),name:entry.name,kind:'creature',aspects:id==='neutral'?[]:[id],
     cost:cost(id,entry.cost),attack:entry.attack,health:entry.health,...entry.traits,lore:
-      id==='violet'?{...lore,note:entry.traits?.sacrifice
+      id==='violet'?{...lore,summary:`${entry.name} служит дому Ван Троупов в Искажении.`,note:entry.traits?.sacrifice
         ?'Слуга культа Ван Троупов: нежить, культ или реликтовая механика; игровая интерпретация.'
-        :'Обитатель владений Ван Троупов; игровое имя, не подтверждённое в вики.'}:lore,
+        :'Обитатель владений Ван Троупов; игровое имя, не подтверждённое в вики.'}:{...lore,summary:`${entry.name} выступает на стороне ${archetype.organization}.`},
   })));
   const plain = [...theme.plain,...extraPlain[id].map((name,i)=>({...theme.plain[i],name}))];
   const vanilla = creatures(plain, plain.map(()=>2));
@@ -127,20 +143,24 @@ export function testDeck(id: ArchetypeId): Card[] {
     loyaltyAbility:id==='violet'
       ? i===0 ? {delta:-2,kind:'recoverCreature',amount:1} : {delta:-2,kind:'raiseSacrifice',amount:1}
       : i===0 ? {delta:-2,kind:'healRuler',amount:4} : {delta:-2,kind:'damageOpponent',amount:2},
-    lore:id==='violet'?{...lore,note:i===0
+    lore:id==='violet'?{...lore,summary:i===0?'Лич Колдрейк Шоу возвращает погибших слуг в строй.':'Цера Ван Троуп собирает ритуальную свиту умертвий.',note:i===0
       ?'Колдрейк Шоу — лич. Возвращает Существо из сброса в руку; игровая трактовка некромантии.'
-      :'Цера Ван Троуп — девушка, умертвие-некромант дома Ван Троуп; создаёт ритуальную Жертву и даёт дополнительный добор при исполнении Ритуала.'}:lore}));
+      :'Цера Ван Троуп — девушка, умертвие-некромант дома Ван Троуп; создаёт ритуальную Жертву и даёт дополнительный добор при исполнении Ритуала.'}:{...lore,summary:`${name} ведёт ${archetype.organization} в сражении.`}}));
   const artifact: Card = {id:identifier(id,theme.item),name:theme.item,kind:'artifact',aspects:id==='neutral'?[]:[id],
-    unique:true,cost:cost(id,3),auraAttack:1,lore};
-  const techniques: Card[] = id==='violet' ? Array.from({length:3},():Card=>({id:'vt-ritual',name:'Призыв забытой реликвии',kind:'technique',aspects:['violet'],
-    cost:cost('violet',3),ritual:{color:'violet',threshold:3,duration:2,rewardPool:rewardPool()},lore})) : [];
+    unique:true,cost:cost(id,3),auraAttack:1,lore:{...lore,summary:`${theme.item} укрепляет бойцов ${archetype.organization}.`}};
+  const techniques: Card[] = id==='violet' ? Array.from({length:2},():Card=>({id:'vt-ritual',name:'Призыв забытой реликвии',kind:'technique',aspects:['violet'],
+    cost:cost('violet',3),ritual:{color:'violet',threshold:3,duration:2,rewardPool:rewardPool()},lore:{...lore,summary:'Культ приносит Жертв ради реликвии из сокровищницы.'}})) : [];
   const spellNames: Record<ArchetypeId,string> = {red:'Залп горной стражи',blue:'Донесение флотилии',green:'Настой Кайров',gold:'Помощь госпитальеров',violet:'Возвращение из крипты',neutral:'Полевое снабжение'};
   const spellEffects: Record<ArchetypeId,NonNullable<Card['techniqueEffect']>> = {
     red:{kind:'damageOpponent',amount:2},blue:{kind:'draw',amount:2},green:{kind:'healRuler',amount:4},
     gold:{kind:'healRuler',amount:4},violet:{kind:'reanimate',amount:1},neutral:{kind:'draw',amount:2}};
-  const spells:Card[]=Array.from({length:id==='violet'?2:3},()=>({id:identifier(id,spellNames[id]),name:spellNames[id],
-    kind:'technique',aspects:id==='neutral'?[]:[id],cost:cost(id,id==='violet'?5:3),techniqueEffect:spellEffects[id],lore}));
-  const deck = [...domains,...vanilla,...effects,...techniques,...spells,...legends,artifact];
+  const spells:Card[]=Array.from({length:2},()=>({id:identifier(id,spellNames[id]),name:spellNames[id],
+    kind:'technique',aspects:id==='neutral'?[]:[id],cost:cost(id,id==='violet'?5:3),techniqueEffect:spellEffects[id],
+    lore:{...lore,summary:`${spellNames[id]} помогает ${archetype.organization} переломить ход боя.`}}));
+  const finalSpell:Card = {id:identifier(id,spellNames[id]+' резервы'),name:spellNames[id]+' · Резервы',
+    kind:'technique',aspects:id==='neutral'?[]:[id],cost:cost(id,id==='violet'?5:3),techniqueEffect:spellEffects[id],
+    lore:{...lore,summary:`Резервный отряд ${archetype.organization} повторяет проверенный приём.`}};
+  const deck = [...domains,...vanilla,...effects,...techniques,...spells,finalSpell,...legends,artifact];
   const issues = validateDeck(deck);
   if (issues.length) throw new Error(`${id}: ${issues.join('; ')}`);
   return deck;
@@ -167,6 +187,8 @@ export const EXTRA_DOMAINS: readonly Card[] = (Object.keys(additionalNames) as A
     id:'extra-domain-'+color+'-'+(i+1),name,nameEn:additionalNamesEn[color][i],
     kind:'domain',basic:false,produces:color,aspects:[color],
     lore:{state:ARCHETYPES.find(a=>a.id===color)!.state,organization:ARCHETYPES.find(a=>a.id===color)!.organization,
+      summary:`${name} снабжает владетеля энергией ${color}.`,
       note:'Новое игровое название недвижимости для расширенного каталога; не заявлено каноническим объектом на карте мира.'},
   })));
+
 

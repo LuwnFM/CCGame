@@ -275,7 +275,8 @@ test('basic thematic Domains preserve stable IDs, Energy and original deck ratio
     assert.ok(basic.some((c:any)=>c.name===names[preset.id]));
     assert.ok(basic.every((c:any)=>c.nameEn&&c.basic));
     if(preset.id!=='neutral')assert.ok(basic.every((c:any)=>c.produces===preset.id));
-    else assert.equal(basic.filter((c:any)=>c.produces==='gold').length,3);
+    else assert.equal(basic.filter((c:any)=>c.produces==='gold').length,2);
+    assert.ok([...new Set(basic.map((c:any)=>c.id))].length===13);
   }
  }finally{app.close()}
 });
@@ -340,3 +341,4 @@ test('Ruler API eligibility, archive parameters and idempotent commands preserve
   assert.equal(JSON.parse(event.action).abilityIndex,0);
  }finally{app.close()}
 });
+

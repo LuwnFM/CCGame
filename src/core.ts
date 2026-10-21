@@ -3,6 +3,12 @@ import { mulligan } from './setup.ts';
 import { eligibleVictims, nextRandom, planRitual, type RitualEffect } from './ritual.ts';
 import { ability } from './mechanics/abilities.ts';
 import { damage, resolveCombat } from './mechanics/combat.ts';
+import { emptyEnergy, payForCard } from './mechanics/energy.ts';
+import { tickStatusesAtTurnStart } from './mechanics/statuses.ts';
+import { activateLegend } from './mechanics/legends.ts';
+import { EffectLimitError, MAX_EFFECT_OPERATIONS, removePermanents, collectLethal, resolveDeaths, finishIfLethal } from './mechanics/death-queue.ts';
+export { MAX_EFFECT_OPERATIONS } from './mechanics/death-queue.ts';
+export { validateDeck } from './mechanics/deck-rules.ts';
 export const RULES_VERSION = '0.9.14-alpha';
 export type PlayerId = 0 | 1;
 export type Aspect = 'red' | 'blue' | 'green' | 'gold' | 'violet';
@@ -48,7 +54,7 @@ export type Card = {
   loyaltyAbility?: { delta: number; kind: 'healRuler' | 'damageOpponent' | 'draw' | 'recoverCreature' | 'raiseSacrifice'; amount: number };
   loyaltyAbilities?: readonly { delta: number; kind: 'healRuler' | 'damageOpponent' | 'draw' | 'recoverCreature' | 'raiseSacrifice'; amount: number }[];
   auraAttack?: number;
-  lore?: { state: string; organization: string; note?: string };
+  lore?: { state: string; organization: string; summary?: string; note?: string };
   // Abilities need a separately specified resolver, never arbitrary card scripts.
   abilities?: readonly string[];
 };
@@ -94,8 +100,6 @@ export type Command =
   | { type: 'discard'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number };
 
 export class RuleError extends Error {}
-const energies: readonly Energy[] = ['red', 'blue', 'green', 'gold', 'violet', 'neutral'];
-const emptyEnergy = (): Record<Energy, number> => ({ red: 0, blue: 0, green: 0, gold: 0, violet: 0, neutral: 0 });
 export function player(deck: Card[] = [], hand: Card[] = []): Player {
   return { hp: 30, deck: [...deck], hand: [...hand], discard: [], erased: [], domains: [], main: [], auxiliary: [], legends: [], energy: emptyEnergy(), domainsPlayed: 0, rituals: [] };
 }
@@ -118,19 +122,6 @@ export function openingGame(first: { hand: Card[]; deck: Card[]; seedAfter: numb
   game.seed = second.seedAfter;
   return game;
 }
-export function validateDeck(deck: readonly Card[]): string[] {
-  const issues: string[] = [];
-  if (deck.length !== 70) issues.push('Колода должна содержать ровно 70 карт');
-  if (deck.filter(c => c.kind === 'domain').length < 26) issues.push('Нужно не менее 26 Владений');
-  if (!deck.some(c => c.kind === 'domain' && c.basic && c.produces !== 'neutral')) issues.push('Нужно базовое цветное Владение');
-  if (new Set(deck.filter(c => c.kind === 'legend').map(c => c.name)).size > 3) issues.push('Не более трёх разных Легенд');
-  const counts = new Map<string, number>();
-  for (const c of deck) counts.set(c.name, (counts.get(c.name) ?? 0) + 1);
-  for (const c of deck) if (!(c.kind === 'domain' && c.basic) && (counts.get(c.name) ?? 0) > (c.unique || c.kind === 'legend' ? 1 : 3)) {
-    issues.push(`Превышен лимит копий: ${c.name}`); counts.delete(c.name);
-  }
-  return issues;
-}
 function requireRule(ok: unknown, message: string): asserts ok {
   if (!ok) throw new RuleError(message);
 }
@@ -145,7 +136,7 @@ function spawnSkeleton(game: Game, actor: PlayerId, count: number, source: Card)
   for(let i=0;i<count && owner.auxiliary.length<4;i++){
     const card:Card={id:'violet-skeleton-token',name:'Призванный скелет',kind:'creature',
       aspects:['violet'],attack:1,health:1,createdToken:true,sacrifice:true,
-      lore:{state:'Искажение',organization:'Некроманты',note:'Токен 1/1; исчезает вместо попадания в Сброс.'}};
+      lore:{state:'Искажение',organization:'Некроманты',summary:'Поднятый скелет служит временной Жертвой ритуала.',note:'Токен 1/1; исчезает вместо попадания в Сброс.'}};
     owner.auxiliary.push({objectId:game.nextObjectId++,card,damage:0,shield:0,exhausted:true,
       interceptions:0,enteredTurn:game.turn,sacrifice:true,attacksMade:0});
   }
@@ -195,47 +186,6 @@ function resolveTechnique(game:Game,actor:PlayerId,card:Card,command:{targetId?:
       else target.stunned=true;
     }else throw new RuleError('Неизвестный эффект Техники');
   }
-}
-function payForCard(owner: Player, cost: Cost): Record<Energy, number> {
-  const available = { ...owner.energy };
-  const ready = owner.domains.filter(d => !d.exhausted && d.card.produces);
-  const tap = (energy: Energy) => {
-    const domain = ready.find(d => d.card.produces === energy && !d.exhausted);
-    if (!domain) return false;
-    domain.exhausted = true;
-    available[energy]++;
-    return true;
-  };
-  for (const color of energies.slice(0, 5) as Aspect[]) {
-    const required = cost.colored[color] ?? 0;
-    while (available[color] < required && tap(color)) {}
-    requireRule(available[color] >= required, 'Не хватает цветной Энергии');
-    available[color] -= required;
-  }
-  let total = energies.reduce((n,color)=>n+available[color],0);
-  for (const color of ['neutral', 'red', 'blue', 'green', 'gold', 'violet'] as Energy[]) {
-    while (total < cost.generic && tap(color)) total++;
-  }
-  requireRule(total >= cost.generic, 'Не хватает Энергии');
-  return pay(available, { colored: {}, generic: cost.generic });
-}
-function pay(pool: Record<Energy, number>, cost: Cost): Record<Energy, number> {
-  const result = { ...pool };
-  for (const color of energies.slice(0, 5) as Aspect[]) {
-    const amount = cost.colored[color] ?? 0;
-    requireRule(Number.isSafeInteger(amount) && amount >= 0, 'Неверная стоимость');
-    requireRule(result[color] >= amount, 'Не хватает цветной Энергии');
-    result[color] -= amount;
-  }
-  requireRule(Number.isSafeInteger(cost.generic) && cost.generic >= 0, 'Неверная стоимость');
-  requireRule(energies.reduce((sum, color) => sum + result[color], 0) >= cost.generic, 'Не хватает Энергии');
-  // Spend neutral first, then fixed colors. UI may later submit an explicit payment plan.
-  let remaining = cost.generic;
-  for (const color of [...energies].reverse()) {
-    const taken = Math.min(result[color], remaining);
-    result[color] -= taken; remaining -= taken;
-  }
-  return result;
 }
 export function apply(game: Game, command: Command): Game {
   requireRule(typeof command.key === 'string' && command.key.length > 0, 'Нужен ключ идемпотентности');
@@ -360,44 +310,7 @@ export function apply(game: Game, command: Command): Game {
       break;
     }
     case 'activateLegend': {
-      requireRule(next.turn > 0 && next.phase === 'main', 'Недоступная фаза');
-      const legend = p.legends.find(unit => unit.objectId === command.objectId);
-      const choices = legend?.card.loyaltyAbilities?.length ? legend.card.loyaltyAbilities : legend?.card.loyaltyAbility ? [legend.card.loyaltyAbility] : [];
-      const chosen = command.abilityIndex ?? (legend?.card.loyaltyAbilities?.length ? 1 : 0);
-      const ability = Number.isSafeInteger(chosen) && chosen >= 0 ? choices[chosen] : undefined;
-      requireRule(legend && ability && legend.lastActivatedTurn !== next.turn && !legend.stunned && !legend.stasis && !legend.silenced, 'Способность Легенды недоступна');
-      requireRule(Number.isSafeInteger(ability.delta) && Number.isSafeInteger(ability.amount) && ability.amount >= 0, 'Неверная способность');
-      requireRule(legend.loyalty! + ability.delta >= 0, 'Не хватает Лояльности');
-      if (ability.kind === 'recoverCreature')
-        requireRule(Number.isSafeInteger(command.discardIndex) && p.discard[command.discardIndex!]?.kind === 'creature',
-          'Выберите Существо из сброса для возвращения в руку');
-      if (ability.kind === 'raiseSacrifice')
-        requireRule(p.auxiliary.length < 4, 'Нет свободного места для умертвия Жертвы');
-      legend.loyalty! += ability.delta;
-      legend.lastActivatedTurn = next.turn;
-      if (ability.kind === 'healRuler') p.hp = Math.min(30, p.hp + ability.amount);
-      else if (ability.kind === 'damageOpponent') next.players[(1 - command.actor) as PlayerId].hp -= ability.amount;
-      else if (ability.kind === 'draw') for (let i = 0; i < ability.amount && p.deck.length; i++) p.hand.push(p.deck.shift()!);
-      else if (ability.kind === 'recoverCreature') p.hand.push(p.discard.splice(command.discardIndex!, 1)[0]);
-      else if (ability.kind === 'raiseSacrifice') {
-        const token: Card = { id: 'vt-cera-ritual-servant', name: 'Умертвие свиты Церы',
-          nameEn: 'Cera’s Undead Retainer', kind: 'creature', aspects: ['violet'],
-          attack: 2, health: 2, createdToken: true, sacrifice: true,
-          lore: {state:'Искажение',organization:'Дом Ван Троуп',
-            note:'Игровой ритуальный слуга из некромантской свиты Церы Ван Троуп.'} };
-        p.auxiliary.push({objectId:next.nextObjectId++, card:token, exhausted:true,
-          damage:0, shield:0, interceptions:0, enteredTurn:next.turn, sacrifice:true, attacksMade:0});
-        // Cera may complete ONE existing ritual immediately. The 3-of-5 reward
-        // selection, sacrifices and death triggers remain entirely unchanged.
-        const ready = p.rituals.find(effect => eligibleVictims(p,effect.color).length >= effect.threshold);
-        if (ready) {
-          next.readyRituals=[{effect:structuredClone(ready),
-            eligibleIds:eligibleVictims(p,ready.color).map(unit=>unit.objectId)}];
-          next.phase='ritual';
-        }
-      } else throw new RuleError('Неизвестная способность Легенды');
-      if (legend.loyalty === 0) { p.legends.splice(p.legends.indexOf(legend), 1); sendToDiscard(p, legend.card); }
-      finishIfLethal(next);
+      activateLegend(next, command);
       break;
     }
     case 'playArtifact': {
@@ -581,14 +494,7 @@ function advance(game: Game): void {
   for (const creature of game.players[1 - game.active].main) creature.interceptions = 0;
   for (const creature of game.players[1 - game.active].auxiliary) creature.interceptions = 0;
   if (p.deck.length) p.hand.push(p.deck.shift()!);
-  for (const unit of [...p.main, ...p.auxiliary]) {
-    // v0.9.13: Stasis pauses Poison; its duration still advances at turn end.
-    // The Poison tick resumes at the next own turn start after Stasis expires.
-    if (unit.poison && !unit.stasis) {
-      damage(unit, unit.poison.strength);
-      if (--unit.poison.ticks <= 0) unit.poison = undefined;
-    }
-  }
+  tickStatusesAtTurnStart(p);
   resolveDeaths(game, collectLethal(game));
   if (finishIfLethal(game)) return;
   const ready: ReadyRitual[] = [];
@@ -601,57 +507,3 @@ function advance(game: Game): void {
   game.readyRituals = ready;
   if (ready.length) game.phase = 'ritual';
 }
-class EffectLimitError extends Error {}
-export const MAX_EFFECT_OPERATIONS = 128;
-type Death = { unit: Permanent; owner: PlayerId };
-function removePermanents(owner: Player, ids: readonly number[]): Permanent[] {
-  const removed: Permanent[] = [];
-  for (const id of ids) {
-    const zone = [owner.main, owner.auxiliary].find(group => group.some(unit => unit.objectId === id));
-    if (!zone) throw new RuleError('Существо уже покинуло поле');
-    removed.push(zone.splice(zone.findIndex(unit => unit.objectId === id), 1)[0]);
-  }
-  return removed;
-}
-function collectLethal(game: Game): Death[] {
-  const dead: Death[] = [];
-  for (const owner of [0, 1] as const) {
-    const player = game.players[owner];
-    for (const zone of [player.main, player.auxiliary]) {
-      for (let i = zone.length - 1; i >= 0; i--) {
-        const unit = zone[i];
-        if (unit.card.health !== undefined && unit.damage >= unit.card.health)
-          dead.push({ unit: zone.splice(i, 1)[0], owner });
-      }
-    }
-  }
-  // Active player resolves their simultaneous deaths first; stable ordering by object id.
-  return dead.sort((a, b) => (a.owner === game.active ? 0 : 1) - (b.owner === game.active ? 0 : 1) || a.unit.objectId - b.unit.objectId);
-}
-function resolveDeaths(game: Game, initial: Death[]): void {
-  const queue = [...initial];
-  while (queue.length) {
-    if ((game.operationsUsed = (game.operationsUsed ?? 0) + 1) > MAX_EFFECT_OPERATIONS)
-      throw new EffectLimitError('Превышен бюджет обязательных эффектов; матч приостановлен');
-    const { unit, owner } = queue.shift()!;
-    const effect = unit.stasis || unit.silenced ? undefined : unit.card.onDeath;
-    if (effect) {
-      if (!Number.isSafeInteger(effect.amount) || effect.amount < 0) throw new RuleError('Неверный эффект гибели');
-      if (effect.kind === 'damageController') game.players[owner].hp -= effect.amount;
-      else if (effect.kind === 'damageOpponent') game.players[(1 - owner) as PlayerId].hp -= effect.amount;
-      else if (effect.kind === 'damageAllCreatures') {
-        for (const side of game.players) for (const creature of [...side.main, ...side.auxiliary]) damage(creature, effect.amount);
-        queue.push(...collectLethal(game));
-      } else throw new RuleError('Неизвестный обязательный эффект гибели');
-    }
-    sendToDiscard(game.players[owner], unit.card, unit.ritualReward);
-  }
-}
-function finishIfLethal(game: Game): boolean {
-  const [a, b] = game.players;
-  if (a.hp > 0 && b.hp > 0) return false;
-  game.winner = a.hp <= 0 && b.hp <= 0 ? 'draw' : a.hp <= 0 ? 1 : 0;
-  game.phase = 'finished';
-  return true;
-}
-

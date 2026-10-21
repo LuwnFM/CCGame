@@ -27,10 +27,26 @@ test('all six alpha decks are legal, with a playable violet Technique', () => {
     assert.equal(cards.filter(c => c.kind === 'legend').length, 2);
     assert.equal(cards.filter(c => c.kind === 'artifact' && c.unique).length, 1);
     assert.ok(cards.every(c => c.lore?.organization === archetype.organization));
+    assert.ok(cards.every(c => c.lore?.summary && c.lore.summary.length > 15));
+    const copies = new Map<string,number>();
+    for (const card of cards) copies.set(card.id,(copies.get(card.id)??0)+1);
+    assert.ok([...copies.values()].every(count => count <= 2), `${archetype.id}: starter contains three copies`);
   }
-  assert.equal(testDeck('violet').filter(card => card.kind === 'technique' && card.ritual).length, 3);
+  assert.equal(testDeck('violet').filter(card => card.kind === 'technique' && card.ritual).length, 2);
   assert.ok(testDeck('violet').some(card => card.name === 'Колдрейк Шоу'));
   assert.ok(testDeck('violet').some(card => card.name === 'Драгнир и Иммельсторн'));
+});
+test('starter catalog covers the implemented card mechanics and two loyalty choices', () => {
+  const decks=Object.fromEntries(ARCHETYPES.map(a=>[a.id,testDeck(a.id)]));
+  const traits=['guard','flying','firstStrike','piercing','lifesteal','haste','stealth',
+    'poisonHit','shield','sacrifice','extraAttacks','onDeath','onEntry','secondChance','ritual'] as const;
+  for(const trait of traits)
+    assert.ok(Object.values(decks).some(cards=>cards.some(card=>Boolean(card[trait]))),trait);
+  for(const cards of Object.values(decks)){
+    assert.ok(cards.some(card=>card.guard));
+    for(const legend of cards.filter(card=>card.kind==='legend'))
+      assert.deepEqual(legend.loyaltyAbilities?.map(choice=>Math.sign(choice.delta)),[1,-1]);
+  }
 });
 test('First Strike prevents retaliation, and Poison pauses for Stasis then resumes', () => {
   let g = step(initialGame(player(),player()),{type:'startTurn',actor:0},'start');
@@ -257,4 +273,5 @@ test('Coldrake Shaw returns a creature from discard to hand, never free-plays it
   assert.equal(g.players[0].main.length,0);
   assert.equal(g.players[0].legends[0].loyalty,2);
 });
+
 

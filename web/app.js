@@ -147,7 +147,7 @@ function showCardDetails(card,p) {
   $('inspectorStats').textContent=kindName(card.kind)+' · '+detailsText(card,p);
   $('inspectorTraits').replaceChildren(...traitDescriptions(card).map(value=>textElement('p',value,'trait-description')));
   const lore=card.lore;
-  $('inspectorLore').textContent=lore?([lore.state,lore.organization,lore.note].filter(Boolean).join(' · ')):'';
+  $('inspectorLore').textContent=lore?([lore.summary,lore.state,lore.organization,lore.note].filter(Boolean).join(' · ')):'';
   dialog.showModal();
 }
 $('inspectorClose').onclick=()=>$('cardInspector').close();
