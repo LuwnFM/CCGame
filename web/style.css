@@ -34,7 +34,7 @@ label{display:block;margin:10px 0;font-size:.9rem;color:var(--muted)}input,selec
 .domain-details{margin-top:12px;border:1px solid #50617e;border-radius:10px;padding:10px;background:#151d2c}
 .domain-details summary{color:#dfc399;font-size:.92rem}
 .domain-grid{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
-.domain-item{display:inline-flex;position:relative;padding-right:14px;align-items:center}.domain-item .domain-inspect{position:absolute;right:0;top:0;min-height:30px;min-width:30px;padding:2px;border:1px solid #9daac2;border-radius:50%;background:#202a40;color:#fff;font-size:.9rem;line-height:1;z-index:1}
+.domain-item{display:inline-flex;align-items:center;gap:3px}.domain-item .domain-inspect{min-height:44px;min-width:40px;padding:2px;border:1px solid #9daac2;border-radius:8px;background:#202a40;color:#fff;font-size:.9rem;line-height:1}
 button.domain-chip{height:32px;min-height:32px;min-width:33px;padding:4px 7px;border-radius:8px;border:1px solid #8293a9;color:white;background:#35415b;font-size:.85rem}
 button.domain-chip.red{background:#813d42}button.domain-chip.blue{background:#325a80}button.domain-chip.green{background:#406a45}button.domain-chip.gold{background:#816139}button.domain-chip.violet{background:#61427b}button.domain-chip.neutral{background:#4c5366}
 button.domain-chip.spent{opacity:.4;text-decoration:line-through}
