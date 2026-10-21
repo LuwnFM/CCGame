@@ -2,7 +2,7 @@ import {RuleError,sendToDiscard,type Command,type Game,type PlayerId} from '../c
 import {eligibleVictims} from '../ritual.ts';
 import {finishIfLethal} from './death-queue.ts';
 import {invokeEffect,registerEffect} from './effects-registry.ts';
-import {drawCards,summon,moveCard} from './zones.ts';
+import {drawCards,summon,transferCard,departPermanent} from './zones.ts';
 import {SIGNATURE_TOKENS,CERA_SERVANT} from '../cards/tokens.ts';
 function requireRule(ok:unknown,message:string):asserts ok{if(!ok)throw new RuleError(message)}
 const number=(n:number)=>Number.isSafeInteger(n)&&n>=0&&n<=8;
@@ -16,13 +16,13 @@ registerEffect('loyalty','damageOpponent',({game,actor,amount})=>{
 });
 registerEffect('loyalty','draw',({game,actor,amount})=>{
   requireRule(number(amount!),'Неверный добор');
-  drawCards(game.players[actor],amount!);
+  drawCards(game.players[actor],amount!,game,actor);
 });
 registerEffect('loyalty','recoverCreature',({game,actor,discardIndex})=>{
   const owner=game.players[actor];
   requireRule(Number.isSafeInteger(discardIndex)&&owner.discard[discardIndex!]?.kind==='creature',
     'Выберите Существо из сброса для возвращения в руку');
-  moveCard(owner,'discard','hand',discardIndex!);
+  transferCard(game,actor,'discard','hand',discardIndex!);
 });
 function completeOneRitual(next:Game,actor:PlayerId):void{
   const p=next.players[actor];
@@ -74,8 +74,7 @@ export function activateLegend(next:Game,command:Extract<Command,{type:'activate
     completeRitual:'completeRitual'in effect?effect.completeRitual:undefined,
     discardIndex:command.discardIndex});
   if(legend.loyalty===0){
-    p.legends.splice(p.legends.indexOf(legend),1);
-    sendToDiscard(p,legend.card);
+    departPermanent(next,command.actor,legend.objectId,['legends']);
   }
   finishIfLethal(next);
 }
