@@ -1,4 +1,5 @@
 import { RuleError, type Card, type Game, type Permanent, type PlayerId } from '../core.ts';
+import {emitGameEvent} from './events.ts';
 
 /** Shared core zone operation. Card effects supply data, never executable card-specific functions.
  * Every produced token receives a fresh objectId; partial creation stops at the 8+4 limit.
@@ -17,9 +18,7 @@ export function summon(game:Game,actor:PlayerId,cards:readonly Card[]):number {
   for(const original of cards){
     if(owner.auxiliary.length>=4)break;
     const card=structuredClone(original);
-    owner.auxiliary.push({objectId:game.nextObjectId++,card,damage:0,
-      shield:card.shield??0,exhausted:true,interceptions:0,enteredTurn:game.turn,
-      sacrifice:card.sacrifice,attacksMade:0});
+    placePermanent(game,actor,'auxiliary',card);
     produced++;
   }
   return produced;
@@ -54,14 +53,20 @@ export function movePermanent(game:Game,actor:PlayerId,from:BoardZone,to:BoardZo
   if(index<0)throw new RuleError('Объект покинул исходную зону');
   const limit=to==='auxiliary'?4:to==='main'?8:to==='legends'?2:Infinity;
   if(destination.length>=limit)throw new RuleError('Нет места в целевой зоне');
-  destination.push(source.splice(index,1)[0]);
+  const unit=source.splice(index,1)[0];
+  destination.push(unit);
+  emitGameEvent(game,{type:'zoneMoved',owner:actor,cardId:unit.card.id,objectId:unit.objectId,from,to});
 }
 /** Remove from a battlefield zone, either as death (caller queues Last Word) or departure. */
 export function takePermanent(game:Game,actor:PlayerId,id:number,zones:readonly BoardZone[]=['main','auxiliary']):Permanent{
   const owner=game.players[actor];
   for(const z of zones){
     const index=owner[z].findIndex(unit=>unit.objectId===id);
-    if(index>=0)return owner[z].splice(index,1)[0];
+    if(index>=0){
+      const unit=owner[z].splice(index,1)[0];
+      emitGameEvent(game,{type:'zoneMoved',owner:actor,cardId:unit.card.id,objectId:unit.objectId,from:z,to:'detached'});
+      return unit;
+    }
   }
   throw new RuleError('Объект покинул поле');
 }
@@ -73,6 +78,7 @@ export function placePermanent(game:Game,actor:PlayerId,zone:BoardZone,card:Card
   const permanent:Permanent={objectId:game.nextObjectId++,card,exhausted:true,damage:0,shield:card.shield??0,
     enteredTurn:game.turn,interceptions:0,attacksMade:0,sacrifice:card.sacrifice,...extra};
   owner[zone].push(permanent);
+  emitGameEvent(game,{type:'zoneMoved',owner:actor,cardId:card.id,objectId:permanent.objectId,from:'detached',to:zone});
   return permanent;
 }
 /** Draw uses the same queue transfer as other movements. */
@@ -89,4 +95,19 @@ export function takeCard(owner:Game['players'][number],from:CardZone,index:numbe
   if(!Number.isSafeInteger(index)||index<0||index>=owner[from].length)
     throw new RuleError('Карта недоступна для перемещения');
   return owner[from].splice(index,1)[0];
+}
+
+/** Emitting card-zone transfer for game-aware operations. */
+export function transferCard(game:Game,actor:PlayerId,from:CardZone,to:CardZone,index:number):Card{
+  const card=moveCard(game.players[actor],from,to,index);
+  const realDestination=to==='discard'&&(card.createdToken||card.ritualReward)?'erased':to;
+  emitGameEvent(game,{type:'zoneMoved',owner:actor,cardId:card.id,from,to:realDestination});
+  return card;
+}
+/** Remove non-dying permanent; no Last Word. This is distinct from resolveDeaths(). */
+export function departPermanent(game:Game,actor:PlayerId,objectId:number,zones:readonly BoardZone[]=['main','auxiliary']):Permanent{
+  const unit=takePermanent(game,actor,objectId,zones);
+  const destination=leaveCard(game.players[actor],unit.card,!!unit.ritualReward);
+  emitGameEvent(game,{type:'zoneMoved',owner:actor,cardId:unit.card.id,objectId:unit.objectId,from:'detached',to:destination});
+  return unit;
 }
