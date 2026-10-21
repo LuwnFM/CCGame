@@ -44,7 +44,7 @@ const labels=[
 ['Соперник','Opponent'],['Легенды','Legends'],['Основное поле · 8','Main field · 8'],
 ['Вспомогательное поле · 4','Auxiliary field · 4'],['Владения','Domains'],
 ['Рука','Hand'],['Атаковать Владетеля','Attack Ruler'],['Пропустить перехват','Skip intercept'],['Завершить ход','End turn'],
-['В сети','Online'],['Не подключено','Disconnected'],['Альфа · дуэль 1×1','Alpha · 1v1 duel'],
+['Сервер игры онлайн','Game server online'],['Сервер игры недоступен','Game server unavailable'],['Проверяем сервер…','Checking server…'],['В сети','Online'],['Не подключено','Disconnected'],['Альфа · дуэль 1×1','Alpha · 1v1 duel'],
 ['Готово','Ready'],['Истощено','Exhausted'],['Сохранено','Saved'],['Топ-10 по победам','Top 10 by wins'],['Обновление каждые 10 минут · только завершённые победой матчи','Updated every 10 minutes · completed wins only'],['побед','wins'],['Пока нет завершённых матчей','No completed matches yet'],['Данные на: ','Updated: '],['Удалить','Delete'],
 ['Колода удалена','Deck deleted'],['Колода сохранена','Deck saved'],
 [' · своя',' · custom'],[' карт',' cards'],['Владений','Domains'],['Колода ','Deck '],
