@@ -97,9 +97,17 @@ export function testDeck(id: ArchetypeId): Card[] {
     ...(id==='violet'?{nameEn:i===0?'Coldrake Shaw':'Cera Van Troupe'}:{}),
     kind:'legend',aspects:id==='neutral'?[]:[id],
     unique:true,cost:cost(id,5+i),loyalty:4+i,
+    // Two exclusive choices per turn: modest +1 Loyalty, or the stronger -2 Loyalty power.
+    // Keep loyaltyAbility for saved legacy matches and older clients.
+    loyaltyAbilities:[
+      {delta:1,kind:'healRuler',amount:1},
+      id==='violet'
+        ? i===0 ? {delta:-2,kind:'recoverCreature',amount:1} : {delta:-2,kind:'raiseSacrifice',amount:1}
+        : i===0 ? {delta:-2,kind:'healRuler',amount:4} : {delta:-2,kind:'damageOpponent',amount:2}
+    ] as NonNullable<Card['loyaltyAbilities']>,
     loyaltyAbility:id==='violet'
       ? i===0 ? {delta:-2,kind:'recoverCreature',amount:1} : {delta:-2,kind:'raiseSacrifice',amount:1}
-      : i===0 ? {delta:1,kind:'healRuler',amount:2} : {delta:-2,kind:'damageOpponent',amount:2},
+      : i===0 ? {delta:-2,kind:'healRuler',amount:4} : {delta:-2,kind:'damageOpponent',amount:2},
     lore:id==='violet'?{...lore,note:i===0
       ?'Колдрейк Шоу — лич. Возвращает Существо из сброса в руку; игровая трактовка некромантии.'
       :'Цера Ван Троуп — девушка, умертвие-некромант дома Ван Троуп; создаёт ритуальную Жертву и даёт дополнительный добор при исполнении Ритуала.'}:lore}));
