@@ -1,5 +1,6 @@
 /** Firewell CCG rules. No client or network state is trusted. */
 import { mulligan } from './setup.ts';
+import type {DeathEffect,EntryEffect,LoyaltyEffect,TechniqueEffect} from './mechanics/effect-contracts.ts';
 import {executeCommand} from './mechanics/command-registry.ts';
 import { eligibleVictims, nextRandom, planRitual, type RitualEffect } from './ritual.ts';
 import { ability } from './mechanics/abilities.ts';
@@ -19,10 +20,7 @@ export type Aspect = 'red' | 'blue' | 'green' | 'gold' | 'violet';
 export type Energy = Aspect | 'neutral';
 export type Cost = { colored: Partial<Record<Aspect, number>>; generic: number };
 export type RitualSpec = { color: Aspect | 'neutral'; threshold: number; duration: number; rewardPool: [Card, Card, Card, Card, Card] };
-export type DeathEffect = { kind: 'damageController' | 'damageOpponent' | 'damageAllCreatures'; amount: number };
-export type EntryEffect = { kind: 'summonSkeleton' | 'summonBonePair' | 'healRuler' | 'draw' | 'stunEnemy' | 'stasisEnemy'; amount: number } | {kind:'summon';cards:Card[]};
-export type LoyaltyEffect = {delta:number;kind:'healRuler'|'damageOpponent'|'draw'|'recoverCreature'|'raiseSacrifice'|'summonSignature';amount:number} | {delta:number;kind:'summon';cards:Card[];completeRitual?:boolean};
-export type TechniqueEffect = { kind: 'reanimate' | 'damageOpponent' | 'healRuler' | 'draw' | 'cleanse' | 'ward' | 'silence' | 'bind'; amount: number };
+export type {DeathEffect,EntryEffect,LoyaltyEffect,TechniqueEffect} from './mechanics/effect-contracts.ts';
 export type Card = {
   id: string;
   name: string;
