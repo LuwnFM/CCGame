@@ -14,7 +14,6 @@ export default {
   },
   "attack": 5,
   "health": 2,
-  "piercing": true,
   "zeal": true,
   "lore": {
     "state": "Стальное королевство",
