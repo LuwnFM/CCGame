@@ -5,16 +5,11 @@ import { existsSync, statSync, mkdirSync, readdirSync, unlinkSync } from 'node:f
 import { dirname, join, basename } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { apply, openingGame, RULES_VERSION, RuleError, type Command, type Game, type PlayerId } from './core.ts';
-import { apply as applyLegacy, RuleError as LegacyRuleError } from './legacy/core-v0.9.13.ts';
-const LEGACY_RULES_VERSION = '0.9.13-alpha';
 export function applyForMatch(game: Game, command: Command): Game {
-  if (game.rulesVersion === LEGACY_RULES_VERSION) {
-    if (command.type === 'rulerDraw') throw new RuleError('Эта способность недоступна в версии старого матча');
-    return applyLegacy(game as any, command as any) as Game;
-  }
-  if (game.rulesVersion === RULES_VERSION) return apply(game, command);
-  throw new RuleError('Версия правил матча больше не поддерживается');
+  if (game.rulesVersion !== RULES_VERSION) throw new RuleError('Устаревший матч. Создайте новый матч по действующим правилам.');
+  return apply(game, command);
 }
+
 import { openingHand } from './setup.ts';
 import { ARCHETYPES, testDeck, type ArchetypeId } from './decks.ts';
 import { nextRandom } from './ritual.ts';
@@ -191,6 +186,20 @@ export function createApp(options: { databasePath: string; accessPassword: strin
     return selectRoom.get(code) as Room;
   }
   // Limit online guessing of passwords; the alpha access password gates only registration.
+  // Presence is tied to real, recently refreshed browser sessions, not persisted account timestamps.
+  const presence = new Map<string,{userId:string,seenAt:number}>();
+  const ONLINE_TTL_MS = 15_000;
+  function onlineUsers(now=Date.now()) {
+    for(const [session,value] of presence)if(now-value.seenAt>ONLINE_TTL_MS)presence.delete(session);
+    return new Set([...presence.values()].map(x=>x.userId));
+  }
+  function activeRooms() {
+    const rows=db.prepare("SELECT code,host,guest,game FROM rooms WHERE guest IS NOT NULL").all() as Pick<Room,'code'|'host'|'guest'|'game'>[];
+    return rows.flatMap(r=>{try{
+      const g=JSON.parse(r.game) as Game;
+      return g.phase==='finished'||g.phase==='paused'?[]:[{code:r.code,host:r.host,guest:r.guest!,turn:g.turn,phase:g.phase,hp:g.players.map(p=>p.hp)}];
+    }catch{return []}});
+  }
   const authFailures = new Map<string, { attempts: number; blockedUntil: number }>();
   const AUTH_WINDOW_MS = 15 * 60_000;
   const AUTH_MAX_FAILURES = 15;
@@ -212,17 +221,10 @@ export function createApp(options: { databasePath: string; accessPassword: strin
       if (origin) { try { originHost = new URL(origin).host; } catch { return json(res,403,{error:'Недопустимый источник'}); } }
       if (origin && originHost !== req.headers.host && origin !== options.clientOrigin)
         return json(res,403,{error:'Недопустимый источник'});
-      if (req.method === 'GET' && /^\/versions\/0\.9\.13\/(?:index\.html|app\.js|i18n\.js|rules\.js|style\.css)$/.test(url.pathname)) {
-        const file = url.pathname.slice(1);
-        const contentType = file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : 'text/html';
-        res.writeHead(200, {'content-type':contentType+'; charset=utf-8','x-content-type-options':'nosniff'});
-        res.end(await readFile(new URL('../web/'+file, import.meta.url)));
-        return;
-      }
       if (req.method === 'GET' && ['/', '/style.css', '/app.js', '/i18n.js', '/rules.js'].includes(url.pathname)) {
         const file = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
         const contentType = file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : 'text/html';
-        res.writeHead(200, { 'content-type': `${contentType}; charset=utf-8`, 'x-content-type-options': 'nosniff' });
+        res.writeHead(200, { 'content-type': `${contentType}; charset=utf-8`, 'cache-control':'no-store, max-age=0', 'x-content-type-options': 'nosniff' });
         res.end(await readFile(new URL(`../web/${file}`, import.meta.url)));
         return;
       }
@@ -262,9 +264,13 @@ export function createApp(options: { databasePath: string; accessPassword: strin
       const user = sid && selectSession.get(sid, Date.now()) as {user_id:string|null}|undefined;
       if (!user?.user_id) return json(res, 401, { error: 'Войдите в профиль' });
       const uid = user.user_id;
+      const heartbeat = url.pathname==='/api/lobby'||url.pathname==='/api/presence'||url.pathname==='/api/chat'||/^\/api\/rooms\/[A-F0-9]{8}$/.test(url.pathname);
+      if(heartbeat && req.method==='GET' && sid) presence.set(sid,{userId:uid,seenAt:Date.now()});
+      if(url.pathname==='/api/presence/away' && req.method==='POST'){if(sid)presence.delete(sid);return json(res,200,{ok:true})}
       social.touch(uid);
       if (url.pathname === '/api/me' && req.method === 'GET') return json(res,200,{account:social.get(uid)});
       if (url.pathname === '/api/logout' && req.method === 'POST') {
+        presence.delete(sid);
         db.prepare('DELETE FROM sessions WHERE id=?').run(sid);
         return json(res,200,{ok:true});
       }
@@ -287,7 +293,14 @@ export function createApp(options: { databasePath: string; accessPassword: strin
       if (deckDelete && req.method === 'DELETE') {
         social.deleteDeck(uid,deckDelete[1]); return json(res,200,{ok:true});
       }
-      if (url.pathname === '/api/lobby' && req.method === 'GET') return json(res,200,social.lobby(uid));
+      if (url.pathname === '/api/lobby' && req.method === 'GET') {
+        const info=social.lobby(uid), active=onlineUsers(), rooms=activeRooms();
+        return json(res,200,{...info,online:active.size,inMatches:new Set(rooms.flatMap(r=>[r.host,r.guest])).size,
+          activeMatches:rooms.map(r=>({code:r.code,turn:r.turn,phase:r.phase,players:[r.host,r.guest].map(id=>{
+            const a=db.prepare('SELECT login FROM accounts WHERE id=?').get(id) as {login:string}|undefined;
+            return a?.login??'Игрок';
+          })}))});
+      }
       if (url.pathname === '/api/chat' && req.method === 'POST') {
         return json(res,201,{ok:true,...social.postChat(uid,(await body(req)).text)});
       }
@@ -333,6 +346,17 @@ export function createApp(options: { databasePath: string; accessPassword: strin
         do code = randomBytes(4).toString('hex').toUpperCase(); while (selectRoom.get(code));
         insertRoom.run(code, uid, '{}', choice);
         return json(res, 201, { code, seat: 0 });
+      }
+      const watch = /^\/api\/spectate\/([A-F0-9]{8})$/.exec(url.pathname);
+      if(watch && req.method==='GET'){
+        const row=selectRoom.get(watch[1]) as Room|undefined;
+        if(!row?.guest) return json(res,404,{error:'Матч недоступен'});
+        const g=JSON.parse(row.game) as Game;
+        if(g.phase==='finished'||g.phase==='paused')return json(res,404,{error:'Матч завершён'});
+        // Explicit whitelist: no hands, decks, secret Ritual offers, identities, archives or commands.
+        return json(res,200,{code:watch[1],turn:g.turn,active:g.active,phase:g.phase,
+          players:g.players.map(p=>({hp:p.hp,handCount:p.hand.length,deckCount:p.deck.length,
+            main:p.main,auxiliary:p.auxiliary,legends:p.legends,domains:p.domains.map(d=>({card:d.card,exhausted:d.exhausted}))}))});
       }
       const match = /^\/api\/rooms\/([A-F0-9]{8})(?:\/(join|commands))?$/.exec(url.pathname);
       if (!match) return json(res, 404, { error: 'Не найдено' });

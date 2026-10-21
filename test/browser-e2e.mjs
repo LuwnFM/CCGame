@@ -193,7 +193,7 @@ try {
   assert.equal(afterCombat.players[1].hp,40);
   // Inspect an enemy card on mobile; unavailable actions must remain inspectable.
   checkpoint("battle resolved; inspecting enemy card");
-  await b.locator('#enemyBoard .card .inspect-card').first().click();
+  await b.locator('#enemyBoard .card-wrapper > .inspect-card').first().click();
   await b.locator('#cardInspector').waitFor({state:'visible'});
   await b.locator('#inspectorClose').click();
   // Targeted resurrection uses a card picker, then Ruler draw is a real API action.
