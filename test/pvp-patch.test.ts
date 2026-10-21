@@ -2,7 +2,6 @@ import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { apply, initialGame, player, type Card, type Command, type Game, type Permanent } from '../src/core.ts';
 import { applyForMatch } from '../src/server.ts';
-import { initialGame as legacyGame, player as legacyPlayer } from '../src/legacy/core-v0.9.13.ts';
 
 const red: Card = {id:'red-land',name:'Тестовое красное Владение',kind:'domain',produces:'red',basic:true};
 const neutral: Card = {id:'neutral-land',name:'Тестовое нейтральное Владение',kind:'domain',produces:'neutral',basic:true};
@@ -79,7 +78,7 @@ test('Legends: weak +1 loyalty and stronger -2 are mutually exclusive per turn',
  assert.equal(g.players[1].hp,38);
 });
 test('old match versions are rejected; new matches use the current 40 HP rules',()=>{
- const old=legacyGame(legacyPlayer(),legacyPlayer());
+ const old={...initialGame(player(),player()),rulesVersion:'0.9.13-alpha'};
  const newer=initialGame(player(),player());
  assert.equal(old.rulesVersion,'0.9.13-alpha');
  assert.equal(newer.rulesVersion,'0.9.15-alpha');

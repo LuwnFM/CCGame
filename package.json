@@ -5,7 +5,8 @@
   "scripts": {
     "test": "node scripts/run-fast-tests.mjs",
     "start": "node --experimental-strip-types src/server.ts",
-    "test:balance": "node --experimental-strip-types --test test/simulation.test.ts"
+    "test:balance": "node --experimental-strip-types --test test/simulation.test.ts",
+    "test:browser:all": "node --experimental-strip-types test/browser-e2e.mjs && node --experimental-strip-types test/browser-crossplatform.mjs"
   },
   "engines": {
     "node": ">=24"

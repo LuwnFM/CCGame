@@ -36,9 +36,13 @@ try{
    await page.locator('#languageToggle').click();
    await page.getByText('Find an opponent',{exact:true}).waitFor();
    await page.locator('#rulesOpen').click();
-   await page.locator('#rulesContent').getByText(/Coldrake Shaw and Cera Van Troupe/).first().waitFor();
+   await page.locator('#rulesContent').getByText(/Victory and starting Health/).first().waitFor();
+   await page.locator('#rulesContent').getByText(/Untiring and Extra Attack/).first().waitFor();
+   assert.equal(await page.locator('#rulesContent').getByText(/Coldrake Shaw and Cera Van Troupe/).count(),0);
+   await page.locator('#rulesContent').getByText(/Color archetypes/).first().waitFor();
    await page.locator('#rulesClose').click();
    await page.locator('#languageToggle').click();
+   await page.locator('#playBot').waitFor({state:'visible'});
    const dimensions=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,width:innerWidth}));
    assert.ok(dimensions.scroll<=dimensions.width+8,JSON.stringify({name,...dimensions}));
    assert.deepEqual(exceptions,[]);

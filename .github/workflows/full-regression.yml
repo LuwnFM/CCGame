@@ -1,0 +1,50 @@
+name: Firewell Full Regression
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm test
+      - name: Check all client modules
+        run: |
+          node --check web/app.js
+          node --check web/i18n.js
+          node --check web/rules.js
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm install --no-save playwright@1.57.0
+      - run: npx playwright install --with-deps chromium firefox webkit
+      - name: Chromium, Firefox and mobile WebKit
+        run: npm run test:browser:all
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: firewell-full-regression-browser
+          path: artifacts/browser/
+          if-no-files-found: ignore
+  balance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: 2592 three-scenario matches
+        run: npm run test:balance
