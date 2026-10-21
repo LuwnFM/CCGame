@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import {strict as assert} from 'node:assert';
-import {readdirSync} from 'node:fs';
+import {readdirSync,readFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {CARD_CATALOG} from '../src/cards/catalog.ts';
 import {registeredTraits,registerTrait,printedTrait} from '../src/mechanics/trait-registry.ts';
@@ -68,5 +68,14 @@ test('game effects are universal primitives, not card-specific summon aliases',(
   const effects=[card.onEntry,card.secondChance,card.techniqueEffect,card.onDeath,
     ...(card.loyaltyAbilities??(card.loyaltyAbility?[card.loyaltyAbility]:[]))];
   for(const eff of effects)if(eff)assert.ok(!removed.includes(eff.kind),card.id+' still references '+eff.kind);
+ }
+});
+
+test('effect handlers never import card or token catalogs',()=>{
+ const fs=readdirSync(join(process.cwd(),'src/mechanics/effects')).filter(n=>n.endsWith('.ts')&&n!=='index.ts');
+ for(const file of fs){
+  const content=readFileSync(join(process.cwd(),'src/mechanics/effects',file),'utf8');
+  assert.ok(!/from\\s+['\"][^'\"]*\\/cards\\//.test(content),file+' depends on card catalog');
+  assert.ok(!/SIGNATURE_TOKENS|BONE_BLADE|CERA_SERVANT|SKELETON/.test(content),file+' embeds named token behavior');
  }
 });
