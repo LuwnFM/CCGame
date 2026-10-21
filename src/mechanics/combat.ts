@@ -1,5 +1,9 @@
 import { ability } from './abilities.ts';
 import {runCombatHooks,type CombatStage} from './combat-hooks.ts';
+import {healFromLifesteal} from './traits/lifesteal.ts';
+import {applyPoisonFromHit} from './traits/poisonHit.ts';
+import {interceptedOverflow} from './traits/piercing.ts';
+import {strikeOrder} from './traits/firstStrike.ts';
 import type { Game, Permanent, Player, PlayerId } from '../core.ts';
 
 export function damage(target: Permanent, amount: number): number {
@@ -23,13 +27,6 @@ function woundLegend(target: Permanent, raw: number): number {
   target.loyalty! -= reduced - absorbed;
   return actual;
 }
-function applyPoison(target: Permanent, source: Permanent): void {
-  const incoming = ability(source,'poisonHit');
-  if (!incoming) return;
-  const old = target.poison;
-  if (!old || incoming.strength > old.strength || incoming.strength === old.strength && incoming.ticks > old.ticks)
-    target.poison = { ...incoming };
-}
 
 /** One combat packet. First Strike has an early packet; ordinary simultaneous hits still trade. */
 export function resolveCombat(game: Game, attacker: Permanent, defender: Permanent | null, legend: Permanent | null,
@@ -41,7 +38,7 @@ export function resolveCombat(game: Game, attacker: Permanent, defender: Permane
   notify('beforeCombat',attacker,defender??legend,0,0);
   const attack = totalAttack(attackingPlayer, attacker);
   const response = defender ? totalAttack(defendingPlayer, defender) : 0;
-  const heal = (owner: Player, source: Permanent, dealt: number) => { if (ability(source,'lifesteal')) owner.hp = Math.min(30, owner.hp + dealt); };
+  const heal = healFromLifesteal;
   const original = () => declared.kind === 'creature' ? [...defendingPlayer.main, ...defendingPlayer.auxiliary].find(x => x.objectId === declared.objectId)
     : declared.kind === 'legend' ? defendingPlayer.legends.find(x => x.objectId === declared.objectId) : null;
   const spill = (amount: number) => {
@@ -59,8 +56,8 @@ export function resolveCombat(game: Game, attacker: Permanent, defender: Permane
       const shieldBefore = defender.shield;
       const dealt = damage(defender, attack);
       heal(attackingPlayer, attacker, Math.min(remaining, dealt));
-      applyPoison(defender, attacker);
-      if (intercepted && ability(attacker,'piercing')) spill(Math.max(0, attack - shieldBefore - remaining));
+      applyPoisonFromHit(defender, attacker);
+      spill(interceptedOverflow(attacker,intercepted,attack,shieldBefore,remaining));
       notify('afterAttackerHit',attacker,defender,attack,Math.min(remaining,dealt));
     } else if (legend) {
       const dealt=woundLegend(legend,attack);heal(attackingPlayer,attacker,dealt);
@@ -74,13 +71,14 @@ export function resolveCombat(game: Game, attacker: Permanent, defender: Permane
     const remaining = Math.max(0, (attacker.card.health ?? 0) - attacker.damage);
     const dealt = damage(attacker, response);
     heal(defendingPlayer, defender, Math.min(remaining, dealt));
-    applyPoison(attacker, defender);
+    applyPoisonFromHit(attacker, defender);
     notify('afterDefenderHit',defender,attacker,response,Math.min(remaining,dealt));
   };
   if (!defender) { hit(); notify('afterCombat',attacker,legend,attack,0); return; }
-  if (ability(attacker,'firstStrike') && !ability(defender,'firstStrike')) {
+  const order=strikeOrder(attacker,defender);
+  if (order==='attacker') {
     hit(); if (defender.damage < defender.card.health!) reply();
-  } else if (ability(defender,'firstStrike') && !ability(attacker,'firstStrike')) {
+  } else if (order==='defender') {
     reply(); if (attacker.damage < attacker.card.health!) hit();
   } else { hit(); reply(); }
   notify('afterCombat',attacker,defender,attack,0);
