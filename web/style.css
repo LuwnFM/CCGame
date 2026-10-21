@@ -18,3 +18,43 @@ label{display:block;margin:10px 0;font-size:.9rem;color:var(--muted)}input,selec
 
 /* Keep disabled cards readable for players inspecting their hand. */
 .card:disabled{opacity:.83;cursor:default}.board .card:disabled{opacity:.78}#turnLabel{display:inline-block;margin-left:9px}.leaderboard{margin:0;padding-left:25px}.leaderboard-entry{margin-bottom:7px;display:flex;justify-content:space-between;gap:10px;align-items:center;overflow-wrap:anywhere}.leaderboard-entry>div{min-width:0;display:grid}.leaderboard-entry strong{color:#f4f1e9}.leaderboard-entry small{color:var(--muted);font-size:.75rem}.leaderboard-entry b{color:var(--accent);white-space:nowrap}@media(max-width:390px){.hand .card small{font-size:.72rem}.board .card b{font-size:.72rem}}
+
+/* Live PvP UX 0.9.14 */
+.attack-alert{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:12px 0;padding:14px 16px;border:2px solid #ec6670;border-radius:12px;background:#602735;color:#fff;box-shadow:0 0 28px #d3293c55;animation:attack-pulse 2s ease-in-out infinite}
+.attack-alert strong{font-size:1.07rem}.attack-alert span{font-size:.94rem}
+.under-attack{border-color:#ed6670;box-shadow:inset 0 0 0 1px #c95165,0 0 22px #b42b4655}
+.incoming-attacker{border-color:#ff5467!important;box-shadow:0 0 0 3px #f74359,0 0 18px #fc364577!important;background:#653442!important}
+.attack-target-highlight{outline:3px solid #ef6777!important;box-shadow:0 0 18px #ec486a66}
+.attack-target{font-weight:800;color:#ffbac1!important}
+@keyframes attack-pulse{0%,100%{box-shadow:0 0 10px #ee48552c}50%{box-shadow:0 0 25px #ee485575}}
+.card{position:relative;transition:border-color .12s,box-shadow .12s}
+.card .inspect-card{position:absolute;top:2px;right:3px;display:grid;place-items:center;min-height:28px;min-width:28px;background:#101829de;border:1px solid #6c7896;border-radius:50%;font-size:1rem;cursor:pointer;color:#f3e6d9;z-index:1}
+.card.unavailable{filter:saturate(.77);opacity:.85}.card.unavailable:focus{outline:2px solid var(--accent)}
+.domain-details{margin-top:12px;border:1px solid #50617e;border-radius:10px;padding:10px;background:#151d2c}
+.domain-details summary{color:#dfc399;font-size:.92rem}
+.domain-grid{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+button.domain-chip{height:32px;min-height:32px;min-width:33px;padding:4px 7px;border-radius:8px;border:1px solid #8293a9;color:white;background:#35415b;font-size:.85rem}
+button.domain-chip.red{background:#813d42}button.domain-chip.blue{background:#325a80}button.domain-chip.green{background:#406a45}button.domain-chip.gold{background:#816139}button.domain-chip.violet{background:#61427b}button.domain-chip.neutral{background:#4c5366}
+button.domain-chip.spent{opacity:.4;text-decoration:line-through}
+.legend-actions,.discard-picker{margin:10px 0;padding:10px;border:1px solid #52617c;border-radius:12px;background:#151f2e}
+.legend-actions strong{display:block;margin-bottom:8px}
+.legend-actions button{display:block;width:100%;text-align:left;margin-top:5px;white-space:normal}
+.discard-picker .card{display:inline-flex;flex-direction:column;vertical-align:top;margin:6px}
+.card-inspector{position:fixed;inset:0;margin:auto;max-width:min(500px,calc(100% - 20px));max-height:85dvh;overflow:auto;background:#222d41;border:1px solid #ab916e;border-radius:15px;color:#f7efe1;padding:20px;box-shadow:0 24px 90px #000b}
+.card-inspector::backdrop{background:#070c1be0}.inspector-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+#inspectorStats{color:#f1ca8b;font-weight:600;margin:10px 0}#inspectorTraits{display:grid;gap:7px}#inspectorTraits p{margin:0;padding:8px;background:#151c2d;border-left:2px solid #e3a85a;border-radius:4px}
+#inspectorLore{line-height:1.5;color:#bfc8dc}
+@media(max-width:750px){
+  .board{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+  .board .card{padding:5px;min-height:82px}
+  .board .card .glyph{width:24px;height:24px;font-size:.75rem}
+  .board .card b{font-size:.69rem;line-height:1.15}
+  .board .card small{font-size:.65rem}
+  .hand .card{flex-basis:106px;min-height:95px}
+  .card .glyph{width:29px;height:29px}
+  .slot-placeholder{min-height:82px}
+  .card-inspector{padding:14px}
+  .attack-alert{padding:12px}
+  .domain-grid button.domain-chip{min-width:30px}
+}
+@media(prefers-reduced-motion:reduce){.attack-alert{animation:none}}
