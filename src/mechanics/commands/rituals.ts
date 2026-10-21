@@ -12,6 +12,11 @@ import {removePermanents,collectLethal,resolveDeaths,finishIfLethal} from '../de
 import {drawCards,leaveCard,moveCard,takeCard,placePermanent,departPermanent,addCard,discardDetached} from '../zones.ts';
 import {emitGameEvent} from '../events.ts';
 import {advance} from '../turns.ts';
+
+// A card can opt into a generic ritual-completion bonus without an ID-specific branch.
+declare module '../../core.ts' {
+  interface Card { ritualDrawBonus?: number }
+}
 registerCommand('chooseRitual',(next,command)=>{const p=next.players[command.actor];
       requireRule(next.phase === 'ritual' && next.readyRituals, 'Сейчас нет выбора Ритуала');
       const ready = next.readyRituals.find(r => r.effect.id === command.effectId);
@@ -21,10 +26,13 @@ registerCommand('chooseRitual',(next,command)=>{const p=next.players[command.act
       next.seed = plan.seedAfter;
       const dead = removePermanents(p, plan.chosenObjectIds);
       resolveDeaths(next, dead.map(unit => ({ unit, owner: command.actor })));
-      // Cera's one-card bonus is outside and AFTER the sacrifice death sequence.
-      // It does not change the five possible reward cards or three offers.
-      if (p.legends.some(unit => unit.card.id === 'violet-цера-ван-троуп' && !unit.stasis && !unit.stunned && !unit.silenced) && p.deck.length)
-        drawCards(p,1,next,command.actor);
+      // Ritual bonuses resolve after sacrificial deaths, before presenting rewards.
+      // Preserve the existing once-per-ritual behavior, even with multiple bonus Legends.
+      const bonus = p.legends.find(unit =>
+        !unit.stasis && !unit.stunned && !unit.silenced && (unit.card.ritualDrawBonus ?? 0) > 0
+      )?.card.ritualDrawBonus ?? 0;
+      requireRule(Number.isSafeInteger(bonus) && bonus >= 0 && bonus <= 8, 'Недопустимый бонус Ритуала');
+      if (bonus && p.deck.length) drawCards(p,Math.min(bonus,p.deck.length),next,command.actor);
       next.readyRituals = [];
       if (finishIfLethal(next)) return;
       next.pendingReward = { owner: command.actor, offeredIds: plan.offeredRewardIds, pool: [...ready.effect.rewardPool] as PendingReward['pool'] };
