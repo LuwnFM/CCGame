@@ -4,7 +4,7 @@ import {apply,initialGame,player,RuleError,type Card,type Command,type Game} fro
 import {moveCard,drawCards,leaveCard,movePermanent,placePermanent,takePermanent} from '../src/mechanics/zones.ts';
 import {registeredEffects,registerEffect,invokeEffect} from '../src/mechanics/effects-registry.ts';
 import {emitGameEvent,onGameEvent} from '../src/mechanics/events.ts';
-const card=(id:string,extra:Partial<Card>={}):Card=>({id,name:id,kind:'creature',attack:1,health:2,...extra});
+const card=(id:string,extra:Partial<Card>={}):Card=>({id,name:id,kind:'creature',attack:1,health:2,cost:{colored:{},generic:0},...extra});
 const step=(g:Game,command:object):Game=>apply(g,{actor:0,expectedRevision:g.revision,key:'z-'+g.revision,...command} as Command);
 test('shared zone primitives handle hand/deck/graveyard/erasure with identity preservation',()=>{
  const p=player([card('one'),card('two')],[card('three')]);
