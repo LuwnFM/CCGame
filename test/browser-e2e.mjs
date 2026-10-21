@@ -152,6 +152,7 @@ try {
   assert.match(await b.locator('#domainSummary').innerText(),/\d+ всего · \d+ готовы · \d+ истощены/);
   await b.locator('#myDomains .domain-inspect').first().click();
   await b.locator('#cardInspector').waitFor({state:'visible'});
+  assert.match(await b.locator('#inspectorLore').innerText(),/энергией и укрытием/);
   await b.locator('#inspectorClose').click();
   await a.locator('#enemyDomains').locator('..').locator('summary').click();
   await a.locator('#enemyDomains button').first().click();
