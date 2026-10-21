@@ -177,29 +177,6 @@
       "deprecatedAlias": false
     },
     {
-      "kind": "raiseSacrifice",
-      "type": "effect",
-      "channels": [
-        "loyalty"
-      ],
-      "params": [
-        "amount"
-      ],
-      "targetRules": "see handler and rules",
-      "timing": [
-        "loyalty"
-      ],
-      "implemented": true,
-      "ui": "legacy/manual",
-      "testIds": [
-        "mechanics-modularity"
-      ],
-      "ru": "Ритуальный призыв (адаптер)",
-      "en": "raiseSacrifice",
-      "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": true
-    },
-    {
       "kind": "reanimate",
       "type": "effect",
       "channels": [
@@ -338,75 +315,6 @@
       "en": "summon",
       "introducedIn": "<=0.9.15-alpha",
       "deprecatedAlias": false
-    },
-    {
-      "kind": "summonBonePair",
-      "type": "effect",
-      "channels": [
-        "entry"
-      ],
-      "params": [
-        "amount"
-      ],
-      "targetRules": "see handler and rules",
-      "timing": [
-        "entry"
-      ],
-      "implemented": true,
-      "ui": "legacy/manual",
-      "testIds": [
-        "mechanics-modularity"
-      ],
-      "ru": "Призыв костей (адаптер)",
-      "en": "summonBonePair",
-      "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": true
-    },
-    {
-      "kind": "summonSignature",
-      "type": "effect",
-      "channels": [
-        "loyalty"
-      ],
-      "params": [
-        "amount"
-      ],
-      "targetRules": "see handler and rules",
-      "timing": [
-        "loyalty"
-      ],
-      "implemented": true,
-      "ui": "legacy/manual",
-      "testIds": [
-        "mechanics-modularity"
-      ],
-      "ru": "Именной призыв (адаптер)",
-      "en": "summonSignature",
-      "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": true
-    },
-    {
-      "kind": "summonSkeleton",
-      "type": "effect",
-      "channels": [
-        "entry"
-      ],
-      "params": [
-        "amount"
-      ],
-      "targetRules": "see handler and rules",
-      "timing": [
-        "entry"
-      ],
-      "implemented": true,
-      "ui": "legacy/manual",
-      "testIds": [
-        "mechanics-modularity"
-      ],
-      "ru": "Призыв скелета (адаптер)",
-      "en": "summonSkeleton",
-      "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": true
     },
     {
       "kind": "ward",
