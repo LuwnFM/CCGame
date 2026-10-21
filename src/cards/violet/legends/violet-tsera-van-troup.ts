@@ -15,6 +15,7 @@ export default {
     "generic": 5
   },
   "loyalty": 5,
+  "ritualDrawBonus": 1,
   "loyaltyAbilities": [
     {
       "delta": 1,
