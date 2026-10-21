@@ -208,6 +208,10 @@ export function createApp(options: { databasePath: string; accessPassword: strin
         res.end(await readFile(new URL(`../web/${file}`, import.meta.url)));
         return;
       }
+      if (url.pathname === '/api/health' && req.method === 'GET') {
+        res.setHeader('cache-control','no-store');
+        return json(res,200,{ok:true,service:'firewell-ccg'});
+      }
       if ((url.pathname === '/api/register' || url.pathname === '/api/login') && req.method === 'POST') {
         const address = req.socket.remoteAddress ?? 'unknown';
         const now = Date.now(), entry = authFailures.get(address);
