@@ -175,7 +175,7 @@ export function createApp(options: { databasePath: string; accessPassword: strin
     if(!isBot(row))return row;
     for(let n=0;n<45;n++){
       const current=JSON.parse(row.game) as Game;
-      const command=chooseBotCommand(current);
+      const command=chooseBotCommand(current,(row.host_deck||'red') as ArchetypeId);
       if(!command)break;
       const next=applyForMatch(current,command);
       commitGame(code,row,current,next,Date.now(),'player',command);
@@ -363,7 +363,7 @@ export function createApp(options: { databasePath: string; accessPassword: strin
         do code=randomBytes(4).toString('hex').toUpperCase();while(selectRoom.get(code));
         const game=newGame(deck,testDeck(chosen));
         db.prepare('INSERT INTO rooms (code,host,guest,game,host_deck,deadline) VALUES (?,?,?,?,?,?)')
-          .run(code,uid,TEST_BOT,JSON.stringify(game),'custom',Date.now()+MULLIGAN_MS);
+          .run(code,uid,TEST_BOT,JSON.stringify(game),chosen,Date.now()+MULLIGAN_MS);
         advanceTestBot(code,selectRoom.get(code) as Room);
         return json(res,201,{code,seat:0,bot:true});
       }
