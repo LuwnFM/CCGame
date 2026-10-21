@@ -1,8 +1,6 @@
 name: Firewell Full Regression
 on:
   workflow_dispatch:
-  push:
-    branches: ['codex/complete-test-audit-20261022']
 
 permissions:
   contents: read
