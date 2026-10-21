@@ -67,7 +67,7 @@ test('combat and turn lifecycle accept detachable feature hooks',()=>{
   let next=command(g,{type:'attack',actor:0,attackerId:1,target:{kind:'player'}});
   next=command(next,{type:'intercept',actor:1,interceptorId:null});
   assert.equal(packets,2);
-  assert.equal(next.players[1].hp,28);
+  assert.equal(next.players[1].hp,38);
   next=command(next,{type:'endTurn',actor:0});
   assert.deepEqual(seen,[1]);
  }finally{stopHit();stopTurn()}

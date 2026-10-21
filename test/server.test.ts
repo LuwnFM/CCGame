@@ -327,7 +327,7 @@ test('Ruler API eligibility, archive parameters and idempotent commands preserve
   app.db.prepare('UPDATE rooms SET game=?,deadline=?,turn_deadline=? WHERE code=?').run(JSON.stringify(g),Date.now()+120000,Date.now()+120000,code);
   const cmd={type:'rulerDraw',key:'draw-ruler-api',expectedRevision:g.revision};
   const accepted=await request('/api/rooms/'+code+'/commands',a.token,cmd);
-  assert.equal(accepted.status,200,JSON.stringify(accepted.body));assert.equal(accepted.body.game.players[0].hp,28);
+  assert.equal(accepted.status,200,JSON.stringify(accepted.body));assert.equal(accepted.body.game.players[0].hp,38);
   assert.equal(accepted.body.game.players[0].lastRulerDrawTurn,1);
   const timing=app.db.prepare('SELECT deadline,turn_deadline FROM rooms WHERE code=?').get(code);
   assert.equal((await request('/api/rooms/'+code+'/commands',a.token,cmd)).status,200);

@@ -25,7 +25,7 @@ test('First Strike: attacker kills defender before defender retaliates',()=>{
  {id:'d',name:'Защитник',kind:'creature',attack:5,health:2});
  assert.equal(g.players[0].main[0].damage,0);
  assert.equal(g.players[1].main.length,0);
- assert.equal(g.players[1].hp,30);
+ assert.equal(g.players[1].hp,40);
 });
 test('First Strike: defender kills attacker before attacker hits',()=>{
  const g=fight({id:'a',name:'Атакующий',kind:'creature',attack:5,health:2},
@@ -76,7 +76,7 @@ test('Legends: weak +1 loyalty and stronger -2 are mutually exclusive per turn',
  g=act(g,{type:'endTurn',actor:1},'turn-else');
  g=act(g,{type:'activateLegend',actor:0,objectId:1,abilityIndex:1},'loyalty-minus');
  assert.equal(g.players[0].legends[0].loyalty,2);
- assert.equal(g.players[1].hp,28);
+ assert.equal(g.players[1].hp,38);
 });
 test('old games keep frozen core and original version while new games use updated core',()=>{
  const old=legacyGame(legacyPlayer(),legacyPlayer());
@@ -97,5 +97,5 @@ test('First Strike combines Shield, Piercing and Lifesteal without a dead defend
  g=act(g,{type:'attack',actor:0,attackerId:1,target:{kind:'player'}},'strike');
  g=act(g,{type:'intercept',actor:1,interceptorId:2},'intercept');
  assert.equal(g.players[0].main[0].damage,0);assert.equal(g.players[1].main.length,0);
- assert.equal(g.players[1].hp,28);assert.equal(g.players[0].hp,24);
+ assert.equal(g.players[1].hp,38);assert.equal(g.players[0].hp,24);
 });

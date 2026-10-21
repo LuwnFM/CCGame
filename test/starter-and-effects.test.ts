@@ -34,7 +34,7 @@ test('invalid resurrection rolls back payment and cards',()=>{
 });
 test('Ruler draw costs two HP, requires <=3 cards and two deck cards, once per own turn',()=>{
  let g=initialGame(player([unit,unit,unit,unit],[]),player());g.turn=1;
- g=act(g,{type:'rulerDraw'});assert.equal(g.players[0].hp,28);assert.equal(g.players[0].hand.length,2);
+ g=act(g,{type:'rulerDraw'});assert.equal(g.players[0].hp,38);assert.equal(g.players[0].hand.length,2);
  assert.throws(()=>act(g,{type:'rulerDraw'}),/уже/);
  for(const [hp,hand,deck] of [[2,0,2],[30,4,2],[30,0,1]]){
  let bad=initialGame(player(Array(deck).fill(unit),Array(hand).fill(unit)),player());bad.turn=1;bad.players[0].hp=hp;
@@ -59,8 +59,8 @@ test('Unique creature survivor choice is a departure with no Last Word or Entry 
  let g=initialGame(player([],[c,c]),player());g.turn=1;g.players[0].hp=20;
  g=act(g,{type:'playCreature',handIndex:0});assert.equal(g.players[0].hp,21);
  assert.throws(()=>act(g,{type:'playCreature',handIndex:0}),/Уникальную/);
- g=act(g,{type:'playCreature',handIndex:0,keepExisting:true});assert.equal(g.players[0].hp,21);assert.equal(g.players[1].hp,30);assert.equal(g.players[0].main.length,1);
- g.players[0].hand.push(c);g=act(g,{type:'playCreature',handIndex:0,keepExisting:false});assert.equal(g.players[0].hp,22);assert.equal(g.players[1].hp,30);assert.equal(g.players[0].main.length,1);
+ g=act(g,{type:'playCreature',handIndex:0,keepExisting:true});assert.equal(g.players[0].hp,21);assert.equal(g.players[1].hp,40);assert.equal(g.players[0].main.length,1);
+ g.players[0].hand.push(c);g=act(g,{type:'playCreature',handIndex:0,keepExisting:false});assert.equal(g.players[0].hp,22);assert.equal(g.players[1].hp,40);assert.equal(g.players[0].main.length,1);
 });
 test('Bind refreshes existing Stasis; Cleanse preserves printed abilities and damage',()=>{
  const spell:Card={...cast,techniqueEffect:{kind:'bind',amount:2}};

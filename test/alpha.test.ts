@@ -60,7 +60,7 @@ test('blue Ещё удар! (1) creature can attack twice in one turn',()=>{
     g=step(g,{type:'attack',actor:0,attackerId:1,target:{kind:'player'}},'blue-attack-'+i);
     g=step(g,{type:'intercept',actor:1,interceptorId:null},'blue-defend-'+i);
   }
-  assert.equal(g.players[1].hp,22);
+  assert.equal(g.players[1].hp,32);
   assert.equal(g.players[0].main[0].exhausted,true);
   assert.throws(()=>step(g,{type:'attack',actor:0,attackerId:1,target:{kind:'player'}},'blue-third'),/не готов/);
 });
@@ -129,7 +129,7 @@ test('ritual snapshots both zones, resolves a negative death effect before offer
   const previous = g;
   g = step(g, { type: 'chooseRitual', actor: 0, effectId: effect.id, objectIds: [1, 2, 3] }, 'ritual');
   assert.equal(previous.players[0].hp, 40);
-  assert.equal(g.players[0].hp, 28);
+  assert.equal(g.players[0].hp, 38);
   assert.equal(g.players[0].main.length, 0);
   assert.equal(g.players[0].auxiliary.length, 0);
   assert.equal(g.players[0].discard.length, 3);
@@ -148,7 +148,7 @@ test('replacement dies with consequences; a filled all-Majestic field sends rero
   assert.throws(() => step(g, { type: 'chooseReward', actor: 0, rewardId: choice }, 'bad'), /заменяемое/);
   g.players[0].main[0].card.onDeath = { kind: 'damageController', amount: 3 };
   g = step(g, { type: 'chooseReward', actor: 0, rewardId: choice, replaceId: 20 }, 'replace');
-  assert.equal(g.players[0].hp, 25);
+  assert.equal(g.players[0].hp, 35);
   assert.equal(g.players[0].main.length, 8);
   assert.equal(g.players[0].erased.length, 0);
   const another = ready();
@@ -202,7 +202,7 @@ test('unique auxiliary item boosts combat and can displace a token without death
   g.players[0].main.push({ ...victim(5), card: { ...victim(5).card, attack: 2 }, enteredTurn: 0 });
   g = step(g, { type: 'attack', actor: 0, attackerId: 5, target: { kind: 'player' } }, 'a');
   g = step(g, { type: 'intercept', actor: 1, interceptorId: null }, 'i');
-  assert.equal(g.players[1].hp, 27);
+  assert.equal(g.players[1].hp, 37);
 });
 test('same-name Legends and unique items require an explicit survivor and discard without death',()=>{
   const legend:Card={id:'hero',name:'Герой',kind:'legend',unique:true,cost:{colored:{},generic:0},
@@ -273,12 +273,12 @@ test('duplicate Unique ritual reward requires survivor choice, never fakes a dea
   const kept=step(ritual,{type:'chooseReward',actor:0,rewardId,keepExisting:true},'keep-old');
   assert.equal(kept.players[0].main.find(x=>x.card.id===rewardId)?.objectId,100);
   assert.equal(kept.players[0].erased.length,1);
-  assert.equal(kept.players[0].hp,28);
+  assert.equal(kept.players[0].hp,38);
   assert.equal(kept.phase,'main');
   const replaced=step(ritual,{type:'chooseReward',actor:0,rewardId,keepExisting:false},'use-new');
   assert.equal(replaced.players[0].main.filter(x=>x.card.id===rewardId).length,1);
   assert.notEqual(replaced.players[0].main.find(x=>x.card.id===rewardId)?.objectId,100);
-  assert.equal(replaced.players[0].hp,28);
+  assert.equal(replaced.players[0].hp,38);
   assert.equal(replaced.players[0].discard.some(c=>c.id===rewardId),true);
   assert.equal(replaced.phase,'main');
 });

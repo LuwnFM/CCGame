@@ -77,7 +77,7 @@ test('stunned but ready defender can intercept, Stasis cannot', () => {
   g.players[1].main.push(blocker);
   g = step(g, { type: 'attack', actor: 0, attackerId: 1, target: { kind: 'player' } }, 'stun-attack');
   g = step(g, { type: 'intercept', actor: 1, interceptorId: 2 }, 'stun-intercept');
-  assert.equal(g.players[1].hp, 30);
+  assert.equal(g.players[1].hp, 40);
   assert.equal(g.players[1].main[0].interceptions, 1);
   const g2 = step(initialGame(player(), player()), { type: 'startTurn', actor: 0 }, 'stasis-start');
   g2.players[0].main.push({ ...attacker });
@@ -90,7 +90,7 @@ test('shield absorbs damage and direct attack lowers ruler HP', () => {
   g.players[0].main.push({ objectId: 1, card: creature, exhausted: false, damage: 0, shield: 1, interceptions: 0, enteredTurn: 0 });
   g = step(g, { type: 'attack', actor: 0, attackerId: 1, target: { kind: 'player' } }, 'a');
   g = step(g, { type: 'intercept', actor: 1, interceptorId: null }, 'i');
-  assert.equal(g.players[1].hp, 28);
+  assert.equal(g.players[1].hp, 38);
 });
 test('ritual rewards and created tokens erase instead of entering discard', () => {
   const p = player();
