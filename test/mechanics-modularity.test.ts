@@ -58,3 +58,15 @@ test('third-party passive mechanic can be mounted/unmounted without kernel modif
    abilities:['not-registered-gameplay']});
  assert.equal(ability(permanent,'abilities'),undefined,'Unknown textual abilities cannot execute');
 });
+
+test('game effects are universal primitives, not card-specific summon aliases',()=>{
+ const removed=["summonSkeleton","summonBonePair","summonSignature","raiseSacrifice"];
+ for(const kind of removed){
+  assert.ok(!registeredEffects().some(id=>id.endsWith(':'+kind)),kind+' should not have a handler');
+ }
+ for(const card of CARD_CATALOG){
+  const effects=[card.onEntry,card.secondChance,card.techniqueEffect,card.onDeath,
+    ...(card.loyaltyAbilities??(card.loyaltyAbility?[card.loyaltyAbility]:[]))];
+  for(const eff of effects)if(eff)assert.ok(!removed.includes(eff.kind),card.id+' still references '+eff.kind);
+ }
+});
