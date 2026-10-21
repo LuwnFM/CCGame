@@ -375,3 +375,27 @@ test('tester bot uses an official starter and does not enter public match statis
   assert.equal(lobby.online,1);
  }finally{app.close()}
 });
+
+test('test-bot strategy never relies on shuffled own deck order or hidden enemy hand',async()=>{
+ const {openingGame}=await import('../src/core.ts');
+ const {openingHand}=await import('../src/setup.ts');
+ const {testDeck}=await import('../src/decks.ts');
+ const {observeBot,drawProbability,chooseBotCommand}=await import('../src/bots/opponent.ts');
+ const red=testDeck('red'),blue=testDeck('blue');
+ const game=openingGame(openingHand(blue,125),openingHand(red,250));
+ const one=observeBot(game,'red');
+ const altered=structuredClone(game);
+ altered.players[1].deck.reverse();
+ altered.players[0].deck.reverse();
+ altered.players[0].hand.reverse();
+ // Enemy hand identities are hidden: replace cards while preserving hand size.
+ altered.players[0].hand=altered.players[0].hand.map(()=>blue[0]);
+ const two=observeBot(altered,'red');
+ assert.deepEqual([...one.remaining],[...two.remaining]);
+ assert.deepEqual([...one.enemyArchetypeOdds],[...two.enemyArchetypeOdds]);
+ assert.equal(one.domainDrawChance,two.domainDrawChance);
+ assert.deepEqual(chooseBotCommand(game,'red'),chooseBotCommand(altered,'red'));
+ assert.equal(drawProbability(10,2,2),1-(8/10)*(7/9));
+ assert.equal(drawProbability(10,0,2),0);
+ assert.equal(drawProbability(10,10,1),1);
+});
