@@ -26,6 +26,7 @@ jobs:
       - name: Install Chromium only (avoid long Firefox/WebKit downloads)
         run: npx playwright install --with-deps chromium
       - name: Browser end-to-end smoke
+        timeout-minutes: 5
         run: node --experimental-strip-types test/browser-e2e.mjs
       - uses: actions/upload-artifact@v4
         if: always()
