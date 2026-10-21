@@ -6,10 +6,11 @@ export type EffectContext={game:Game;actor:PlayerId;source:Card;amount?:number;c
 export type EffectHandler=(context:EffectContext)=>void;
 /** Each registered effect has one implementation, independent of individual cards. */
 const handlers=new Map<string,EffectHandler>();
-export function registerEffect(channel:EffectChannel,kind:string,handler:EffectHandler):void{
+export function registerEffect(channel:EffectChannel,kind:string,handler:EffectHandler):()=>void{
   const key=channel+':'+kind;
   if(!kind||handlers.has(key))throw new RuleError('Эффект уже зарегистрирован или не имеет ID: '+key);
   handlers.set(key,handler);
+  return ()=>{if(handlers.get(key)===handler)handlers.delete(key)};
 }
 export function registeredEffects(channel?:EffectChannel):string[]{
   return [...handlers.keys()].filter(x=>!channel||x.startsWith(channel+':')).sort();
