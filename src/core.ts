@@ -8,6 +8,8 @@ import { tickStatusesAtTurnStart } from './mechanics/statuses.ts';
 import { activateLegend } from './mechanics/legends.ts';
 import { enterTrigger, resolveTechnique } from './mechanics/techniques.ts';
 import { EffectLimitError, MAX_EFFECT_OPERATIONS, removePermanents, collectLethal, resolveDeaths, finishIfLethal } from './mechanics/death-queue.ts';
+import {drawCards,leaveCard,moveCard,takeCard,takePermanent,placePermanent} from './mechanics/zones.ts';
+import {emitGameEvent} from './mechanics/events.ts';
 export { MAX_EFFECT_OPERATIONS } from './mechanics/death-queue.ts';
 export { validateDeck } from './mechanics/deck-rules.ts';
 export const RULES_VERSION = '0.9.15-alpha';
@@ -107,9 +109,8 @@ export function player(deck: Card[] = [], hand: Card[] = []): Player {
   return { hp: 30, deck: [...deck], hand: [...hand], discard: [], erased: [], domains: [], main: [], auxiliary: [], legends: [], energy: emptyEnergy(), domainsPlayed: 0, rituals: [] };
 }
 /** A ritual reward or created token can never enter the discard zone. */
-export function sendToDiscard(owner: Player, card: Card, ritualReward = false): void {
-  if (ritualReward || card.ritualReward || card.createdToken) owner.erased.push(card);
-  else owner.discard.push(card);
+export function sendToDiscard(owner:Player,card:Card,ritualReward=false):void{
+  leaveCard(owner,card,ritualReward);
 }
 /** Fixtures must state their initial hand/deck explicitly until mulligan is formalized. */
 export function initialGame(first: Player, second: Player): Game {
@@ -168,8 +169,8 @@ export function apply(game: Game, command: Command): Game {
       requireRule(p.domainsPlayed < 1, 'Владение уже разыграно');
       const card = p.hand[command.handIndex];
       requireRule(card?.kind === 'domain' && !!card.produces, 'Неверное Владение');
-      p.hand.splice(command.handIndex, 1);
-      p.domains.push({ objectId: next.nextObjectId++, card, exhausted: false, damage: 0, shield: 0, interceptions: 0, enteredTurn: next.turn });
+      takeCard(p,'hand',command.handIndex);
+      placePermanent(next,command.actor,'domains',card,{exhausted:false,shield:0});
       p.domainsPlayed++;
       break;
     }
@@ -205,9 +206,9 @@ export function apply(game: Game, command: Command): Game {
         sendToDiscard(p, replaced.card, replaced.ritualReward);
       }
       const energy = payForCard(p, card.cost);
-      p.energy = energy; p.hand.splice(command.handIndex, 1);
-      zone.push({ objectId: next.nextObjectId++, card, exhausted: !card.haste && !card.zeal, damage: 0, shield: card.shield ?? 0,
-        interceptions: 0, enteredTurn: next.turn, sacrifice: card.sacrifice, ritualReward: !!card.ritualReward, attacksMade: 0 });
+      p.energy = energy; takeCard(p,'hand',command.handIndex);
+      placePermanent(next,command.actor,card.createdToken?'auxiliary':'main',card,
+        {exhausted:!card.haste&&!card.zeal,ritualReward:!!card.ritualReward});
       enterTrigger(next,command.actor,card,'hand',command.targetId);
       break;
     }
@@ -234,7 +235,7 @@ export function apply(game: Game, command: Command): Game {
       requireRule(p.hand.length<=3,'Для добора должно быть не больше 3 карт в руке');
       requireRule(p.deck.length>=2,'В колоде должно быть не менее двух карт');
       p.hp-=2;p.lastRulerDrawTurn=next.turn;
-      p.hand.push(p.deck.shift()!,p.deck.shift()!);
+      drawCards(p,2);
       break;
     }
     case 'playLegend': {
@@ -250,8 +251,7 @@ export function apply(game: Game, command: Command): Game {
         p.legends.splice(p.legends.indexOf(sameLegend), 1);
         sendToDiscard(p, sameLegend.card, sameLegend.ritualReward);
       }
-      p.legends.push({ objectId: next.nextObjectId++, card, loyalty: card.loyalty,
-        exhausted: false, damage: 0, shield: card.shield ?? 0, interceptions: 0, enteredTurn: next.turn });
+      placePermanent(next,command.actor,'legends',card,{loyalty:card.loyalty,exhausted:false});
       break;
     }
     case 'activateLegend': {
@@ -277,8 +277,7 @@ export function apply(game: Game, command: Command): Game {
         p.auxiliary.splice(p.auxiliary.indexOf(sameItem), 1);
         sendToDiscard(p, sameItem.card, sameItem.ritualReward);
       }
-      p.auxiliary.push({ objectId: next.nextObjectId++, card, exhausted: false, damage: 0,
-        shield: 0, interceptions: 0, enteredTurn: next.turn });
+      placePermanent(next,command.actor,'auxiliary',card,{exhausted:false,shield:0});
       break;
     }
     case 'chooseRitual': {
@@ -293,7 +292,7 @@ export function apply(game: Game, command: Command): Game {
       // Cera's one-card bonus is outside and AFTER the sacrifice death sequence.
       // It does not change the five possible reward cards or three offers.
       if (p.legends.some(unit => unit.card.id === 'violet-цера-ван-троуп' && !unit.stasis && !unit.stunned && !unit.silenced) && p.deck.length)
-        p.hand.push(p.deck.shift()!);
+        drawCards(p,1);
       next.readyRituals = [];
       if (finishIfLethal(next)) break;
       next.pendingReward = { owner: command.actor, offeredIds: plan.offeredRewardIds, pool: [...ready.effect.rewardPool] as PendingReward['pool'] };
@@ -341,9 +340,7 @@ export function apply(game: Game, command: Command): Game {
         reward.cost ??= { colored: {}, generic: 0 };
         p.hand.push(reward);
       } else {
-        zone.push({ objectId: next.nextObjectId++, card: reward, exhausted: true, damage: 0,
-          shield: reward.shield ?? 0, interceptions: 0, enteredTurn: next.turn, ritualReward: true,
-          sacrifice: reward.sacrifice });
+        placePermanent(next,command.actor,reward.createdToken?'auxiliary':'main',reward,{ritualReward:true});
       }
       next.pendingReward = null; next.phase = 'main';
       break;
@@ -363,6 +360,7 @@ export function apply(game: Game, command: Command): Game {
       attacker.exhausted = true; attacker.attacksMade = (attacker.attacksMade ?? 0) + 1;
       next.pendingAttack = { attackerId: attacker.objectId, target: command.target, defender };
       next.phase = 'intercept';
+      emitGameEvent(next,{type:'combatResolved',owner:command.actor,objectId:attacker.objectId});
       break;
     }
     case 'intercept': {
@@ -389,11 +387,13 @@ export function apply(game: Game, command: Command): Game {
       if (attacker && [...next.players[next.active].main, ...next.players[next.active].auxiliary].includes(attacker) &&
           (attacker.attacksMade ?? 0) <= (ability(attacker,'extraAttacks') ?? 0)) attacker.exhausted = false;
       next.pendingAttack = null;
+      emitGameEvent(next,{type:'combatResolved',owner:next.active,objectId:pending.attackerId});
       break;
     }
     case 'endTurn': {
       requireRule(next.turn > 0 && next.phase === 'main', 'Недоступная фаза');
       p.energy = emptyEnergy();
+      emitGameEvent(next,{type:'turnEnd',owner:command.actor});
       for (const unit of [...p.main, ...p.auxiliary,...p.legends]) {
         unit.stunned = false;
         unit.silenced = false;
@@ -406,7 +406,7 @@ export function apply(game: Game, command: Command): Game {
     case 'discard': {
       requireRule(next.phase === 'discard', 'Сейчас нет сброса');
       requireRule(Number.isInteger(command.handIndex) && command.handIndex >= 0 && command.handIndex < p.hand.length, 'Неверная карта');
-      sendToDiscard(p, p.hand.splice(command.handIndex, 1)[0]);
+      sendToDiscard(p, takeCard(p,'hand',command.handIndex));
       if (p.hand.length <= 8) advance(next);
       break;
     }
@@ -429,6 +429,7 @@ function advance(game: Game): void {
   game.turn++;
   game.operationsUsed = 0;
   game.phase = 'main';
+  emitGameEvent(game,{type:'turnStart',owner:game.active});
   const p = game.players[game.active];
   p.domainsPlayed = 0;
   for (const domain of p.domains) domain.exhausted = false;
@@ -438,7 +439,7 @@ function advance(game: Game): void {
   // A defender's per-opponent-turn intercept limit resets when that opponent starts.
   for (const creature of game.players[1 - game.active].main) creature.interceptions = 0;
   for (const creature of game.players[1 - game.active].auxiliary) creature.interceptions = 0;
-  if (p.deck.length) p.hand.push(p.deck.shift()!);
+  drawCards(p,1);
   tickStatusesAtTurnStart(p);
   resolveDeaths(game, collectLethal(game));
   if (finishIfLethal(game)) return;
