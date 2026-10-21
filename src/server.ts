@@ -7,7 +7,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { apply, openingGame, RULES_VERSION, RuleError, type Command, type Game, type PlayerId } from './core.ts';
 import { apply as applyLegacy, RuleError as LegacyRuleError } from './legacy/core-v0.9.13.ts';
 const LEGACY_RULES_VERSION = '0.9.13-alpha';
-function applyForMatch(game: Game, command: Command): Game {
+export function applyForMatch(game: Game, command: Command): Game {
   if (game.rulesVersion === LEGACY_RULES_VERSION) return applyLegacy(game as any, command as any) as Game;
   if (game.rulesVersion === RULES_VERSION) return apply(game, command);
   throw new RuleError('Версия правил матча больше не поддерживается');
