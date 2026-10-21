@@ -10,7 +10,7 @@ let account = null, catalog = [], presets = [], savedDecks = [], deckIds = [], g
 let selected = null, selectedMulligan = new Set(), selectedVictims = new Set(), selectedRitual = null;
 let selectedReward = null, selectedRewardKeepExisting = undefined, selectedArtifactIndex = null, busy = false, loading = false;
 let selectedLegendId = null, defenderChoice = null, attackAlertKey = null;
-let chatAvailableAt=0,olderMessages=[],chatMore=true;
+let chatAvailableAt=0,olderMessages=[],chatMore=true,spectating=null;
 function status(value) { $('status').textContent = translate(value || ''); }
 let healthProbeInFlight = false;
 async function checkGameServer() {
@@ -40,7 +40,7 @@ async function checkGameServer() {
 let lastPage='auth';
 function show(id) {
   if(id!=='rulesPage')lastPage=id;
-  for(const pane of ['auth','home','builder','match','rulesPage'])$(pane).classList.toggle('hidden',pane!==id);
+  for(const pane of ['auth','home','builder','match','spectator','rulesPage'])$(pane).classList.toggle('hidden',pane!==id);
 }
 function serverAddress() {
   if (hostedClient) return ''; // Vercel proxies /api/* to the configured game server.
@@ -168,6 +168,11 @@ function showCardDetails(card,p) {
 }
 $('inspectorClose').onclick=()=>$('cardInspector').close();
 $('cardInspector').onclick=e=>{if(e.target===$('cardInspector'))$('cardInspector').close()};
+function cardSummary(card){
+ const cost=card.cost?Object.entries(card.cost.colored||{}).filter(([,v])=>v).map(([k,v])=>k+':'+v).join(' ')+' '+(card.cost.generic?'+'+card.cost.generic:''): '0';
+ const stats=card.kind==='creature'?(card.attack??0)+'/'+(card.health??0):card.kind==='legend'?'Лояльность '+(card.loyalty??0):'';
+ return 'Стоимость '+cost.trim()+(stats?' · '+stats:'');
+}
 function cardButton(card, label, onClick, disabled = false, active = false, permanent = undefined) {
   const element = button('',onClick,disabled,'card '+(card.aspects?.[0] || 'neutral')+(active?' active':''));
   if(permanent?.objectId!==undefined)element.dataset.objectId=permanent.objectId;
@@ -181,7 +186,7 @@ function cardButton(card, label, onClick, disabled = false, active = false, perm
   inspect.onclick=reveal;
   inspect.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();reveal(e)}};
   element.append(inspect);
-  element.append(textElement('small',label));
+  element.append(textElement('small',cardSummary(card),'card-summary'),textElement('small',label));
   const flags = [['unique','Уникальная'],['guard','Страж'],['flying','Полёт'],['firstStrike','Первый удар'],
     ['piercing','Пробивание'],['lifesteal','Похищение жизни'],['stealth','Скрытность'],['majestic','Величественный'],
     ['sacrifice','Жертва'],['haste','Мгновенная атака'],['zeal','Рвение'],['untiring','Неутомимость']]
@@ -247,13 +252,10 @@ function renderLeaderboard(board){
   $('leaderboardUpdated').textContent=translate('Данные на: ')+
     new Date(board.updatedAt).toLocaleString(locale()==='en'?'en-US':'ru-RU');
 }
-function renderLobby(data) {
-  renderLeaderboard(data.leaderboard);
-  $('presence').textContent='Онлайн: '+data.online+' · в поиске: '+data.searching;
-  $('queueStatus').textContent=data.searchingSelf?'Поиск идёт. Подбираем другого игрока…':'';
-  $('search').disabled=data.searchingSelf;
-  $('cancelSearch').classList.toggle('hidden',!data.searchingSelf);
-  const chat=$('chat'), pinned=chat.scrollTop+chat.clientHeight>=chat.scrollHeight-20;
+function renderSharedChat(data) {
+  for(const chat of [$('chat'),$('matchChat'),$('spectatorChat')]){
+   if(!chat)continue;
+   const pinned=chat.scrollTop+chat.clientHeight>=chat.scrollHeight-20;
   const items=[...new Map([...olderMessages,...data.chat].map(message=>[message.id,message])).values()].sort((a,b)=>a.id-b.id);
   chat.dataset.earliest=String(items[0]?.id||'');
   chat.replaceChildren(...items.map(message=>{
@@ -263,16 +265,36 @@ function renderLobby(data) {
     line.title=message.accountId;return line;
   }));
   if (pinned) chat.scrollTop=chat.scrollHeight;
-  $('olderChat').disabled=!chatMore;
+   $('olderChat').disabled=!chatMore;
+  }
+}
+function renderLobby(data) {
+  renderLeaderboard(data.leaderboard);
+  $('presence').textContent='Онлайн: '+data.online+' · в поиске: '+data.searching+' · в матчах: '+(data.inMatches??0);
+  $('activeMatches').replaceChildren(...(data.activeMatches?.length?data.activeMatches.map(m=>{
+    const row=document.createElement('div');row.className='spectator-entry';
+    row.append(textElement('span',m.players.join(' против ')+' · ход '+m.turn),
+      button('Смотреть',()=>openSpectator(m.code),false,'secondary'));
+    return row;
+  }):[textElement('p','Сейчас нет активных матчей','hint')]));
+  renderSharedChat(data);
+  $('queueStatus').textContent=data.searchingSelf?'Поиск идёт. Подбираем другого игрока…':'';
+  $('search').disabled=data.searchingSelf;
+  $('cancelSearch').classList.toggle('hidden',!data.searchingSelf);
   if (data.room && !room) enterRoom(data.room);
 }
 async function refresh() {
   if (!token || loading || !$('rulesPage').classList.contains('hidden')) return;
   loading=true;
   try {
-    if (room) {
+    if (spectating) {
+      const snapshot=await api('/api/spectate/'+spectating);
+      renderSpectator(snapshot);
+      const lobby=await api('/api/lobby');renderSharedChat(lobby);
+    } else if (room) {
       const data=await api('/api/rooms/'+room);
       game=data.game;show('match');renderGame(data.ready);
+      renderSharedChat(await api('/api/lobby'));
     } else if (!$('builder').classList.contains('hidden')) {
       // Editing is local until saved.
     } else {
@@ -284,7 +306,15 @@ async function refresh() {
     else status(error.message);
   } finally { loading=false; }
 }
-function enterRoom(value) { room=value;localStorage.setItem(roomKey,room);game=null;show('match');refresh(); }
+function openSpectator(code){spectating=code;room='';game=null;localStorage.removeItem(roomKey);show('spectator');refresh()}
+function renderSpectator(g){
+ show('spectator');$('spectatorHeading').textContent='Матч '+g.code+' · ход '+g.turn+' · '+g.phase;
+ for(const i of [0,1]){
+ const root=$('spectatorPlayer'+i);root.replaceChildren(textElement('h3','Игрок '+(i+1)+' · '+g.players[i].hp+' HP · рука '+g.players[i].handCount),
+  ...[...g.players[i].main,...g.players[i].auxiliary,...g.players[i].legends].map(p=>cardButton(p.card,cardSummary(p.card),()=>showCardDetails(p.card,p),false,false,p)));
+ }
+}
+function enterRoom(value) {spectating=null; room=value;localStorage.setItem(roomKey,room);game=null;show('match');refresh(); }
 async function send(command) {
   if (busy || !game) return;
   busy=true;
@@ -559,22 +589,25 @@ $('joinRoom').onclick=async()=>{try{const code=$('code').value.trim().toUpperCas
 $('leaveMatch').onclick=async()=>{try{await api('/api/queue/leave',{})}catch{}room='';game=null;localStorage.removeItem(roomKey);show('home');await refresh()};
 function updateChatCooldown(){
   const left=Math.max(0,Math.ceil((chatAvailableAt-Date.now())/1000));
-  $('chatSubmit').disabled=left>0;
-  $('chatSubmit').textContent=left?'Отправить ('+left+'с)':'Отправить';
+  for(const id of ['chatSubmit','matchChatSubmit','spectatorChatSubmit'])if($(id))$(id).disabled=left>0;
+  for(const id of ['chatSubmit','matchChatSubmit','spectatorChatSubmit'])if($(id))$(id).textContent=left?'Отправить ('+left+'с)':'Отправить';
   $('chatCooldown').textContent=left?'Повторная отправка через '+left+' сек.':'';
 }
-$('chatForm').onsubmit=async event=>{
+async function sendSharedChat(event){
   event.preventDefault();if(Date.now()<chatAvailableAt)return;
   try {
-    const response=await api('/api/chat',{text:$('chatText').value});
-    $('chatText').value='';chatAvailableAt=response.nextAllowedAt||Date.now()+5000;
+    const field=event.currentTarget.querySelector('input');
+    const response=await api('/api/chat',{text:field.value});
+    field.value='';chatAvailableAt=response.nextAllowedAt||Date.now()+5000;
     updateChatCooldown();await refresh();
   } catch(e){
     const match=/Подождите (\d+) сек/.exec(e.message);
     if(match){chatAvailableAt=Date.now()+Number(match[1])*1000;updateChatCooldown()}
     status(e.message);
   }
-};
+}
+for(const id of ['chatForm','matchChatForm','spectatorChatForm'])$(id).onsubmit=sendSharedChat;
+$('spectatorClose').onclick=()=>{spectating=null;show('home');refresh()};
 $('olderChat').onclick=async()=>{
   try{
     const before=olderMessages[0]?.id||$('chat').dataset.earliest;
@@ -627,10 +660,10 @@ if (hostedClient) {
 show('auth');
 checkGameServer();
 setInterval(checkGameServer,20000);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkGameServer()});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){checkGameServer();refresh()}else if(token)api('/api/presence/away',{}).catch(()=>{})});
 if(token)api('/api/me').then(async data=>{setAccount(data.account);await loadData();await refresh()}).catch(()=>{token='';localStorage.removeItem(sessionKey);show('auth')});
 observeLocalization();
-setInterval(refresh,2500);setInterval(tick,1000);setInterval(updateChatCooldown,250);
+setInterval(()=>{if(!document.hidden)refresh()},2500);setInterval(tick,1000);setInterval(updateChatCooldown,250);
 updateChatCooldown();
 
 
