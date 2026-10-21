@@ -345,3 +345,33 @@ test('Ruler API eligibility, archive parameters and idempotent commands preserve
  }finally{app.close()}
 });
 
+
+
+test('tester bot uses an official starter and does not enter public match statistics',async()=>{
+ const {app,request,register}=await fixture();
+ try{
+  const user=await register('BotTester');
+  const created=await request('/api/bot',user.token,{deckId:'red'});
+  assert.equal(created.status,201,JSON.stringify(created.body));
+  assert.equal(created.body.bot,true);
+  const code=created.body.code;
+  let snapshot=(await request('/api/rooms/'+code,user.token)).body;
+  assert.equal(snapshot.bot,true);
+  assert.equal(snapshot.game.players[0].hp,40);
+  assert.equal(snapshot.game.players[1].hp,40);
+  assert.equal(snapshot.game.players[1].hand,undefined,'bot hand must remain hidden');
+  assert.equal(snapshot.game.mulliganReady[1],true,'bot accepts its mulligan');
+  let done=await request('/api/rooms/'+code+'/commands',user.token,{type:'mulligan',indices:[],expectedRevision:snapshot.game.revision,key:'tester-accept'});
+  assert.equal(done.status,200,JSON.stringify(done.body));
+  snapshot=(await request('/api/rooms/'+code,user.token)).body;
+  assert.equal(snapshot.game.phase,'main');
+  // The bot should eventually act without a second user's browser.
+  const action=await request('/api/rooms/'+code+'/commands',user.token,{type:'endTurn',expectedRevision:snapshot.game.revision,key:'tester-end'});
+  assert.equal(action.status,200,JSON.stringify(action.body));
+  snapshot=(await request('/api/rooms/'+code,user.token)).body;
+  assert.ok(snapshot.game.turn>=2);
+  assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM match_history WHERE room=?').get(code).n,0,'test games cannot affect ratings');
+  const lobby=(await request('/api/lobby',user.token)).body;
+  assert.equal(lobby.online,1);
+ }finally{app.close()}
+});
