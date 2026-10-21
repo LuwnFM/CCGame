@@ -279,3 +279,37 @@ test('basic thematic Domains preserve stable IDs, Energy and original deck ratio
   }
  }finally{app.close()}
 });
+
+
+test('registered profile, permanent ID and bearer session survive a full SQLite server restart',async()=>{
+ const temp=await mkdtemp(join(tmpdir(),'firewell-account-restart-'));
+ const file=join(temp,'players.sqlite'), opts={databasePath:file,accessPassword:'privateAlphaPass1'};
+ let first:any=null,second:any=null;
+ try{
+   first=createApp(opts);
+   await new Promise<void>(resolve=>first.server.listen(0,'127.0.0.1',resolve));
+   const url1='http://127.0.0.1:'+first.server.address().port;
+   const registered=await fetch(url1+'/api/register',{method:'POST',headers:{'content-type':'application/json'},
+     body:JSON.stringify({login:'RestartPlayer',password:'PrivatePlayerSecret1',accessPassword:'privateAlphaPass1'})});
+   assert.equal(registered.status,200);
+   const initial=await registered.json();
+   const token=initial.token,playerId=initial.account.id;
+   await new Promise<void>(resolve=>first.server.close(resolve));first.db.close();first=null;
+   second=createApp(opts);
+   await new Promise<void>(resolve=>second.server.listen(0,'127.0.0.1',resolve));
+   const url2='http://127.0.0.1:'+second.server.address().port;
+   const restored=await fetch(url2+'/api/me',{headers:{authorization:'Bearer '+token}});
+   assert.equal(restored.status,200);
+   assert.equal((await restored.json()).account.id,playerId);
+   const relog=await fetch(url2+'/api/login',{method:'POST',headers:{'content-type':'application/json'},
+     body:JSON.stringify({login:'restartplayer',password:'PrivatePlayerSecret1'})});
+   assert.equal(relog.status,200);
+   assert.equal((await relog.json()).account.id,playerId);
+   const denied=await fetch(url2+'/api/register',{method:'POST',headers:{'content-type':'application/json'},
+     body:JSON.stringify({login:'SecondPerson',password:'PrivatePlayerSecret1',accessPassword:'wrong'})});
+   assert.equal(denied.status,403);
+ }finally{
+   for(const app of [first,second])if(app){if(app.server.listening)await new Promise<void>(resolve=>app.server.close(resolve));app.db.close();}
+   await rm(temp,{recursive:true,force:true});
+ }
+});
