@@ -9,6 +9,7 @@ let room = localStorage.getItem(roomKey) || '';
 let account = null, catalog = [], presets = [], savedDecks = [], deckIds = [], game = null;
 let selected = null, selectedMulligan = new Set(), selectedVictims = new Set(), selectedRitual = null;
 let selectedReward = null, selectedRewardKeepExisting = undefined, selectedArtifactIndex = null, busy = false, loading = false;
+let selectedLegendId = null, defenderChoice = null, attackAlertKey = null;
 let chatAvailableAt=0,olderMessages=[],chatMore=true;
 function status(value) { $('status').textContent = translate(value || ''); }
 let lastPage='auth';
@@ -45,9 +46,71 @@ function textElement(tag, value, className = '') {
   const element = document.createElement(tag); element.textContent = value; element.className = className; return element;
 }
 function initials(name) { return [...name.replace(/[^\p{L}\p{N}]/gu,'')].slice(0,2).join('').toUpperCase() || 'FW'; }
-function cardButton(card, label, onClick, disabled = false, active = false) {
+function abilityText(ability) {
+  if(!ability)return 'Пока нет активной способности';
+  const effects={healRuler:'Восстановить '+ability.amount+' HP Владетелю',
+    damageOpponent:'Нанести '+ability.amount+' урона Владетелю противника',
+    draw:'Взять карт: '+ability.amount, recoverCreature:'Вернуть Существо из сброса в руку',
+    raiseSacrifice:'Создать Жертву 2/2 во вспомогательной зоне'};
+  return (ability.delta>0?'+':'')+ability.delta+' лояльности · '+(effects[ability.kind]||ability.kind);
+}
+function detailsText(card,p) {
+  const bits=[];
+  if(card.attack!==undefined&&card.health!==undefined)bits.push('Сила '+card.attack+' / Здоровье '+card.health);
+  if(p?.damage)bits.push('Ранения '+p.damage);
+  if(p?.shield)bits.push('Щит '+p.shield);
+  if(p?.loyalty!==undefined)bits.push('Лояльность '+p.loyalty);
+  if(card.cost)bits.push('Стоимость '+(card.cost.generic+Object.values(card.cost.colored||{}).reduce((a,b)=>a+b,0))+' энергии');
+  if(card.produces)bits.push('Даёт энергию: '+card.produces);
+  if(card.unique)bits.push('Уникальная карта');
+  return bits.join(' · ');
+}
+function traitDescriptions(card) {
+  const traits=[
+    ['guard','Страж: может перехватывать нападение на Существо'],
+    ['flying','Полёт: перехватывается только летающими Существами'],
+    ['firstStrike','Первый удар: наносит урон до ответного удара'],
+    ['piercing','Пробивание: избыточный урон после перехвата проходит к исходной цели'],
+    ['lifesteal','Похищение жизни: восстанавливает HP на величину нанесённого урона'],
+    ['stealth','Скрытность: Существо нельзя выбрать целью атаки'],
+    ['haste','Мгновенная атака: может атаковать в ход выхода'],
+    ['zeal','Рвение: может сразу атаковать Существо'],
+    ['sacrifice','Жертва: подходит для ритуального принесения в жертву'],
+    ['majestic','Величественный: нельзя вытеснить из зоны']];
+  const result=traits.filter(([k])=>card[k]).map(([,txt])=>txt);
+  if(card.shield)result.push('Щит '+card.shield+': поглощает урон');
+  if(card.poisonHit)result.push('Отрава '+card.poisonHit.strength+' / '+card.poisonHit.ticks);
+  if(card.extraAttacks)result.push('Дополнительные атаки: '+card.extraAttacks);
+  if(card.ritual)result.push('Ритуал: нужно Жертв '+card.ritual.threshold);
+  if(card.onDeath)result.push('После гибели: '+card.onDeath.kind+' ('+card.onDeath.amount+')');
+  if(card.loyaltyAbilities?.length)result.push(...card.loyaltyAbilities.map(abilityText));
+  else if(card.loyaltyAbility)result.push(abilityText(card.loyaltyAbility));
+  if(card.abilities?.length)result.push('Ещё не реализовано: '+card.abilities.join(', '));
+  return result;
+}
+function showCardDetails(card,p) {
+  const dialog=$('cardInspector');
+  $('inspectorTitle').textContent=cardName(card);
+  $('inspectorStats').textContent=kindName(card.kind)+' · '+detailsText(card,p);
+  $('inspectorTraits').replaceChildren(...traitDescriptions(card).map(value=>textElement('p',value,'trait-description')));
+  const lore=card.lore;
+  $('inspectorLore').textContent=lore?([lore.state,lore.organization,lore.note].filter(Boolean).join(' · ')):'';
+  dialog.showModal();
+}
+$('inspectorClose').onclick=()=>$('cardInspector').close();
+$('cardInspector').onclick=e=>{if(e.target===$('cardInspector'))$('cardInspector').close()};
+function cardButton(card, label, onClick, disabled = false, active = false, permanent = undefined) {
   const element = button('',onClick,disabled,'card '+(card.aspects?.[0] || 'neutral')+(active?' active':''));
+  element.disabled=false;
+  element.classList.toggle('unavailable',disabled);
+  element.onclick=()=>disabled?showCardDetails(card,permanent):onClick();
   element.append(textElement('span',initials(cardName(card)),'glyph'),textElement('b',cardName(card)));
+  const inspect=textElement('span','ⓘ','inspect-card');
+  inspect.setAttribute('role','button'); inspect.tabIndex=0;inspect.setAttribute('aria-label','Подробнее о карте '+cardName(card));
+  const reveal=e=>{e.stopPropagation();showCardDetails(card,permanent)};
+  inspect.onclick=reveal;
+  inspect.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();reveal(e)}};
+  element.append(inspect);
   element.append(textElement('small',label));
   const flags = [['unique','Уникальная'],['guard','Страж'],['flying','Полёт'],['firstStrike','Первый удар'],
     ['piercing','Пробивание'],['lifesteal','Похищение жизни'],['stealth','Скрытность'],['majestic','Величественный'],
@@ -184,6 +247,9 @@ function cardLabel(p) {
   return stats+(p.shield?' · Щит '+p.shield:'')+(p.exhausted?' · истощено':'');
 }
 function renderGame(ready) {
+  if (hostedClient && game?.rulesVersion === '0.9.13-alpha' && !location.pathname.includes('/versions/0.9.13/')) {
+    location.replace('/versions/0.9.13/index.html'); return;
+  }
   $('roomLabel').textContent='Комната '+room;
   if (!ready || !game) {
     $('turnLabel').textContent='Ожидание соперника. Код комнаты: '+room;
