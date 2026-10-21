@@ -3,6 +3,7 @@ import { strict as assert } from 'node:assert';
 import { apply, openingGame, RuleError, type Command, type Game, type PlayerId } from '../src/core.ts';
 import { ARCHETYPES, testDeck } from '../src/decks.ts';
 import { totalAttack } from '../src/mechanics/combat.ts';
+import {chooseDefensiveInterceptor} from '../src/bots/defense.ts';
 import { openingHand } from '../src/setup.ts';
 
 function step(g: Game, action: object, n: number): Game {
@@ -58,11 +59,7 @@ test('balance bot respects all Ruler-draw restrictions and can draw at 3 HP',()=
   }
 });
 function defend(g:Game,n:number):Game {
- const p=g.players[g.pendingAttack!.defender],a=[...g.players[g.active].main,...g.players[g.active].auxiliary].find(x=>x.objectId===g.pendingAttack!.attackerId)!;
- const candidates=[...p.main,...p.auxiliary].filter(x=>x.card.kind==='creature'&&!x.exhausted&&!x.stasis&&x.interceptions===0&&(!a.card.flying||x.card.flying)&&(g.pendingAttack!.target.kind!=='creature'||x.card.guard));
- candidates.sort((x,y)=>(x.card.attack!+x.card.health!)-(y.card.attack!+y.card.health!));
- const chosen=candidates.find(x=>x.card.health!-x.damage+x.shield>totalAttack(g.players[g.active],a)||totalAttack(p,x)>=a.card.health!-a.damage+a.shield||p.hp<=totalAttack(g.players[g.active],a));
- return step(g,{type:'intercept',actor:g.pendingAttack!.defender,interceptorId:chosen?.objectId??null},n);
+ return step(g,{type:'intercept',actor:g.pendingAttack!.defender,interceptorId:chooseDefensiveInterceptor(g)},n);
 }
 
 /** Controlled A/B: keep the exact same decks, seeds and legal bot policy. */
