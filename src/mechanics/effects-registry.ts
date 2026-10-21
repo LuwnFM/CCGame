@@ -1,5 +1,5 @@
 import {RuleError,type Game,type PlayerId,type Card} from '../core.ts';
-import {EffectLimitError,MAX_EFFECT_OPERATIONS} from './death-queue.ts';
+import {EffectLimitError,MAX_EFFECT_OPERATIONS} from './limits.ts';
 export type EffectChannel='entry'|'technique'|'loyalty'|'death';
 export type EffectContext={game:Game;actor:PlayerId;source:Card;amount?:number;cards?:readonly Card[];
   targetId?:number;discardIndex?:number;completeRitual?:boolean};
