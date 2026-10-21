@@ -1,4 +1,5 @@
 import { ability } from './abilities.ts';
+import {runCombatHooks,type CombatStage} from './combat-hooks.ts';
 import type { Game, Permanent, Player, PlayerId } from '../core.ts';
 
 export function damage(target: Permanent, amount: number): number {
@@ -34,6 +35,10 @@ function applyPoison(target: Permanent, source: Permanent): void {
 export function resolveCombat(game: Game, attacker: Permanent, defender: Permanent | null, legend: Permanent | null,
   defendingPlayer: Player, declared: { kind: 'player' } | { kind: 'creature' | 'legend'; objectId: number }, intercepted: boolean): void {
   const attackingPlayer = game.players[game.active];
+  const notify=(stage:CombatStage,source:Permanent,target:Permanent|null,amount:number,dealt:number)=>
+    runCombatHooks(stage,{game,attacker,defender,legend,attackerOwner:attackingPlayer,
+      defenderOwner:defendingPlayer,intercepted,source,target,amount,dealt});
+  notify('beforeCombat',attacker,defender??legend,0,0);
   const attack = totalAttack(attackingPlayer, attacker);
   const response = defender ? totalAttack(defendingPlayer, defender) : 0;
   const heal = (owner: Player, source: Permanent, dealt: number) => { if (ability(source,'lifesteal')) owner.hp = Math.min(30, owner.hp + dealt); };
@@ -56,8 +61,13 @@ export function resolveCombat(game: Game, attacker: Permanent, defender: Permane
       heal(attackingPlayer, attacker, Math.min(remaining, dealt));
       applyPoison(defender, attacker);
       if (intercepted && ability(attacker,'piercing')) spill(Math.max(0, attack - shieldBefore - remaining));
-    } else if (legend) heal(attackingPlayer, attacker, woundLegend(legend, attack));
-    else { const dealt = Math.min(Math.max(0, defendingPlayer.hp), attack); defendingPlayer.hp -= attack; heal(attackingPlayer, attacker, dealt); }
+      notify('afterAttackerHit',attacker,defender,attack,Math.min(remaining,dealt));
+    } else if (legend) {
+      const dealt=woundLegend(legend,attack);heal(attackingPlayer,attacker,dealt);
+      notify('afterAttackerHit',attacker,legend,attack,dealt);
+    }
+    else { const dealt = Math.min(Math.max(0, defendingPlayer.hp), attack); defendingPlayer.hp -= attack; heal(attackingPlayer, attacker, dealt);
+      notify('afterAttackerHit',attacker,null,attack,dealt); }
   };
   const reply = () => {
     if (!defender) return;
@@ -65,12 +75,14 @@ export function resolveCombat(game: Game, attacker: Permanent, defender: Permane
     const dealt = damage(attacker, response);
     heal(defendingPlayer, defender, Math.min(remaining, dealt));
     applyPoison(attacker, defender);
+    notify('afterDefenderHit',defender,attacker,response,Math.min(remaining,dealt));
   };
-  if (!defender) { hit(); return; }
+  if (!defender) { hit(); notify('afterCombat',attacker,legend,attack,0); return; }
   if (ability(attacker,'firstStrike') && !ability(defender,'firstStrike')) {
     hit(); if (defender.damage < defender.card.health!) reply();
   } else if (ability(defender,'firstStrike') && !ability(attacker,'firstStrike')) {
     reply(); if (attacker.damage < attacker.card.health!) hit();
   } else { hit(); reply(); }
+  notify('afterCombat',attacker,defender,attack,0);
 }
 
