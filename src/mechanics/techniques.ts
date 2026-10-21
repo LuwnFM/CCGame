@@ -15,13 +15,24 @@ function spawnSkeleton(game: Game, actor: PlayerId, count: number, source: Card)
   }
 }
 /** Only entered-from-hand and revived-from-discard cards receive the corresponding trigger. */
-export function enterTrigger(game:Game,actor:PlayerId,card:Card,origin:'hand'|'discard'):void{
+export function enterTrigger(game:Game,actor:PlayerId,card:Card,origin:'hand'|'discard',targetId?:number):void{
   const effect=origin==='hand'?card.onEntry:card.secondChance;
   if(!effect)return;
   if((game.operationsUsed=(game.operationsUsed??0)+1)>MAX_EFFECT_OPERATIONS)
     throw new EffectLimitError('Превышен бюджет Вступления/Второго шанса');
   requireRule(Number.isSafeInteger(effect.amount) && effect.amount>=0&&effect.amount<=4,'Неверное Вступление');
   if(effect.kind==='summonSkeleton')spawnSkeleton(game,actor,effect.amount,card);
+  else if(effect.kind==='stunEnemy') {
+    // A blue entry stuns one chosen enemy Creature; a clear board does not prevent entry.
+    const enemy=game.players[(1-actor) as PlayerId];
+    const candidates=[...enemy.main,...enemy.auxiliary].filter(u=>u.card.kind==='creature'&&!u.stunned&&!u.stasis);
+    if(candidates.length){
+      requireRule(Number.isSafeInteger(targetId),'Выберите цель для Ошеломления');
+      const target=candidates.find(u=>u.objectId===targetId);
+      requireRule(target,'Недоступная цель Ошеломления');
+      target.stunned=true;
+    }else requireRule(targetId===undefined,'Некого ошеломить');
+  }
   else if(effect.kind==='healRuler')game.players[actor].hp=Math.min(30,game.players[actor].hp+effect.amount);
   else if(effect.kind==='draw')for(let i=0;i<effect.amount&&game.players[actor].deck.length;i++)
       game.players[actor].hand.push(game.players[actor].deck.shift()!);
