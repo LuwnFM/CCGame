@@ -25,7 +25,7 @@ export function syncCatalog({checkOnly=false}={}){
   if(checkOnly)throw Error(color+' has unregistered card files: '+missing.join(', '));
   const index=content.indexOf('export const starter:');
   if(index<0)throw Error(color+' lacks stable starter export');
-  const prior=[...content.matchAll(/import card(\d+) from/g)].map(m=>Number(m[1]));
+  const prior=[...content.matchAll(/import (?:card|addedCard)(\d+) from/g)].map(m=>Number(m[1]));
   let serial=Math.max(0,...prior)+1;
   const imports=missing.map(path=>({path,identifier:'addedCard'+(serial++)}));
   const lines=imports.map(v=>"import "+v.identifier+" from './"+v.path+"';").join('\n')+'\n';
