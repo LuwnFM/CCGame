@@ -745,6 +745,27 @@
       "en": "zeal",
       "introducedIn": "<=0.9.15-alpha",
       "deprecatedAlias": false
+    },
+    {
+      "kind": "untiring",
+      "type": "trait",
+      "channels": [],
+      "params": [
+        "untiring"
+      ],
+      "targetRules": "permanent",
+      "timing": [
+        "attack/intercept"
+      ],
+      "implemented": true,
+      "ui": "legacy/manual",
+      "testIds": [
+        "untiring"
+      ],
+      "ru": "Неутомимость",
+      "en": "Untiring",
+      "introducedIn": "0.9.15-alpha",
+      "deprecatedAlias": false
     }
   ]
 }

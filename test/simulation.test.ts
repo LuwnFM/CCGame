@@ -78,14 +78,30 @@ function deckFor(id:Parameters<typeof testDeck>[0],scenario:'before'|'after'){
  return cards;
 }
 
-test('controlled before/after reward balance simulation at 40 HP (1728 seeded matches)',()=>{
- for(const scenario of ['before','after'] as const){
+
+function scenarioDeck(id:Parameters<typeof testDeck>[0],scenario:'legacy'|'improved'|'untiring'){
+ const cards=structuredClone(testDeck(id));
+ if(scenario!=='untiring')for(const card of cards)delete card.untiring;
+ return cards;
+}
+function defendScenario(g:Game,n:number,scenario:'legacy'|'improved'|'untiring'):Game{
+ if(scenario!=='legacy')return defend(g,n);
+ const p=g.players[g.pendingAttack!.defender];
+ const a=[...g.players[g.active].main,...g.players[g.active].auxiliary].find(x=>x.objectId===g.pendingAttack!.attackerId)!;
+ const candidates=[...p.main,...p.auxiliary].filter(x=>x.card.kind==='creature'&&!x.exhausted&&!x.stasis&&x.interceptions===0&&(!a.card.flying||x.card.flying)&&(g.pendingAttack!.target.kind!=='creature'||x.card.guard));
+ candidates.sort((x,y)=>(x.card.attack!+x.card.health!)-(y.card.attack!+y.card.health!));
+ const chosen=candidates.find(x=>x.card.health!-x.damage+x.shield>totalAttack(g.players[g.active],a)||totalAttack(p,x)>=a.card.health!-a.damage+a.shield||p.hp<=totalAttack(g.players[g.active],a));
+ return step(g,{type:'intercept',actor:g.pendingAttack!.defender,interceptorId:chosen?.objectId??null},n);
+}
+
+test('three defensive scenarios at 40 HP (2592 seeded matches)',()=>{
+ for(const scenario of ['legacy','improved','untiring'] as const){
   let finished=0,cutoff=0,draws=0;const wins:Record<string,number>={},pairings:Record<string,{first:number;second:number;cutoff:number}>={};
   let count=0,rituals=0,rewards=0,ritualWins=0,ritualLosses=0,ritualDraws=0,postRitualTurns=0,legends=0,artifacts=0,combat=0, actions=0;
   const rulerDraws:Record<string,{first:number;second:number}> = Object.fromEntries(ARCHETYPES.map(a=>[a.id,{first:0,second:0}]));
   for (let i=0;i<ARCHETYPES.length;i++) for (let j=0;j<ARCHETYPES.length;j++) for (let repeat=0;repeat<24;repeat++) {
-    let g=openingGame(openingHand(deckFor(ARCHETYPES[i].id,scenario),1001+i*29+j*11+repeat),
-      openingHand(deckFor(ARCHETYPES[j].id,scenario),4001+j*37+i*13+repeat));
+    let g=openingGame(openingHand(scenarioDeck(ARCHETYPES[i].id,scenario),1001+i*29+j*11+repeat),
+      openingHand(scenarioDeck(ARCHETYPES[j].id,scenario),4001+j*37+i*13+repeat));
     // Experimental balance-only rule: both rulers start at 40 HP (production remains 30).
     g.players[0].hp=40;g.players[1].hp=40;
     let serial=0;const ritualOwners=new Map<PlayerId,number>();
@@ -107,7 +123,7 @@ test('controlled before/after reward balance simulation at 40 HP (1728 seeded ma
       } else if (g.phase==='discard') {
         g=step(g,{type:'discard',actor,handIndex:0},serial++);
       } else if (g.phase==='intercept') {
-        g=defend(g,serial++);
+        g=defendScenario(g,serial++,scenario);
       } else {
         const land=p.domainsPlayed<1?p.hand.findIndex(c=>c.kind==='domain'):-1;
         if(land>=0)g=step(g,{type:'playDomain',actor,handIndex:land},serial++);
@@ -183,7 +199,7 @@ test('controlled before/after reward balance simulation at 40 HP (1728 seeded ma
     if(g.phase==='finished'){finished++;for(const [owner,turn] of ritualOwners){if(g.winner==='draw')ritualDraws++;else if(g.winner===owner){ritualWins++;postRitualTurns+=g.turn-turn}else ritualLosses++}if(g.winner==='draw')draws++;else{const winner=ARCHETYPES[g.winner===0?i:j].id;wins[winner]=(wins[winner]||0)+1;pairings[pairing][g.winner===0?'first':'second']++}}else{cutoff++;pairings[pairing].cutoff++}
     count++;
   }
-  console.log('SIMULATION_40HP_AB_REPORT '+JSON.stringify({scenario,matches:count,finished,cutoff,draws,rituals,rewards,ritualWins,ritualLosses,ritualDraws,meanTurnsToWinAfterReward:ritualWins?postRitualTurns/ritualWins:null,wins,pairings,rulerDraws}));
+  console.log('SIMULATION_DEFENSE_3WAY_REPORT '+JSON.stringify({scenario,matches:count,finished,cutoff,draws,rituals,rewards,ritualWins,ritualLosses,ritualDraws,meanTurnsToWinAfterReward:ritualWins?postRitualTurns/ritualWins:null,wins,pairings,rulerDraws}));
   for(const archetype of ARCHETYPES){
     const bySeat=rulerDraws[archetype.id];
     assert.ok(bySeat.first>0 && bySeat.second>0,

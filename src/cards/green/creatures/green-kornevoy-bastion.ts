@@ -16,6 +16,7 @@ export default {
   "health": 6,
   "guard": true,
   "shield": 1,
+  "untiring": true,
   "lore": {
     "state": "Королевство Сувар",
     "organization": "Дом Кайров",

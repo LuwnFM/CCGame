@@ -13,3 +13,4 @@ import './majestic.ts';
 import './cannotAttack.ts';
 import './sacrifice.ts';
 import './auraAttack.ts';
+import './untiring.ts';
