@@ -112,3 +112,8 @@ button.domain-chip.spent{opacity:.4;text-decoration:line-through}
 .ruler-ability-bar strong{color:#f7d79b}.ruler-ability-bar button{font-weight:800;border:2px solid #ffdb95}
 .ruler-ability-bar .hint{flex:1 1 240px;margin:0}
 @media(max-width:390px){.board .card-wrapper{min-width:0}.board .card-wrapper>.card{padding-top:42px}.hand .card-wrapper{flex-basis:146px}}
+
+/* Attack indicators apply to the visible card when wrapped for a separate info button. */
+.card-wrapper.incoming-attacker>.card{border:3px solid #ff5369!important;background:#653442!important;box-shadow:0 0 0 3px #f74359,0 0 18px #fc364577!important}
+.card-wrapper .attack-target{display:block;position:absolute;bottom:4px;left:4px;right:4px;background:#8b233b;color:white!important;padding:3px 5px;border-radius:5px;font-size:.7rem;z-index:2}
+.card-wrapper:has(>.card.attack-target-highlight)>.card{outline:4px solid #ff4962!important;box-shadow:0 0 18px #ff4962!important}
