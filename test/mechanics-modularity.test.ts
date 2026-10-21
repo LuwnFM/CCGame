@@ -12,7 +12,7 @@ import {type Card,type Permanent} from '../src/core.ts';
 const printedTraits=[
  'guard','flying','firstStrike','piercing','lifesteal','haste','zeal',
  'extraAttacks','stealth','poisonHit','shield','majestic',
- 'cannotAttack','sacrifice','auraAttack'
+ 'cannotAttack','sacrifice','auraAttack','untiring'
 ] as const;
 const testPermanent=(card:Card):Permanent=>({card,objectId:1,exhausted:false,
   damage:0,shield:card.shield??0,enteredTurn:0,interceptions:0});
