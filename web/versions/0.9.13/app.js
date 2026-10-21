@@ -6,6 +6,7 @@ const hostedClient = location.hostname.endsWith('.vercel.app');
 let token = localStorage.getItem(sessionKey) || '';
 let apiBase = hostedClient ? '' : (localStorage.getItem(serverKey) || '');
 let room = localStorage.getItem(roomKey) || '';
+if (hostedClient && !room) location.replace('/'); // Leave archived UI when no legacy match is active.
 let account = null, catalog = [], presets = [], savedDecks = [], deckIds = [], game = null;
 let selected = null, selectedMulligan = new Set(), selectedVictims = new Set(), selectedRitual = null;
 let selectedReward = null, selectedRewardKeepExisting = undefined, selectedArtifactIndex = null, busy = false, loading = false;
@@ -348,7 +349,7 @@ $('search').onclick=async()=>{try{const data=await api('/api/queue',{deckId:$('d
 $('cancelSearch').onclick=async()=>{try{await api('/api/queue',undefined,'DELETE');await refresh()}catch(e){status(e.message)}};
 $('createRoom').onclick=async()=>{try{enterRoom((await api('/api/rooms',{deckId:$('deck').value})).code)}catch(e){status(e.message)}};
 $('joinRoom').onclick=async()=>{try{const code=$('code').value.trim().toUpperCase();await api('/api/rooms/'+code+'/join',{deckId:$('deck').value});enterRoom(code)}catch(e){status(e.message)}};
-$('leaveMatch').onclick=async()=>{try{await api('/api/queue/leave',{})}catch{}room='';game=null;localStorage.removeItem(roomKey);show('home');await refresh()};
+$('leaveMatch').onclick=async()=>{try{await api('/api/queue/leave',{})}catch{}room='';game=null;localStorage.removeItem(roomKey);if(hostedClient)location.replace('/');else{show('home');await refresh()}};
 function updateChatCooldown(){
   const left=Math.max(0,Math.ceil((chatAvailableAt-Date.now())/1000));
   $('chatSubmit').disabled=left>0;
