@@ -10,6 +10,8 @@ import {EffectLimitError,MAX_EFFECT_OPERATIONS} from './mechanics/limits.ts';
 export {MAX_EFFECT_OPERATIONS} from './mechanics/limits.ts';
 export {validateDeck} from './mechanics/deck-rules.ts';
 export const RULES_VERSION = '0.9.15-alpha';
+/** Initial Ruler health, effective for newly created games. */
+export const STARTING_RULER_HP = 40;
 export type PlayerId = 0 | 1;
 export type Aspect = 'red' | 'blue' | 'green' | 'gold' | 'violet';
 export type Energy = Aspect | 'neutral';
@@ -85,7 +87,7 @@ export type {Command} from './mechanics/command-contracts.ts';
 
 export class RuleError extends Error {}
 export function player(deck: Card[] = [], hand: Card[] = []): Player {
-  return { hp: 30, deck: [...deck], hand: [...hand], discard: [], erased: [], domains: [], main: [], auxiliary: [], legends: [], energy: emptyEnergy(), domainsPlayed: 0, rituals: [] };
+  return { hp: STARTING_RULER_HP, deck: [...deck], hand: [...hand], discard: [], erased: [], domains: [], main: [], auxiliary: [], legends: [], energy: emptyEnergy(), domainsPlayed: 0, rituals: [] };
 }
 /** A ritual reward or created token can never enter the discard zone. */
 export function sendToDiscard(owner:Player,card:Card,ritualReward=false):void{

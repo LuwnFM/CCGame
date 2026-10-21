@@ -102,8 +102,8 @@ test('three defensive scenarios at 40 HP (2592 seeded matches)',()=>{
   for (let i=0;i<ARCHETYPES.length;i++) for (let j=0;j<ARCHETYPES.length;j++) for (let repeat=0;repeat<24;repeat++) {
     let g=openingGame(openingHand(scenarioDeck(ARCHETYPES[i].id,scenario),1001+i*29+j*11+repeat),
       openingHand(scenarioDeck(ARCHETYPES[j].id,scenario),4001+j*37+i*13+repeat));
-    // Experimental balance-only rule: both rulers start at 40 HP (production remains 30).
-    g.players[0].hp=40;g.players[1].hp=40;
+    // All three scenarios use the production 40-HP starting health.
+    assert.equal(g.players[0].hp,40);assert.equal(g.players[1].hp,40);
     let serial=0;const ritualOwners=new Map<PlayerId,number>();
     g=step(g,{type:'mulligan',actor:0,indices:[]},serial++);
     g=step(g,{type:'mulligan',actor:1,indices:[]},serial++);

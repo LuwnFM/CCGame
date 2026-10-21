@@ -75,7 +75,7 @@ test('blue Flying attacker requires a Flying interceptor',()=>{
   assert.throws(()=>step(g,{type:'intercept',actor:1,interceptorId:2},'ground-block'),/Полёт/);
   g.players[1].main[0].card=guard;
   g=step(g,{type:'intercept',actor:1,interceptorId:2},'flying-block');
-  assert.equal(g.players[1].hp,30);
+  assert.equal(g.players[1].hp,40);
   assert.equal(g.players[1].main[0].interceptions,1);
 });
 test('every starter Legend offers balanced +1 and -2 choices, exclusive each turn',()=>{
@@ -128,7 +128,7 @@ test('ritual snapshots both zones, resolves a negative death effect before offer
   assert.throws(() => step(g, { type: 'chooseRitual', actor: 0, effectId: effect.id, objectIds: [1, 1, 3] }, 'bad'), /разных/);
   const previous = g;
   g = step(g, { type: 'chooseRitual', actor: 0, effectId: effect.id, objectIds: [1, 2, 3] }, 'ritual');
-  assert.equal(previous.players[0].hp, 30);
+  assert.equal(previous.players[0].hp, 40);
   assert.equal(g.players[0].hp, 28);
   assert.equal(g.players[0].main.length, 0);
   assert.equal(g.players[0].auxiliary.length, 0);
@@ -167,7 +167,7 @@ test('operation overflow pauses and rolls the entire lethal ritual back', () => 
   assert.equal(paused.winner, null);
   assert.equal(paused.players[0].main.length, 2);
   assert.equal(paused.players[0].auxiliary.length, 1);
-  assert.equal(paused.players[0].hp, 30);
+  assert.equal(paused.players[0].hp, 40);
   assert.equal(paused.seed, g.seed);
   assert.equal(paused.pendingReward, undefined);
 });
@@ -240,7 +240,7 @@ test('ritual reward token in hand uses auxiliary zone and legal displacement, ne
   assert.equal(g.players[0].main.length,8);
   assert.equal(g.players[0].auxiliary.length,4);
   assert.equal(g.players[0].auxiliary.some(unit=>unit.card.id===token.id),true);
-  assert.equal(g.players[0].hp,30);
+  assert.equal(g.players[0].hp,40);
   assert.equal(g.players[0].erased.length,1);
   assert.equal(g.players[0].hand.length,0);
 });
