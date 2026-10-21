@@ -120,15 +120,18 @@ test('288 seeded matches exercise every ordered starter pairing and preserve fie
             try {
               const discardIndex=g.players[actor].discard.findIndex(c=>c.kind==='creature');
               const effect=hand[index].techniqueEffect?.kind;
+              const entry=hand[index].onEntry?.kind;
+              const targetedEntry=entry==='stunEnemy'||entry==='stasisEnemy';
               const targetSide=effect==='cleanse'?g.players[actor]:g.players[enemy];
               const target=effect==='cleanse'
                 ? [...targetSide.main,...targetSide.auxiliary].find(x=>x.poison||x.stasis||x.stunned||x.silenced)
                 : ['silence','bind'].includes(effect||'')
                   ? [...targetSide.main,...targetSide.auxiliary].find(x=>x.card.kind==='creature'&&!x.stasis&&!x.silenced)
                   : undefined;
+              const entryTarget=targetedEntry?[...g.players[enemy].main,...g.players[enemy].auxiliary].find(x=>x.card.kind==='creature'&&!x.stasis&&(entry==='stasisEnemy'||!x.stunned)):undefined;
               if(['cleanse','silence','bind'].includes(effect||'')&&!target)continue;
               const next=step(g,{type,actor,handIndex:index,
-                ...(effect==='reanimate'?{discardIndex}: {}),...(target?{targetId:target.objectId}:{})},serial++);
+                ...(effect==='reanimate'?{discardIndex}: {}),...(target||entryTarget?{targetId:(target||entryTarget)!.objectId}:{})},serial++);
               g=next;played=true;
               if(kind==='legend')legends++;if(kind==='artifact')artifacts++;
               break;
