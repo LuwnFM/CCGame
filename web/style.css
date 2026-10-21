@@ -117,3 +117,7 @@ button.domain-chip.spent{opacity:.4;text-decoration:line-through}
 .card-wrapper.incoming-attacker>.card{border:3px solid #ff5369!important;background:#653442!important;box-shadow:0 0 0 3px #f74359,0 0 18px #fc364577!important}
 .card-wrapper .attack-target{display:block;position:absolute;bottom:4px;left:4px;right:4px;background:#8b233b;color:white!important;padding:3px 5px;border-radius:5px;font-size:.7rem;z-index:2}
 .card-wrapper:has(>.card.attack-target-highlight)>.card{outline:4px solid #ff4962!important;box-shadow:0 0 18px #ff4962!important}
+
+/* Text is the primary attack signal; color supports it without conveying unique information. */
+.card-wrapper.incoming-attacker{padding-top:28px}
+.card-wrapper .attack-target{position:absolute;top:0;left:0;right:0;bottom:auto;background:#602b3a;color:#fff!important;text-align:center;font-size:.72rem;font-weight:800;z-index:6;border:1px solid #ff8998;padding:3px;border-radius:6px}

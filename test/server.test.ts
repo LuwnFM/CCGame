@@ -345,3 +345,57 @@ test('Ruler API eligibility, archive parameters and idempotent commands preserve
  }finally{app.close()}
 });
 
+
+
+test('tester bot uses an official starter and does not enter public match statistics',async()=>{
+ const {app,request,register}=await fixture();
+ try{
+  const user=await register('BotTester');
+  const created=await request('/api/bot',user.token,{deckId:'red'});
+  assert.equal(created.status,201,JSON.stringify(created.body));
+  assert.equal(created.body.bot,true);
+  const code=created.body.code;
+  let snapshot=(await request('/api/rooms/'+code,user.token)).body;
+  assert.equal(snapshot.bot,true);
+  assert.equal(snapshot.game.players[0].hp,40);
+  assert.equal(snapshot.game.players[1].hp,40);
+  assert.equal(snapshot.game.players[1].hand,undefined,'bot hand must remain hidden');
+  assert.equal(snapshot.game.mulliganReady[1],true,'bot accepts its mulligan');
+  let done=await request('/api/rooms/'+code+'/commands',user.token,{type:'mulligan',indices:[],expectedRevision:snapshot.game.revision,key:'tester-accept'});
+  assert.equal(done.status,200,JSON.stringify(done.body));
+  snapshot=(await request('/api/rooms/'+code,user.token)).body;
+  assert.equal(snapshot.game.phase,'main');
+  // The bot should eventually act without a second user's browser.
+  const action=await request('/api/rooms/'+code+'/commands',user.token,{type:'endTurn',expectedRevision:snapshot.game.revision,key:'tester-end'});
+  assert.equal(action.status,200,JSON.stringify(action.body));
+  snapshot=(await request('/api/rooms/'+code,user.token)).body;
+  assert.ok(snapshot.game.turn>=2);
+  assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM match_history WHERE room=?').get(code).n,0,'test games cannot affect ratings');
+  const lobby=(await request('/api/lobby',user.token)).body;
+  assert.equal(lobby.online,1);
+ }finally{app.close()}
+});
+
+test('test-bot strategy never relies on shuffled own deck order or hidden enemy hand',async()=>{
+ const {openingGame}=await import('../src/core.ts');
+ const {openingHand}=await import('../src/setup.ts');
+ const {testDeck}=await import('../src/decks.ts');
+ const {observeBot,drawProbability,chooseBotCommand}=await import('../src/bots/opponent.ts');
+ const red=testDeck('red'),blue=testDeck('blue');
+ const game=openingGame(openingHand(blue,125),openingHand(red,250));
+ const one=observeBot(game,'red');
+ const altered=structuredClone(game);
+ altered.players[1].deck.reverse();
+ altered.players[0].deck.reverse();
+ altered.players[0].hand.reverse();
+ // Enemy hand identities are hidden: replace cards while preserving hand size.
+ altered.players[0].hand=altered.players[0].hand.map(()=>blue[0]);
+ const two=observeBot(altered,'red');
+ assert.deepEqual([...one.remaining],[...two.remaining]);
+ assert.deepEqual([...one.enemyArchetypeOdds],[...two.enemyArchetypeOdds]);
+ assert.equal(one.domainDrawChance,two.domainDrawChance);
+ assert.deepEqual(chooseBotCommand(game,'red'),chooseBotCommand(altered,'red'));
+ assert.equal(drawProbability(10,2,2),1-(8/10)*(7/9));
+ assert.equal(drawProbability(10,0,2),0);
+ assert.equal(drawProbability(10,10,1),1);
+});
