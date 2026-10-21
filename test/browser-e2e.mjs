@@ -17,6 +17,12 @@ await mkdir(artifacts, { recursive: true });
 let browser;
 const pages = [];
 const errors = [];
+const report = [];
+function checkpoint(name) {
+  const message = '[E2E] ' + new Date().toISOString() + ' ' + name;
+  report.push(message);
+  console.log(message);
+}
 async function register(page, name) {
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   await page.locator('#login').fill(name);
@@ -35,8 +41,17 @@ try {
   const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   const a = await desktop.newPage(), b = await phone.newPage();
   pages.push(a,b);
-  for (const page of [a,b]) page.on('pageerror', error => errors.push(error.message));
+  for (const page of [a,b]) {
+    page.setDefaultTimeout(12_000);
+    page.setDefaultNavigationTimeout(15_000);
+    page.on('pageerror', error => {
+      errors.push(error.message);
+      checkpoint('pageerror: '+error.message);
+    });
+  }
+  checkpoint('start: browser contexts created');
 
+  checkpoint("desktop registration");
   await register(a, 'AlphaBrowser');
   await a.locator('#leaderboard').waitFor({state:'visible'});
   assert.equal(await a.locator('#leaderboard li').count(),1);
@@ -60,6 +75,7 @@ try {
   await a.locator('#feedbackForm button').click();
   await a.locator('#feedbackConfirm').getByText(/Обращение №\d+ сохранено/).waitFor();
   await a.locator('#chatCooldown').getByText(/Повторная отправка через/).waitFor();
+  checkpoint("desktop lobby, chat, and feedback completed");
   await a.locator('#openBuilder').click();
   await a.locator('#builder').waitFor({ state: 'visible' });
   assert.equal(await a.locator('#deckCount').innerText(), '70/70');
@@ -69,6 +85,7 @@ try {
   await a.locator('#savedDecks').getByText('Браузерная колода').waitFor();
   await a.screenshot({ path: join(artifacts, 'alpha-lobby-desktop.png'), fullPage: true });
 
+  checkpoint("deck editor saved");
   await register(b, 'BetaMobile');
   assert.equal(await b.locator('#languageToggle').count(),1);
   const scrollInfo=await b.evaluate(()=>({body:document.documentElement.scrollWidth,viewport:innerWidth}));
@@ -77,17 +94,21 @@ try {
   await b.screenshot({ path: join(artifacts, 'alpha-lobby-mobile.png'), fullPage: true });
 
   await a.locator('summary').first().click();
+  checkpoint("both players registered");
   await a.locator('#createRoom').click();
   await a.locator('#match').waitFor({ state: 'visible' });
   await a.waitForFunction(() => /^Комната [A-F0-9]{8}$/.test(document.querySelector('#roomLabel')?.textContent ?? ''));
   const code = (await a.locator('#roomLabel').innerText()).match(/[A-F0-9]{8}/)[0];
   await b.locator('summary').first().click();
   await b.locator('#code').fill(code);
+  checkpoint("room created, invite sent");
   await b.locator('#joinRoom').click();
+  checkpoint("guest joined; waiting for mulligan");
   await b.locator('#mulligan').waitFor({ state: 'visible' });
   await a.locator('#mulligan').waitFor({ state: 'visible', timeout: 12000 });
   assert.equal(await a.locator('#mulliganHand .card').count(), 7);
   assert.equal(await b.locator('#mulliganHand .card').count(), 7);
+  checkpoint("both opening hands visible");
   await a.locator('#confirmMulligan').click();
   await b.locator('#confirmMulligan').click();
   await a.locator('#mulligan').waitFor({ state: 'hidden', timeout: 12000 });
@@ -103,10 +124,12 @@ try {
   }, code);
   assert.deepEqual(visibility, { own: true, enemyHidden: true });
   await a.locator('#hand .card').filter({ hasText: /владение/i }).first().click();
+  checkpoint("mulligan completed; preparing energy");
   await a.locator('#domainDetails summary').click();
   await a.locator('#myDomains button').first().waitFor({ state: 'visible' });
   await a.locator('#myDomains button').first().click();
   await a.waitForFunction(() => document.querySelector('#myInfo')?.textContent.includes('red:1'));
+  checkpoint("first player energy and turn confirmed");
   await a.locator('#end').click();
   await b.waitForFunction(() => {
     const button = document.querySelector('#end');
@@ -128,9 +151,11 @@ try {
   app.db.prepare('UPDATE rooms SET game=? WHERE code=?').run(JSON.stringify(battle),code);
   await a.waitForFunction(() => document.querySelector('#myBoard .card')?.textContent.includes('Атакующий теста'));
   await a.locator('#myBoard .card').first().click();
+  checkpoint("opponent turn confirmed, battle injected");
   await a.locator('#hero').click();
   await b.waitForFunction(() => !document.querySelector('#skip').disabled, null, {timeout:15000});
   await b.locator('#myBoard .card').first().click();
+  checkpoint("defense selected");
   await b.locator('#confirmDefense').click();
   await a.waitForFunction(() => document.querySelector('#myBoard .card')?.textContent.includes('4/3'), null, {timeout:15000});
   const finalRow = app.db.prepare('SELECT game FROM rooms WHERE code=?').get(code);
@@ -141,6 +166,7 @@ try {
   assert.equal(afterCombat.players[0].hp,30);
   assert.equal(afterCombat.players[1].hp,30);
   // Inspect an enemy card on mobile; unavailable actions must remain inspectable.
+  checkpoint("battle resolved; inspecting enemy card");
   await b.locator('#enemyBoard .card .inspect-card').first().click();
   await b.locator('#cardInspector').waitFor({state:'visible'});
   await b.locator('#inspectorClose').click();
@@ -151,14 +177,17 @@ try {
   resumed.players[1].discard=[{id:'ui-reborn',name:'Возвращённый теста',kind:'creature',attack:2,health:3,secondChance:{kind:'summonSkeleton',amount:1}}];
   app.db.prepare('UPDATE rooms SET game=?,deadline=?,turn_deadline=? WHERE code=?').run(JSON.stringify(resumed),Date.now()+120000,Date.now()+120000,code);
   await b.waitForFunction(()=>document.querySelector('#hand')?.textContent.includes('Возвращение теста'));
+  checkpoint("resurrection battle injected");
   await b.locator('#hand .card').first().click();
   await b.locator('#choiceDialog').waitFor({state:'visible'});
   await b.locator('#choiceCards .card').first().click();
   await b.waitForFunction(()=>document.querySelector('#myBoard')?.textContent.includes('Возвращённый теста'));
   assert.equal(await b.locator('#myAux .card').count(),1);
+  checkpoint("resurrection and second chance resolved");
   await b.locator('#rulerDraw').click();
   await b.waitForFunction(()=>document.querySelector('#myHp')?.textContent.includes('28 HP'));
   assert.equal(await b.locator('#rulerDraw').isDisabled(),true);
+  checkpoint("ruler draw resolved");
   await b.reload({waitUntil:'domcontentloaded'});
   await b.waitForFunction(()=>document.querySelector('#myBoard')?.textContent.includes('Возвращённый теста'));
   const matchWidth=await b.evaluate(()=>({body:document.documentElement.scrollWidth,viewport:innerWidth}));
@@ -166,6 +195,7 @@ try {
   await b.screenshot({ path: join(artifacts, 'alpha-match-mobile.png'), fullPage: true });
   await a.screenshot({ path: join(artifacts, 'alpha-match-desktop.png'), fullPage: true });
   // Vercel-like static client on a separate origin: browser CORS and bearer auth.
+  checkpoint("mobile reload, responsive match, screenshots passed");
   const staticSite=createServer(async (req,res)=>{
     const file=req.url==='/'?'index.html':['/app.js','/style.css','/i18n.js','/rules.js'].includes(req.url)?req.url.slice(1):null;
     if(!file){res.writeHead(404);res.end();return}
@@ -194,15 +224,22 @@ try {
     if(crossApp){await new Promise(resolve=>crossApp.server.close(resolve));crossApp.db.close()}
     await new Promise(resolve=>staticSite.close(resolve));
   }
+  checkpoint("cross-origin registration passed");
   assert.deepEqual(errors, []);
   console.log('BROWSER PASS: two registrations, chat, feedback, custom 70-card deck, private hands, PvP room, mulligan, energy, 2 turns and client-triggered combat with stunned interception and separate-origin CORS');
-} catch (error) {
+ } catch (error) {
+  console.error('[E2E] FAILURE after:',report.at(-1));
+  console.error('[E2E] Browser exceptions:',JSON.stringify(errors));
+  const { writeFile } = await import('node:fs/promises');
+  await writeFile(join(artifacts, 'test-progress.log'),report.join('\n')+'\n'+String(error.stack||error)+'\n');
   for (let index=0; index<pages.length;index++) {
     try { await pages[index].screenshot({ path: join(artifacts, 'failure-'+index+'.png'), fullPage: true, timeout: 5000 }); } catch {}
   }
   throw error;
 } finally {
   if (browser) await browser.close();
+  // Force-close hanging HTTP keepalive connections; fixtures must always terminate.
+  app.server.closeAllConnections();
   await new Promise(resolve => app.server.close(resolve));
   app.db.close();
   await rm(temp, { recursive: true, force: true });
