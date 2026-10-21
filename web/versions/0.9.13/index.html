@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#151926">
+  <title>Firewell CCG · Альфа</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./app.js" type="module"></script>
+</head>
+<body>
+<header><div class="brand"><span class="sigil">FW</span><div><strong>Firewell CCG</strong><small>Альфа · дуэль 1×1</small></div></div><div class="header-actions"><button type="button" id="rulesOpen" class="secondary">Правила игры</button><button type="button" id="languageToggle" class="ghost" aria-label="Переключить язык / Switch language">EN</button><span id="connection" class="pill">Не подключено</span></div></header>
+<main>
+  <section id="auth" class="panel">
+    <h1>Войти в игру</h1>
+    <p class="muted">Создай профиль с постоянным ID или войди под своим логином.</p>
+    <label>Адрес игрового сервера <input id="apiUrl" type="url" placeholder="Для локальной игры оставить пустым" autocomplete="url"></label>
+    <p id="apiHint" class="hint">Локально сервер и страница работают по одному адресу. Для клиента Vercel нужен HTTPS-адрес игрового сервера.</p>
+    <label>Логин <input id="login" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="20" pattern="[A-Za-z0-9_]{3,20}" placeholder="3–20 латинских букв, цифр или _"></label>
+    <label>Пароль профиля <input id="password" type="password" autocomplete="current-password" minlength="10" maxlength="128" placeholder="10–128 символов, буква и цифра"></label>
+    <label id="accessWrap">Пароль доступа к альфе <input id="accessPassword" type="password" autocomplete="off"></label>
+    <div class="actions"><button id="register">Зарегистрироваться</button><button id="signIn" class="secondary">Войти</button></div>
+  </section>
+  <section id="home" class="hidden">
+    <div class="panel profile"><div><h1 id="profileName"></h1><p class="muted">ID: <code id="profileId"></code></p></div><div class="actions"><button id="rename" class="secondary">Сменить логин</button><button id="logout" class="ghost">Выйти</button><button id="deleteProfile" class="ghost">Удалить профиль</button></div></div>
+    <div class="home-grid">
+      <section class="panel"><h2>Искать соперника</h2><p id="presence" class="muted">Онлайн: — · в поиске: —</p>
+        <label>Твоя колода <select id="deck"></select></label>
+        <div class="actions"><button id="search">Начать поиск</button><button id="cancelSearch" class="secondary hidden">Отменить поиск</button></div>
+        <p id="queueStatus" class="hint"></p>
+        <details><summary>Матч по коду</summary><div class="actions"><button id="createRoom" class="secondary">Создать комнату</button><input id="code" maxlength="8" placeholder="Код комнаты"><button id="joinRoom" class="secondary">Войти по коду</button></div></details>
+      </section>
+      <section class="panel"><h2>Общий чат</h2><div id="chat" class="chat" aria-live="polite"></div>
+        <div class="actions"><button id="olderChat" type="button" class="ghost">Загрузить ранние сообщения</button><span id="chatCooldown" class="hint" aria-live="polite"></span></div>
+        <form id="chatForm" class="actions"><input id="chatText" maxlength="500" placeholder="Сообщение (до 500 символов)" aria-label="Сообщение"><button id="chatSubmit">Отправить</button></form></section>
+      <section class="panel"><h2>Топ-10 по победам</h2><p class="hint">Обновление каждые 10 минут · только завершённые победой матчи</p><ol id="leaderboard" class="leaderboard" aria-live="polite"></ol><p id="leaderboardUpdated" class="hint"></p></section>
+      <section class="panel"><h2>Мои колоды</h2><p class="muted">Собирай из карт всех шести стартовых наборов: 70 карт и не меньше 26 Владений.</p><button id="openBuilder" class="secondary">Открыть редактор колоды</button><div id="savedDecks"></div></section>
+      <section class="panel"><h2>Ошибки, проблемы и идеи</h2>
+        <form id="feedbackForm" class="feedback-fields">
+          <label>Категория <select id="feedbackType"><option value="bug">Ошибка / баг</option><option value="problem">Проблема с игрой</option><option value="idea">Идея / улучшение</option></select></label>
+          <label>Краткий заголовок <input id="feedbackTitle" minlength="3" maxlength="100" required placeholder="Что произошло или что улучшить?"></label>
+          <label>Код матча (необязательно) <input id="feedbackRoom" maxlength="8" pattern="[A-Fa-f0-9]{8}" placeholder="Например, A1B2C3D4"></label>
+          <label>Описание <textarea id="feedbackText" minlength="10" maxlength="2000" required rows="5" placeholder="Опиши ситуацию, шаги воспроизведения, ожидаемый и фактический результат"></textarea></label>
+          <p class="hint">Отчёт привязывается к вашему постоянному ID и сохраняется на сервере.</p>
+          <div class="actions"><button id="feedbackSubmit">Отправить обращение</button><span id="feedbackConfirm" class="hint" aria-live="polite"></span></div>
+        </form><details><summary>Мои обращения</summary><button id="loadFeedback" type="button" class="secondary">Обновить</button><div id="myFeedback" class="report-list"></div></details></section>
+    </div>
+  </section>
+  <section id="builder" class="hidden"><div class="panel"><div class="top"><h1>Редактор колоды <span id="deckCount">0/70</span></h1><button id="closeBuilder" class="secondary">Назад</button></div><div class="actions"><label>Начать с <select id="starter"></select></label><button id="loadStarter" class="secondary">Загрузить</button><label>Имя <input id="deckName" maxlength="40" placeholder="Моя колода"></label><button id="saveDeck">Сохранить</button></div><p id="deckIssues" class="hint"></p></div>
+    <div class="builder-grid"><section class="panel"><h2>Карты в колоде</h2><div id="builtCards" class="catalog"></div></section><section class="panel"><h2>Все стартовые карты</h2><div class="actions"><input id="cardSearch" placeholder="Найти карту"><select id="aspectFilter"><option value="">Все аспекты</option><option value="red">Красный</option><option value="blue">Синий</option><option value="green">Зелёный</option><option value="gold">Золотой</option><option value="violet">Фиолетовый</option><option value="neutral">Нейтральный</option></select></div><div id="catalog" class="catalog"></div></section></div>
+  </section>
+  <section id="match" class="hidden"><div class="panel top"><div><strong id="roomLabel"></strong><span id="turnLabel" class="muted"></span></div><div class="actions"><span id="timer" class="pill" role="timer"></span><button id="leaveMatch" class="ghost">В лобби</button></div></div>
+    <section id="mulligan" class="panel hidden"><h2>Выборочный муллиган</h2><p>Отметь карты для замены или оставь руку.</p><div id="mulliganHand" class="hand"></div><button id="confirmMulligan">Подтвердить руку</button><p id="mulliganWait" class="hint"></p></section>
+    <section id="ritual" class="panel hidden"><h2>Ритуал Жертвы</h2><p>Выбери источник и ровно N Жертв из обеих зон.</p><div id="ritualSources" class="actions"></div><div id="ritualVictims" class="hand"></div><button id="confirmRitual">Провести ритуал</button></section>
+    <section id="reward" class="panel hidden"><h2>Награда</h2><p>Выбери одно из трёх предложений. При полном поле выбери заменяемое Существо.</p><div id="rewardCards" class="hand"></div><div id="rewardReplacements" class="hand"></div></section>
+    <div class="field">
+      <section class="panel playarea"><h2>Соперник <span id="enemyHp"></span></h2><p id="enemyInfo" class="muted"></p><h3>Легенды</h3><div id="enemyLegends" class="row"></div><h3>Основное поле · 8</h3><div id="enemyBoard" class="board"></div><h3>Вспомогательное поле · 4</h3><div id="enemyAux" class="board"></div><h3>Владения</h3><div id="enemyDomains" class="row"></div></section>
+      <section class="panel playarea"><h2>Ты <span id="myHp"></span></h2><p id="myInfo" class="muted"></p><h3>Легенды</h3><div id="myLegends" class="row"></div><h3>Основное поле · 8</h3><div id="myBoard" class="board"></div><h3>Вспомогательное поле · 4</h3><div id="myAux" class="board"></div><h3>Владения</h3><div id="myDomains" class="row"></div></section>
+    </div>
+    <section class="panel playarea"><h2>Рука</h2><div id="hand" class="hand"></div><div id="artifactReplacements" class="hand"></div><div class="actions"><button id="hero">Атаковать Владетеля</button><button id="skip" class="secondary">Пропустить перехват</button><button id="end" class="secondary">Завершить ход</button></div></section>
+  </section>
+  <section id="rulesPage" class="hidden">
+    <div class="panel top"><h1>Правила игры</h1><button id="rulesClose" type="button" class="secondary">Вернуться</button></div>
+    <div class="panel"><p class="hint">Правила, необходимые для игры в альфу. Описаны все доступные типы карт и механики. Тонкости внутренних взаимодействий событий можно исследовать в матчах.</p>
+      <div id="rulesContent" class="rules-content"></div></div>
+  </section>
+  <p id="status" role="status" aria-live="polite"></p>
+</main>
+</body></html>
