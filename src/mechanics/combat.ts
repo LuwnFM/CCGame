@@ -4,6 +4,7 @@ import {healFromLifesteal} from './traits/lifesteal.ts';
 import {applyPoisonFromHit} from './traits/poisonHit.ts';
 import {interceptedOverflow} from './traits/piercing.ts';
 import {strikeOrder} from './traits/firstStrike.ts';
+import {alliedAuraBonus} from './traits/auraAttack.ts';
 import type { Game, Permanent, Player, PlayerId } from '../core.ts';
 
 export function damage(target: Permanent, amount: number): number {
@@ -14,8 +15,7 @@ export function damage(target: Permanent, amount: number): number {
   return dealt;
 }
 export function totalAttack(owner: Player, creature: Permanent): number {
-  const aura = owner.auxiliary.filter(item => !item.stasis && !item.silenced)
-    .reduce((sum, item) => sum + (item.card.auraAttack ?? 0), 0);
+  const aura = alliedAuraBonus(owner);
   return Math.max(0, (creature.card.attack ?? 0) + aura);
 }
 function woundLegend(target: Permanent, raw: number): number {
