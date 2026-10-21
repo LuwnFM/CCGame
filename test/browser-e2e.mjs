@@ -200,7 +200,7 @@ try {
   const resumed=JSON.parse(app.db.prepare('SELECT game FROM rooms WHERE code=?').get(code).game);
   resumed.active=1;resumed.turn=8;resumed.revision++;
   resumed.players[1].hand=[{id:'ui-revive',name:'Возвращение теста',kind:'technique',cost:{colored:{},generic:0},techniqueEffect:{kind:'reanimate',amount:1}}];
-  resumed.players[1].discard=[{id:'ui-reborn',name:'Возвращённый теста',kind:'creature',attack:2,health:3,secondChance:{kind:'summonSkeleton',amount:1}}];
+  resumed.players[1].discard=[{id:'ui-reborn',name:'Возвращённый теста',kind:'creature',attack:2,health:3,secondChance:{kind:'summon',cards:[{id:'violet-skeleton-token',name:'Призванный скелет',kind:'creature',aspects:['violet'],attack:1,health:1,createdToken:true,sacrifice:true}]}}];
   app.db.prepare('UPDATE rooms SET game=?,deadline=?,turn_deadline=? WHERE code=?').run(JSON.stringify(resumed),Date.now()+120000,Date.now()+120000,code);
   await b.waitForFunction(()=>document.querySelector('#hand')?.textContent.includes('Возвращение теста'));
   checkpoint("resurrection battle injected");
