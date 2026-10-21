@@ -81,7 +81,7 @@ function deckFor(id:Parameters<typeof testDeck>[0],scenario:'before'|'after'){
  return cards;
 }
 
-test('controlled before/after reward balance simulation (1728 seeded matches)',()=>{
+test('controlled before/after reward balance simulation at 40 HP (1728 seeded matches)',()=>{
  for(const scenario of ['before','after'] as const){
   let finished=0,cutoff=0,draws=0;const wins:Record<string,number>={},pairings:Record<string,{first:number;second:number;cutoff:number}>={};
   let count=0,rituals=0,rewards=0,ritualWins=0,ritualLosses=0,ritualDraws=0,postRitualTurns=0,legends=0,artifacts=0,combat=0, actions=0;
@@ -89,6 +89,8 @@ test('controlled before/after reward balance simulation (1728 seeded matches)',(
   for (let i=0;i<ARCHETYPES.length;i++) for (let j=0;j<ARCHETYPES.length;j++) for (let repeat=0;repeat<24;repeat++) {
     let g=openingGame(openingHand(deckFor(ARCHETYPES[i].id,scenario),1001+i*29+j*11+repeat),
       openingHand(deckFor(ARCHETYPES[j].id,scenario),4001+j*37+i*13+repeat));
+    // Experimental balance-only rule: both rulers start at 40 HP (production remains 30).
+    g.players[0].hp=40;g.players[1].hp=40;
     let serial=0;const ritualOwners=new Map<PlayerId,number>();
     g=step(g,{type:'mulligan',actor:0,indices:[]},serial++);
     g=step(g,{type:'mulligan',actor:1,indices:[]},serial++);
@@ -184,7 +186,7 @@ test('controlled before/after reward balance simulation (1728 seeded matches)',(
     if(g.phase==='finished'){finished++;for(const [owner,turn] of ritualOwners){if(g.winner==='draw')ritualDraws++;else if(g.winner===owner){ritualWins++;postRitualTurns+=g.turn-turn}else ritualLosses++}if(g.winner==='draw')draws++;else{const winner=ARCHETYPES[g.winner===0?i:j].id;wins[winner]=(wins[winner]||0)+1;pairings[pairing][g.winner===0?'first':'second']++}}else{cutoff++;pairings[pairing].cutoff++}
     count++;
   }
-  console.log('SIMULATION_AB_REPORT '+JSON.stringify({scenario,matches:count,finished,cutoff,draws,rituals,rewards,ritualWins,ritualLosses,ritualDraws,meanTurnsToWinAfterReward:ritualWins?postRitualTurns/ritualWins:null,wins,pairings,rulerDraws}));
+  console.log('SIMULATION_40HP_AB_REPORT '+JSON.stringify({scenario,matches:count,finished,cutoff,draws,rituals,rewards,ritualWins,ritualLosses,ritualDraws,meanTurnsToWinAfterReward:ritualWins?postRitualTurns/ritualWins:null,wins,pairings,rulerDraws}));
   for(const archetype of ARCHETYPES){
     const bySeat=rulerDraws[archetype.id];
     assert.ok(bySeat.first>0 && bySeat.second>0,
