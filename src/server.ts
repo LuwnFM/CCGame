@@ -4,7 +4,14 @@ import { readFile } from 'node:fs/promises';
 import { existsSync, statSync, mkdirSync, readdirSync, unlinkSync } from 'node:fs';
 import { dirname, join, basename } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import { apply, openingGame, RuleError, type Command, type Game, type PlayerId } from './core.ts';
+import { apply, openingGame, RULES_VERSION, RuleError, type Command, type Game, type PlayerId } from './core.ts';
+import { apply as applyLegacy, RuleError as LegacyRuleError } from './legacy/core-v0.9.13.ts';
+const LEGACY_RULES_VERSION = '0.9.13-alpha';
+function applyForMatch(game: Game, command: Command): Game {
+  if (game.rulesVersion === LEGACY_RULES_VERSION) return applyLegacy(game as any, command as any) as Game;
+  if (game.rulesVersion === RULES_VERSION) return apply(game, command);
+  throw new RuleError('Версия правил матча больше не поддерживается');
+}
 import { openingHand } from './setup.ts';
 import { ARCHETYPES, testDeck, type ArchetypeId } from './decks.ts';
 import { nextRandom } from './ritual.ts';
@@ -168,7 +175,7 @@ export function createApp(options: { databasePath: string; accessPassword: strin
     if (before.phase === 'finished' || before.phase === 'paused') return row;
     const { command, seed } = timeoutCommand(before);
     const input = structuredClone(before); input.seed = seed;
-    const next = apply(input, command);
+    const next = applyForMatch(input, command);
     if (before.phase === 'main' && next.phase !== 'paused') {
       next.timeoutStreak ??= [0, 0];
       if (++next.timeoutStreak[before.active] >= 3) {
@@ -201,6 +208,13 @@ export function createApp(options: { databasePath: string; accessPassword: strin
       if (origin) { try { originHost = new URL(origin).host; } catch { return json(res,403,{error:'Недопустимый источник'}); } }
       if (origin && originHost !== req.headers.host && origin !== options.clientOrigin)
         return json(res,403,{error:'Недопустимый источник'});
+      if (req.method === 'GET' && /^\/versions\/0\.9\.13\/(?:index\.html|app\.js|i18n\.js|rules\.js|style\.css)$/.test(url.pathname)) {
+        const file = url.pathname.slice(1);
+        const contentType = file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : 'text/html';
+        res.writeHead(200, {'content-type':contentType+'; charset=utf-8','x-content-type-options':'nosniff'});
+        res.end(await readFile(new URL('../web/'+file, import.meta.url)));
+        return;
+      }
       if (req.method === 'GET' && ['/', '/style.css', '/app.js', '/i18n.js', '/rules.js'].includes(url.pathname)) {
         const file = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
         const contentType = file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : 'text/html';
@@ -351,7 +365,7 @@ export function createApp(options: { databasePath: string; accessPassword: strin
         try {
           const current = settleExpired(code, selectRoom.get(code) as Room, Date.now());
           const before = JSON.parse(current.game) as Game;
-          const next = apply(before, { ...input, actor: seat } as Command);
+          const next = applyForMatch(before, { ...input, actor: seat } as Command);
           if (input.type === 'endTurn' && next.revision > before.revision && next.phase !== 'paused') {
             next.timeoutStreak ??= [0, 0]; next.timeoutStreak[seat] = 0;
           }
@@ -363,7 +377,7 @@ export function createApp(options: { databasePath: string; accessPassword: strin
       }
       return json(res, 404, { error: 'Не найдено' });
     } catch (error) {
-      return json(res, error instanceof RuleError ? 409 : 500, { error: error instanceof Error ? error.message : 'Ошибка сервера' });
+      return json(res, error instanceof RuleError || error instanceof LegacyRuleError ? 409 : 500, { error: error instanceof Error ? error.message : 'Ошибка сервера' });
     }
   });
   return { server, db, history, close: () => { server.close(); db.close(); } };
