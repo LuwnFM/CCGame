@@ -293,7 +293,7 @@ async function refresh() {
       const lobby=await api('/api/lobby');renderSharedChat(lobby);
     } else if (room) {
       const data=await api('/api/rooms/'+room);
-      game=data.game;show('match');renderGame(data.ready);
+      game=data.game;show('match');renderGame(data.ready);if(data.bot)$('roomLabel').textContent='Тестовый матч против бота · '+room;
       renderSharedChat(await api('/api/lobby'));
     } else if (!$('builder').classList.contains('hidden')) {
       // Editing is local until saved.
@@ -585,6 +585,7 @@ $('deleteProfile').onclick=async()=>{if(!confirm('Удалить профиль,
   catch(e){status(e.message)} };
 $('search').onclick=async()=>{try{const data=await api('/api/queue',{deckId:$('deck').value});if(data.room)enterRoom(data.room);else await refresh()}catch(e){status(e.message)}};
 $('cancelSearch').onclick=async()=>{try{await api('/api/queue',undefined,'DELETE');await refresh()}catch(e){status(e.message)}};
+$('playBot').onclick=async()=>{try{const result=await api('/api/bot',{deckId:$('deck').value});enterRoom(result.code)}catch(e){status(e.message)}};
 $('createRoom').onclick=async()=>{try{enterRoom((await api('/api/rooms',{deckId:$('deck').value})).code)}catch(e){status(e.message)}};
 $('joinRoom').onclick=async()=>{try{const code=$('code').value.trim().toUpperCase();await api('/api/rooms/'+code+'/join',{deckId:$('deck').value});enterRoom(code)}catch(e){status(e.message)}};
 $('leaveMatch').onclick=async()=>{try{await api('/api/queue/leave',{})}catch{}room='';game=null;localStorage.removeItem(roomKey);show('home');await refresh()};

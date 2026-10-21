@@ -5,6 +5,7 @@ import { existsSync, statSync, mkdirSync, readdirSync, unlinkSync } from 'node:f
 import { dirname, join, basename } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { apply, openingGame, RULES_VERSION, RuleError, type Command, type Game, type PlayerId } from './core.ts';
+import {chooseBotCommand} from './bots/opponent.ts';
 export function applyForMatch(game: Game, command: Command): Game {
   if (game.rulesVersion !== RULES_VERSION) throw new RuleError('Устаревший матч. Создайте новый матч по действующим правилам.');
   return apply(game, command);
@@ -157,6 +158,8 @@ export function createApp(options: { databasePath: string; accessPassword: strin
     catch(error) { console.error('Match archive failed; SQLite journal remains intact for retry:', error); }
   }
   archiveSafely();
+  const TEST_BOT='__firewell_tester_bot__';
+  const isBot=(row:Pick<Room,'guest'>)=>row.guest===TEST_BOT;
   const selectSession = db.prepare('SELECT user_id FROM sessions WHERE id=? AND expires>?');
   const selectRoom = db.prepare('SELECT * FROM rooms WHERE code=?');
   const insertRoom = db.prepare('INSERT INTO rooms (code,host,guest,game,host_deck) VALUES (?, ?, NULL, ?, ?)');
@@ -166,7 +169,20 @@ export function createApp(options: { databasePath: string; accessPassword: strin
     if(next.revision<=before.revision)return;
     const timing=timers(before,next,row,now);
     updateRoom.run(JSON.stringify(next),timing.deadline,timing.turn,timing.started,timing.banks,code);
-    if(next.revision>before.revision)history.record(code,source,command,before,next,now);
+    if(next.revision>before.revision&&!isBot(row))history.record(code,source,command,before,next,now);
+  }
+  function advanceTestBot(code:string,row:Room):Room {
+    if(!isBot(row))return row;
+    for(let n=0;n<45;n++){
+      const current=JSON.parse(row.game) as Game;
+      const command=chooseBotCommand(current);
+      if(!command)break;
+      const next=applyForMatch(current,command);
+      commitGame(code,row,current,next,Date.now(),'player',command);
+      row=selectRoom.get(code) as Room;
+      if(next.phase==='finished'||next.phase==='paused')break;
+    }
+    return row;
   }
   function settleExpired(code: string, row: Room, now: number): Room {
     if (!row.guest || !row.deadline || now < row.deadline) return row;
@@ -294,11 +310,11 @@ export function createApp(options: { databasePath: string; accessPassword: strin
         social.deleteDeck(uid,deckDelete[1]); return json(res,200,{ok:true});
       }
       if (url.pathname === '/api/lobby' && req.method === 'GET') {
-        const info=social.lobby(uid), active=onlineUsers(), rooms=activeRooms();
+        const info=social.lobby(uid), active=onlineUsers(), rooms=activeRooms().filter(r=>r.guest!==TEST_BOT);
         return json(res,200,{...info,online:active.size,inMatches:new Set(rooms.flatMap(r=>[r.host,r.guest])).size,
           activeMatches:rooms.map(r=>({code:r.code,turn:r.turn,phase:r.phase,players:[r.host,r.guest].map(id=>{
             const a=db.prepare('SELECT login FROM accounts WHERE id=?').get(id) as {login:string}|undefined;
-            return a?.login??'Игрок';
+            return id===TEST_BOT?'Тестовый бот':a?.login??'Игрок';
           })}))});
       }
       if (url.pathname === '/api/chat' && req.method === 'POST') {
@@ -338,6 +354,18 @@ export function createApp(options: { databasePath: string; accessPassword: strin
       }
       if (url.pathname === '/api/queue/leave' && req.method === 'POST') {
         social.leaveRoom(uid); return json(res,200,{ok:true});
+      }
+      if(url.pathname==='/api/bot' && req.method==='POST'){
+        const input=await body(req);
+        const deck=social.resolveDeck(uid,input?.deckId??'red');
+        const chosen=ARCHETYPES[randomBytes(1)[0]%ARCHETYPES.length].id;
+        let code='';
+        do code=randomBytes(4).toString('hex').toUpperCase();while(selectRoom.get(code));
+        const game=newGame(deck,testDeck(chosen));
+        db.prepare('INSERT INTO rooms (code,host,guest,game,host_deck,deadline) VALUES (?,?,?,?,?,?)')
+          .run(code,uid,TEST_BOT,JSON.stringify(game),'custom',Date.now()+MULLIGAN_MS);
+        advanceTestBot(code,selectRoom.get(code) as Room);
+        return json(res,201,{code,seat:0,bot:true});
       }
       if (url.pathname === '/api/rooms' && req.method === 'POST') {
         const choice = (await body(req)).deckId ?? 'red';
@@ -383,10 +411,10 @@ export function createApp(options: { databasePath: string; accessPassword: strin
       if (req.method === 'GET' && !action) {
         db.exec('BEGIN IMMEDIATE');
         let current: Room;
-        try { current = settleExpired(code, selectRoom.get(code) as Room, Date.now()); db.exec('COMMIT'); }
+        try { current = settleExpired(code, selectRoom.get(code) as Room, Date.now()); current=advanceTestBot(code,current); db.exec('COMMIT'); }
         catch (error) { db.exec('ROLLBACK'); throw error; }
         archiveSafely();
-        return json(res, 200, { code, ready: !!current.guest, game: current.guest ? view(JSON.parse(current.game), seat, current) : null });
+        return json(res, 200, { code, ready: !!current.guest, game: current.guest ? view(JSON.parse(current.game), seat, current) : null, bot:isBot(current) });
       }
       if (req.method === 'POST' && action === 'commands') {
         if (!row.guest) throw new RuleError('Ожидание второго игрока');
@@ -402,14 +430,15 @@ export function createApp(options: { databasePath: string; accessPassword: strin
             next.timeoutStreak ??= [0, 0]; next.timeoutStreak[seat] = 0;
           }
           commitGame(code,current,before,next,Date.now(),'player',{...input,actor:seat} as Command);
+          const resulting=advanceTestBot(code,selectRoom.get(code) as Room);
           db.exec('COMMIT');
           archiveSafely();
-          return json(res, 200, { game: view(next, seat, selectRoom.get(code) as Room) });
+          return json(res, 200, { game: view(JSON.parse((selectRoom.get(code) as Room).game), seat, selectRoom.get(code) as Room) });
         } catch (error) { db.exec('ROLLBACK'); throw error; }
       }
       return json(res, 404, { error: 'Не найдено' });
     } catch (error) {
-      return json(res, error instanceof RuleError || error instanceof LegacyRuleError ? 409 : 500, { error: error instanceof Error ? error.message : 'Ошибка сервера' });
+      return json(res, error instanceof RuleError ? 409 : 500, { error: error instanceof Error ? error.message : 'Ошибка сервера' });
     }
   });
   return { server, db, history, close: () => { server.close(); db.close(); } };
