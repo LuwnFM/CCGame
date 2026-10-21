@@ -68,3 +68,52 @@ test('Bind refreshes existing Stasis; Cleanse preserves printed abilities and da
  g.players[1].main=[{objectId:10,card:{...unit,firstStrike:true},damage:1,shield:1,exhausted:false,interceptions:0,enteredTurn:0,stasis:1}];
  g=act(g,{type:'playTechnique',handIndex:0,targetId:10});assert.equal(g.players[1].main[0].stasis,2);
 });
+
+test('generic summon creates exactly configured distinct tokens with bounds and no card-specific callbacks',()=>{
+ const blade:Card={id:'bone-blade',name:'Клинок',kind:'creature',aspects:['violet'],attack:2,health:1,createdToken:true,sacrifice:true};
+ const guard:Card={id:'bone-guard',name:'Заслон',kind:'creature',aspects:['violet'],attack:1,health:2,createdToken:true,sacrifice:true};
+ const apprentice:Card={...unit,id:'apprentice',onEntry:{kind:'summon',cards:[blade,guard]}};
+ let g=initialGame(player([],[apprentice]),player());g.turn=1;
+ g=act(g,{type:'playCreature',handIndex:0});
+ assert.deepEqual(g.players[0].auxiliary.map(x=>[x.card.id,x.card.attack,x.card.health,x.card.sacrifice]),[
+ ['bone-blade',2,1,true],['bone-guard',1,2,true]
+ ]);
+ assert.equal(g.players[0].auxiliary.every(x=>x.card.createdToken&&x.exhausted),true);
+ assert.equal(new Set(g.players[0].auxiliary.map(x=>x.objectId)).size,2);
+ g.players[0].hand.push(apprentice);
+ g.players[0].auxiliary.push(...[0,1].map(i=>({...g.players[0].auxiliary[i],objectId:100+i})));
+ g=act(g,{type:'playCreature',handIndex:0});
+ assert.equal(g.players[0].auxiliary.length,4,'full auxiliary board caps data-driven summoning');
+ const invalid:Card={...apprentice,onEntry:{kind:'summon',cards:[{...blade,health:0}]}};
+ const next=initialGame(player([],[invalid]),player());next.turn=1;
+ const snapshot=structuredClone(next);
+ assert.throws(()=>act(next,{type:'playCreature',handIndex:0}),/Недопустимое Существо/);
+ assert.deepEqual(next,snapshot,'invalid tokens rollback the entire transaction');
+});
+test('all six starter Legend plus loyalty token abilities use the same executor, gold guard cannot attack',()=>{
+ for(const {id} of ARCHETYPES){
+  const legend=testDeck(id).find(c=>c.kind==='legend'&&c.loyaltyAbilities?.[0].kind==='summon');
+  assert.ok(legend,`missing summoning Legend for ${id}`);
+  const ability=legend.loyaltyAbilities![0];
+  assert.equal(ability.kind,'summon');
+  if(ability.kind!=='summon')throw Error('expected data-driven summon');
+  const expected=ability.cards[0];
+  const g=initialGame(player([],[legend]),player());g.turn=1;
+  const cast=act(g,{type:'playLegend',handIndex:0});
+  const objectId=cast.players[0].legends[0].objectId;
+  const spawned=act(cast,{type:'activateLegend',objectId,abilityIndex:0});
+  assert.equal(spawned.players[0].auxiliary.length,1);
+  const token=spawned.players[0].auxiliary[0];
+  assert.equal(token.card.id,expected.id);
+  assert.equal(token.card.health,expected.health);
+  assert.equal(spawned.players[0].legends[0].loyalty,cast.players[0].legends[0].loyalty!+1);
+  assert.throws(()=>act(spawned,{type:'activateLegend',objectId,abilityIndex:0}),/недоступна/i);
+  if(id==='gold'){
+   assert.equal(token.card.attack,0);assert.equal(token.card.health,1);
+   assert.equal(token.shield,2);assert.equal(token.card.guard,true);
+   assert.equal(token.card.cannotAttack,true);
+   const ready=structuredClone(spawned);ready.players[0].auxiliary[0].exhausted=false;ready.players[0].auxiliary[0].enteredTurn=0;
+   assert.throws(()=>act(ready,{type:'attack',attackerId:token.objectId,target:{kind:'player'}}),/Атакующий не готов/);
+  }
+ }
+});
