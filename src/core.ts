@@ -1,6 +1,7 @@
 /** Firewell CCG rules. No client or network state is trusted. */
 import { mulligan } from './setup.ts';
 import type {DeathEffect,EntryEffect,LoyaltyEffect,TechniqueEffect} from './mechanics/effect-contracts.ts';
+import type {Command} from './mechanics/command-contracts.ts';
 import {executeCommand} from './mechanics/command-registry.ts';
 import { eligibleVictims, nextRandom, planRitual, type RitualEffect } from './ritual.ts';
 import { ability } from './mechanics/abilities.ts';
@@ -85,23 +86,7 @@ export type Game = {
   pendingAttack: null | { attackerId: number; target: { kind: 'player' } | { kind: 'creature' | 'legend'; objectId: number }; defender: PlayerId };
   players: [Player, Player]; processed: Record<string, { revision: number; command: string }>;
 };
-export type Command =
-  | { type: 'mulligan'; actor: PlayerId; expectedRevision: number; key: string; indices: number[] }
-  | { type: 'startTurn'; actor: PlayerId; expectedRevision: number; key: string }
-  | { type: 'playDomain'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number }
-  | { type: 'tapDomain'; actor: PlayerId; expectedRevision: number; key: string; objectId: number }
-  | { type: 'playCreature'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number; targetId?: number; replaceId?: number; keepExisting?: boolean }
-  | { type: 'playTechnique'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number; targetId?: number; discardIndex?: number }
-  | { type: 'rulerDraw'; actor: PlayerId; expectedRevision: number; key: string }
-  | { type: 'playLegend'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number; keepExisting?: boolean }
-  | { type: 'activateLegend'; actor: PlayerId; expectedRevision: number; key: string; objectId: number; discardIndex?: number; abilityIndex?: number }
-  | { type: 'playArtifact'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number; replaceId?: number; keepExisting?: boolean }
-  | { type: 'chooseRitual'; actor: PlayerId; expectedRevision: number; key: string; effectId: string; objectIds: number[] }
-  | { type: 'chooseReward'; actor: PlayerId; expectedRevision: number; key: string; rewardId: string; replaceId?: number; keepExisting?: boolean }
-  | { type: 'attack'; actor: PlayerId; expectedRevision: number; key: string; attackerId: number; target: { kind: 'player' } | { kind: 'creature' | 'legend'; objectId: number } }
-  | { type: 'intercept'; actor: PlayerId; expectedRevision: number; key: string; interceptorId: number | null }
-  | { type: 'endTurn'; actor: PlayerId; expectedRevision: number; key: string }
-  | { type: 'discard'; actor: PlayerId; expectedRevision: number; key: string; handIndex: number };
+export type {Command} from './mechanics/command-contracts.ts';
 
 export class RuleError extends Error {}
 export function player(deck: Card[] = [], hand: Card[] = []): Player {
