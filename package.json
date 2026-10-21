@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --experimental-strip-types --test $(find test -maxdepth 1 -name '*.test.ts' ! -name 'simulation.test.ts' | sort)",
+    "test": "node scripts/run-fast-tests.mjs",
     "start": "node --experimental-strip-types src/server.ts",
     "test:balance": "node --experimental-strip-types --test test/simulation.test.ts"
   },
