@@ -1,3 +1,4 @@
+import WING from '../../tokens/blue-wing.ts';
 /** Immutable card identity: blue-адмирал-талдрейкского-неба. Edit stats and effect data here. */
 export default {
   "id": "blue-адмирал-талдрейкского-неба",
@@ -18,25 +19,7 @@ export default {
     {
       "delta": 1,
       "kind": "summon",
-      "cards": [
-        {
-          "id": "blue-wing-token",
-          "name": "Крылатый вестник",
-          "kind": "creature",
-          "aspects": [
-            "blue"
-          ],
-          "attack": 1,
-          "health": 1,
-          "createdToken": true,
-          "flying": true,
-          "lore": {
-            "state": "Игровой призыв",
-            "organization": "Призванные существа",
-            "summary": "Призванное существо создаётся общим эффектом Призыв и стирается вместо Сброса."
-          }
-        }
-      ]
+      "cards": [WING]
     },
     {
       "delta": -2,

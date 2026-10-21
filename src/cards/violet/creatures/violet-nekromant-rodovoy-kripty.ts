@@ -1,3 +1,4 @@
+import SKELETON from '../../tokens/violet-skeleton.ts';
 /** Immutable card identity: violet-некромант-родовой-крипты. Edit stats and effect data here. */
 export default {
   "id": "violet-некромант-родовой-крипты",
@@ -16,42 +17,7 @@ export default {
   "health": 3,
   "secondChance": {
     "kind": "summon",
-    "cards": [
-      {
-        "id": "violet-skeleton-token",
-        "name": "Призванный скелет",
-        "kind": "creature",
-        "aspects": [
-          "violet"
-        ],
-        "attack": 1,
-        "health": 1,
-        "createdToken": true,
-        "sacrifice": true,
-        "lore": {
-          "state": "Игровой призыв",
-          "organization": "Призванные существа",
-          "summary": "Призванное существо создаётся общим эффектом Призыв и стирается вместо Сброса."
-        }
-      },
-      {
-        "id": "violet-skeleton-token",
-        "name": "Призванный скелет",
-        "kind": "creature",
-        "aspects": [
-          "violet"
-        ],
-        "attack": 1,
-        "health": 1,
-        "createdToken": true,
-        "sacrifice": true,
-        "lore": {
-          "state": "Игровой призыв",
-          "organization": "Призванные существа",
-          "summary": "Призванное существо создаётся общим эффектом Призыв и стирается вместо Сброса."
-        }
-      }
-    ]
+    "cards": [SKELETON, SKELETON]
   },
   "sacrifice": true,
   "lore": {

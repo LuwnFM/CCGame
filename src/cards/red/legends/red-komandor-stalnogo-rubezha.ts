@@ -1,3 +1,4 @@
+import SCOUT from '../../tokens/red-scout.ts';
 /** Immutable card identity: red-командор-стального-рубежа. Edit stats and effect data here. */
 export default {
   "id": "red-командор-стального-рубежа",
@@ -18,25 +19,7 @@ export default {
     {
       "delta": 1,
       "kind": "summon",
-      "cards": [
-        {
-          "id": "red-scout-token",
-          "name": "Штурмовой новобранец",
-          "kind": "creature",
-          "aspects": [
-            "red"
-          ],
-          "attack": 1,
-          "health": 1,
-          "createdToken": true,
-          "haste": true,
-          "lore": {
-            "state": "Игровой призыв",
-            "organization": "Призванные существа",
-            "summary": "Призванное существо создаётся общим эффектом Призыв и стирается вместо Сброса."
-          }
-        }
-      ]
+      "cards": [SCOUT]
     },
     {
       "delta": -2,

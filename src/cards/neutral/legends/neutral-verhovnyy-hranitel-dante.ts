@@ -1,3 +1,4 @@
+import WATCH from '../../tokens/neutral-watch.ts';
 /** Immutable card identity: neutral-верховный-хранитель-данте. Edit stats and effect data here. */
 export default {
   "id": "neutral-верховный-хранитель-данте",
@@ -14,23 +15,7 @@ export default {
     {
       "delta": 1,
       "kind": "summon",
-      "cards": [
-        {
-          "id": "neutral-watch-token",
-          "name": "Часовой Ордена",
-          "kind": "creature",
-          "aspects": [],
-          "attack": 1,
-          "health": 1,
-          "createdToken": true,
-          "guard": true,
-          "lore": {
-            "state": "Игровой призыв",
-            "organization": "Призванные существа",
-            "summary": "Призванное существо создаётся общим эффектом Призыв и стирается вместо Сброса."
-          }
-        }
-      ]
+      "cards": [WATCH]
     },
     {
       "delta": -2,

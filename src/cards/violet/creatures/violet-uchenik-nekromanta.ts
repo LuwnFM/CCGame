@@ -1,3 +1,6 @@
+import BONE_BLADE from '../../tokens/violet-bone-blade.ts';
+import BONE_GUARD from '../../tokens/violet-bone-guard.ts';
+import SKELETON from '../../tokens/violet-skeleton.ts';
 /** Immutable card identity: violet-ученик-некроманта. Edit stats and effect data here. */
 export default {
   "id": "violet-ученик-некроманта",
@@ -16,64 +19,11 @@ export default {
   "health": 3,
   "onEntry": {
     "kind": "summon",
-    "cards": [
-      {
-        "id": "violet-bone-blade",
-        "name": "Костяной клинок",
-        "kind": "creature",
-        "aspects": [
-          "violet"
-        ],
-        "attack": 2,
-        "health": 1,
-        "createdToken": true,
-        "sacrifice": true,
-        "lore": {
-          "state": "Игровой призыв",
-          "organization": "Призванные существа",
-          "summary": "Призванное существо создаётся общим эффектом Призыв и стирается вместо Сброса."
-        }
-      },
-      {
-        "id": "violet-bone-guard",
-        "name": "Костяной заслон",
-        "kind": "creature",
-        "aspects": [
-          "violet"
-        ],
-        "attack": 1,
-        "health": 2,
-        "createdToken": true,
-        "sacrifice": true,
-        "lore": {
-          "state": "Игровой призыв",
-          "organization": "Призванные существа",
-          "summary": "Призванное существо создаётся общим эффектом Призыв и стирается вместо Сброса."
-        }
-      }
-    ]
+    "cards": [BONE_BLADE, BONE_GUARD]
   },
   "secondChance": {
     "kind": "summon",
-    "cards": [
-      {
-        "id": "violet-skeleton-token",
-        "name": "Призванный скелет",
-        "kind": "creature",
-        "aspects": [
-          "violet"
-        ],
-        "attack": 1,
-        "health": 1,
-        "createdToken": true,
-        "sacrifice": true,
-        "lore": {
-          "state": "Игровой призыв",
-          "organization": "Призванные существа",
-          "summary": "Призванное существо создаётся общим эффектом Призыв и стирается вместо Сброса."
-        }
-      }
-    ]
+    "cards": [SKELETON]
   },
   "sacrifice": true,
   "lore": {
