@@ -22,6 +22,7 @@ label{display:block;margin:10px 0;font-size:.9rem;color:var(--muted)}input,selec
 /* Live PvP UX 0.9.14 */
 .attack-alert{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:12px 0;padding:14px 16px;border:2px solid #ec6670;border-radius:12px;background:#602735;color:#fff;box-shadow:0 0 28px #d3293c55;animation:attack-pulse 2s ease-in-out infinite}
 .attack-alert strong{font-size:1.07rem}.attack-alert span{font-size:.94rem}
+.defense-actions{display:flex;gap:8px;flex-wrap:wrap;width:100%}.defense-actions button{flex:1;min-width:150px}
 .under-attack{border-color:#ed6670;box-shadow:inset 0 0 0 1px #c95165,0 0 22px #b42b4655}
 .incoming-attacker{border-color:#ff5467!important;box-shadow:0 0 0 3px #f74359,0 0 18px #fc364577!important;background:#653442!important}
 .attack-target-highlight{outline:3px solid #ef6777!important;box-shadow:0 0 18px #ec486a66}
@@ -82,3 +83,4 @@ button.domain-chip.spent{opacity:.4;text-decoration:line-through}
 .connection-status[data-state="online"]:before{background:#69d28d}
 .connection-status[data-state="offline"]{color:#ffb0b6;border-color:#a94f5d;background:#412330}
 .connection-status[data-state="offline"]:before{background:#ff6573}
+

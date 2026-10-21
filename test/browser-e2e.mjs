@@ -149,6 +149,7 @@ try {
   await b.locator('#hand .card').filter({ hasText: /владение/i }).first().click();
   await b.locator('#domainDetails summary').click();
   await b.locator('#myDomains button').first().waitFor({ state: 'visible' });
+  assert.match(await b.locator('#domainSummary').innerText(),/\d+ всего · \d+ готовы · \d+ истощены/);
   // Inject a battle-ready server state to verify the entire client -> command -> server -> board path.
   // The same browser sessions and authenticated room are preserved.
   const row = app.db.prepare('SELECT game FROM rooms WHERE code=?').get(code);
@@ -165,8 +166,13 @@ try {
   checkpoint("opponent turn confirmed, battle injected");
   await a.locator('#hero').click();
   await b.waitForFunction(() => !document.querySelector('#skip').disabled, null, {timeout:15000});
+  assert.equal(await b.locator('#attackAlert').isVisible(),true);
+  assert.equal(await b.locator('#attackAlert #skip').isVisible(),true);
+  assert.match(await b.locator('#attackDetails').innerText(),/Атакующий теста.*Владетел/);
+  assert.equal(await b.locator('#enemyBoard .incoming-attacker').count(),1);
   await b.locator('#myBoard .card').first().click();
   checkpoint("defense selected");
+  assert.equal(await b.locator('#confirmDefense').isVisible(),true);
   await b.locator('#confirmDefense').click();
   await a.waitForFunction(() => document.querySelector('#myBoard .card')?.textContent.includes('4/3'), null, {timeout:15000});
   const finalRow = app.db.prepare('SELECT game FROM rooms WHERE code=?').get(code);
@@ -199,6 +205,21 @@ try {
   await b.waitForFunction(()=>document.querySelector('#myHp')?.textContent.includes('28 HP'));
   assert.equal(await b.locator('#rulerDraw').isDisabled(),true);
   checkpoint("ruler draw resolved");
+  const withLegend=JSON.parse(app.db.prepare('SELECT game FROM rooms WHERE code=?').get(code).game);
+  withLegend.players[1].legends=[{objectId:503,card:{id:'ui-legend',name:'Легенда двух решений',kind:'legend',loyalty:3,
+    loyaltyAbilities:[{delta:1,kind:'healRuler',amount:1},{delta:-2,kind:'damageOpponent',amount:2}]},
+    loyalty:3,damage:0,shield:0,exhausted:false,interceptions:0,enteredTurn:8}];
+  withLegend.nextObjectId=504;withLegend.revision++;
+  app.db.prepare('UPDATE rooms SET game=? WHERE code=?').run(JSON.stringify(withLegend),code);
+  await b.waitForFunction(()=>document.querySelector('#myLegends')?.textContent.includes('Легенда двух решений'));
+  await b.locator('#myLegends .card').click();
+  assert.equal(await b.locator('#legendActions button').count(),2);
+  assert.match(await b.locator('#legendActions button').first().innerText(),/\+1/);
+  assert.match(await b.locator('#legendActions button').last().innerText(),/−2|-2/);
+  await b.locator('#legendActions button').first().click();
+  await b.waitForFunction(()=>document.querySelector('#legendActions')?.textContent.includes('4 лояльности'));
+  assert.equal(await b.locator('#legendActions button').last().isDisabled(),true);
+  checkpoint("both Legend choices and once-per-turn lock confirmed on phone");
   await b.reload({waitUntil:'domcontentloaded'});
   await b.waitForFunction(()=>document.querySelector('#myBoard')?.textContent.includes('Возвращённый теста'));
   const matchWidth=await b.evaluate(()=>({body:document.documentElement.scrollWidth,viewport:innerWidth}));
@@ -263,4 +284,5 @@ try {
   app.db.close();
   await rm(temp, { recursive: true, force: true });
 }
+
 
