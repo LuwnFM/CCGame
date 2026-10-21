@@ -9,7 +9,7 @@ import {emptyEnergy,payForCard} from '../energy.ts';
 import {activateLegend} from '../legends.ts';
 import {enterTrigger,resolveTechnique} from '../techniques.ts';
 import {removePermanents,collectLethal,resolveDeaths,finishIfLethal} from '../death-queue.ts';
-import {drawCards,leaveCard,moveCard,takeCard,placePermanent,departPermanent,addCard} from '../zones.ts';
+import {drawCards,leaveCard,moveCard,takeCard,placePermanent,departPermanent,addCard,discardDetached} from '../zones.ts';
 import {emitGameEvent} from '../events.ts';
 import {advance} from '../turns.ts';
 registerCommand('attack',(next,command)=>{const p=next.players[command.actor];
