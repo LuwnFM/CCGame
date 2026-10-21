@@ -10,7 +10,7 @@ import { enterTrigger, resolveTechnique } from './mechanics/techniques.ts';
 import { EffectLimitError, MAX_EFFECT_OPERATIONS, removePermanents, collectLethal, resolveDeaths, finishIfLethal } from './mechanics/death-queue.ts';
 export { MAX_EFFECT_OPERATIONS } from './mechanics/death-queue.ts';
 export { validateDeck } from './mechanics/deck-rules.ts';
-export const RULES_VERSION = '0.9.14-alpha';
+export const RULES_VERSION = '0.9.15-alpha';
 export type PlayerId = 0 | 1;
 export type Aspect = 'red' | 'blue' | 'green' | 'gold' | 'violet';
 export type Energy = Aspect | 'neutral';
