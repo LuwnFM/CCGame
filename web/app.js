@@ -81,7 +81,7 @@ function abilityText(ability) {
   return (ability.delta>0?'+':'')+ability.delta+' лояльности · '+(effects[ability.kind]||ability.kind);
 }
 function effectText(e) {
-  const descriptions={summonSkeleton:'Призвать скелетов 1/1 с Жертвой: ',stunEnemy:'Ошеломить Существо противника: ',healRuler:'Восстановить HP Владетелю: ',draw:'Взять карт: ',damageOpponent:'Урон Владетелю соперника: ',damageController:'Урон своему Владетелю: ',damageAllCreatures:'Урон всем Существам: ',reanimate:'Вернуть Существо из своего сброса на поле: ',cleanse:'Снять отрицательные статусы: ',silence:'Подавить способности: ',bind:'Сковывание: '};
+  const descriptions={summonSkeleton:'Призвать скелетов 1/1 с Жертвой: ',stunEnemy:'Ошеломить Существо противника: ',stasisEnemy:'Наложить Стазис на Существо противника: ',healRuler:'Восстановить HP Владетелю: ',draw:'Взять карт: ',damageOpponent:'Урон Владетелю соперника: ',damageController:'Урон своему Владетелю: ',damageAllCreatures:'Урон всем Существам: ',reanimate:'Вернуть Существо из своего сброса на поле: ',cleanse:'Снять отрицательные статусы: ',silence:'Подавить способности: ',bind:'Сковывание: '};
   return (descriptions[e.kind]||e.kind+' ')+e.amount;
 }
 function chooseCards(title,choices) {
@@ -94,8 +94,10 @@ $('choiceCancel').onclick=()=>$('choiceDialog').close();
 $('rulerDraw').onclick=()=>send({type:'rulerDraw'});
 function playCreature(card,index,enemy) {
   const targets=card.onEntry?.kind==='stunEnemy'
-    ? [...enemy.main,...enemy.auxiliary].filter(p=>p.card.kind==='creature'&&!p.stunned&&!p.stasis):[];
-  if(targets.length)chooseCards('Выбери Существо противника для Ошеломления',targets.map(p=>({
+    ? [...enemy.main,...enemy.auxiliary].filter(p=>p.card.kind==='creature'&&!p.stunned&&!p.stasis):
+    card.onEntry?.kind==='stasisEnemy'
+      ? [...enemy.main,...enemy.auxiliary].filter(p=>p.card.kind==='creature'&&!p.stasis):[];
+  if(targets.length)chooseCards('Выбери Существо противника для '+(card.onEntry.kind==='stasisEnemy'?'Стазиса':'Ошеломления'),targets.map(p=>({
     card:p.card,label:cardLabel(p),choose:()=>send({type:'playCreature',handIndex:index,targetId:p.objectId})
   })));
   else send({type:'playCreature',handIndex:index});
@@ -483,7 +485,7 @@ function renderGame(ready) {
       else if(c.kind==='creature'&&c.unique&&[...me.main,...me.auxiliary].some(p=>p.card.name===c.name))
         chooseCards('Какое Уникальное Существо оставить?',[{card:c,label:'Оставить на поле',choose:()=>send({type:'playCreature',handIndex:i,keepExisting:true})},{card:c,label:'Оставить новое',choose:()=>send({type:'playCreature',handIndex:i,keepExisting:false})}]);
       else if(c.kind==='technique')playTechnique(c,i,me,enemy);
-      else if(c.kind==='creature'&&!c.createdToken&&c.onEntry?.kind==='stunEnemy')playCreature(c,i,enemy);
+      else if(c.kind==='creature'&&!c.createdToken&&['stunEnemy','stasisEnemy'].includes(c.onEntry?.kind))playCreature(c,i,enemy);
       else if((c.kind==='artifact'||c.kind==='creature'&&c.createdToken)&&me.auxiliary.length>=4){selectedArtifactIndex=i;renderGame(ready)}
       else send({type:c.kind==='domain'?'playDomain':c.kind==='technique'?'playTechnique':c.kind==='legend'?'playLegend':c.kind==='artifact'?'playArtifact':'playCreature',handIndex:i})},
     !(mine||game.phase==='discard'&&game.active===seat))));
