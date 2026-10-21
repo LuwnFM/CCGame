@@ -22,6 +22,19 @@ export function enterTrigger(game:Game,actor:PlayerId,card:Card,origin:'hand'|'d
     throw new EffectLimitError('Превышен бюджет Вступления/Второго шанса');
   requireRule(Number.isSafeInteger(effect.amount) && effect.amount>=0&&effect.amount<=4,'Неверное Вступление');
   if(effect.kind==='summonSkeleton')spawnSkeleton(game,actor,effect.amount,card);
+  else if(effect.kind==='summonBonePair'){
+    requireRule(effect.amount===2,'Костяная пара призывает ровно двух скелетов');
+    const owner=game.players[actor];
+    const variants=[{id:'violet-bone-blade',name:'Костяной клинок',attack:2,health:1},
+      {id:'violet-bone-guard',name:'Костяной заслон',attack:1,health:2}];
+    for(const variant of variants){
+      if(owner.auxiliary.length>=4)break;
+      const token:Card={...variant,kind:'creature',aspects:['violet'],createdToken:true,sacrifice:true,
+        lore:{state:'Искажение',organization:'Некроманты',summary:'Поднятая нежить с Жертвой; токен исчезает вместо Сброса.'}};
+      owner.auxiliary.push({objectId:game.nextObjectId++,card:token,damage:0,shield:0,exhausted:true,
+        interceptions:0,enteredTurn:game.turn,sacrifice:true,attacksMade:0});
+    }
+  }
   else if(effect.kind==='stunEnemy'||effect.kind==='stasisEnemy') {
     // Targeted blue Entry only affects enemy creatures; an empty enemy field is legal.
     // Stun prevents attacks during the next controller turn; Stasis also suspends abilities.
