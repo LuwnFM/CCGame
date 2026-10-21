@@ -19,6 +19,44 @@ function check(g: Game) {
   }
   assert.equal(g.players.length,2);
 }
+// Use the same legal conditions as src/core.ts (no extra HP >8 bot-only rule).
+function canBotUseRulerDraw(g:Game,actor:PlayerId):boolean {
+  const p=g.players[actor];
+  return g.phase==='main' && g.turn>0 && g.active===actor &&
+    p.hp>2 && p.hand.length<=3 && p.deck.length>=2 &&
+    p.lastRulerDrawTurn!==g.turn;
+}
+test('balance bot respects all Ruler-draw restrictions and can draw at 3 HP',()=>{
+  const red=testDeck(ARCHETYPES[0].id);
+  let g=openingGame(openingHand(red,1123),openingHand(red,1124));
+  g=step(g,{type:'mulligan',actor:0,indices:[]},0);
+  g=step(g,{type:'mulligan',actor:1,indices:[]},1);
+  g.turn=1;g.active=0;g.phase='main';
+  const p=g.players[0];p.hp=3;p.hand=red.slice(0,3);p.deck=red.slice(0,4);
+  assert.equal(canBotUseRulerDraw(g,0),true);
+  assert.equal(canBotUseRulerDraw(g,1),false,'inactive player cannot draw');
+  const beforeRevision=g.revision;
+  const drawn=step(g,{type:'rulerDraw',actor:0},2);
+  assert.equal(drawn.revision,beforeRevision+1);
+  assert.equal(drawn.players[0].hp,1);
+  assert.equal(drawn.players[0].hand.length,5);
+  assert.equal(drawn.players[0].deck.length,2);
+  assert.equal(drawn.players[0].lastRulerDrawTurn,1);
+  assert.equal(canBotUseRulerDraw(drawn,0),false,'one draw per own turn');
+  assert.throws(()=>step(drawn,{type:'rulerDraw',actor:0},3),RuleError);
+  for(const [label,mutate] of [
+    ['HP=2',(game:Game)=>{game.players[0].hp=2}],
+    ['hand=4',(game:Game)=>{game.players[0].hand=red.slice(0,4)}],
+    ['deck=1',(game:Game)=>{game.players[0].deck=red.slice(0,1)}],
+    ['already used',(game:Game)=>{game.players[0].lastRulerDrawTurn=game.turn}],
+    ['intercept phase',(game:Game)=>{game.phase='intercept'}],
+    ['not active',(game:Game)=>{game.active=1}],
+    ['before first turn',(game:Game)=>{game.turn=0}],
+  ] as const){
+    const bad=structuredClone(g);mutate(bad);
+    assert.equal(canBotUseRulerDraw(bad,0),false,label);
+  }
+});
 function defend(g:Game,n:number):Game {
  const p=g.players[g.pendingAttack!.defender],a=[...g.players[g.active].main,...g.players[g.active].auxiliary].find(x=>x.objectId===g.pendingAttack!.attackerId)!;
  const candidates=[...p.main,...p.auxiliary].filter(x=>x.card.kind==='creature'&&!x.exhausted&&!x.stasis&&x.interceptions===0&&(!a.card.flying||x.card.flying)&&(g.pendingAttack!.target.kind!=='creature'||x.card.guard));
@@ -29,6 +67,7 @@ function defend(g:Game,n:number):Game {
 test('288 seeded matches exercise every ordered starter pairing and preserve field invariants',()=>{
   let finished=0,cutoff=0,draws=0;const wins:Record<string,number>={},pairings:Record<string,{first:number;second:number;cutoff:number}>={};
   let count=0,rituals=0,legends=0,artifacts=0,combat=0, actions=0;
+  const rulerDraws:Record<string,{first:number;second:number}> = Object.fromEntries(ARCHETYPES.map(a=>[a.id,{first:0,second:0}]));
   for (let i=0;i<ARCHETYPES.length;i++) for (let j=0;j<ARCHETYPES.length;j++) for (let repeat=0;repeat<8;repeat++) {
     let g=openingGame(openingHand(testDeck(ARCHETYPES[i].id),1001+i*29+j*11+repeat),
       openingHand(testDeck(ARCHETYPES[j].id),4001+j*37+i*13+repeat));
@@ -54,7 +93,24 @@ test('288 seeded matches exercise every ordered starter pairing and preserve fie
         const land=p.domainsPlayed<1?p.hand.findIndex(c=>c.kind==='domain'):-1;
         if(land>=0)g=step(g,{type:'playDomain',actor,handIndex:land},serial++);
         for(const d of [...g.players[actor].domains]) if(!d.exhausted)g=step(g,{type:'tapDomain',actor,objectId:d.objectId},serial++);
-        for(let attempt=0;attempt<3;attempt++) {
+        for(let attempt=0;attempt<8;attempt++) {
+          if(g.phase!=='main')break;
+          // Each archetype uses the Ruler ability when legally available.
+          // Drawing before the next play lets the bot spend the fresh cards now,
+          // rather than drawing just before ending its turn.
+          if(canBotUseRulerDraw(g,actor)){
+            const before=g.players[actor];
+            const next=step(g,{type:'rulerDraw',actor},serial++);
+            const after=next.players[actor];
+            assert.equal(after.hp,before.hp-2);
+            assert.equal(after.hand.length,before.hand.length+2);
+            assert.equal(after.deck.length,before.deck.length-2);
+            assert.equal(after.lastRulerDrawTurn,next.turn);
+            assert.equal(canBotUseRulerDraw(next,actor),false);
+            const archetype=ARCHETYPES[actor===0?i:j].id;
+            rulerDraws[archetype][actor===0?'first':'second']++;
+            g=next;
+          }
           const hand=g.players[actor].hand;
           let played=false;
           for(let index=0;index<hand.length;index++) {
@@ -91,7 +147,6 @@ test('288 seeded matches exercise every ordered starter pairing and preserve fie
             if(g.phase==='finished')break;
           } catch(error) {if(!(error instanceof RuleError))throw error}
         }
-        if(g.phase==='main'&&g.players[actor].hp>8&&g.players[actor].hand.length<=3&&g.players[actor].deck.length>=2&&g.players[actor].lastRulerDrawTurn!==g.turn)g=step(g,{type:'rulerDraw',actor},serial++);
         if(g.phase==='main')g=step(g,{type:'endTurn',actor},serial++);
       }
       check(g);actions++;
@@ -101,12 +156,17 @@ test('288 seeded matches exercise every ordered starter pairing and preserve fie
     if(g.phase==='finished'){finished++;if(g.winner==='draw')draws++;else{const winner=ARCHETYPES[g.winner===0?i:j].id;wins[winner]=(wins[winner]||0)+1;pairings[pairing][g.winner===0?'first':'second']++}}else{cutoff++;pairings[pairing].cutoff++}
     count++;
   }
-  console.log('SIMULATION_REPORT '+JSON.stringify({matches:count,finished,cutoff,draws,wins,pairings}));
+  console.log('SIMULATION_REPORT '+JSON.stringify({matches:count,finished,cutoff,draws,wins,pairings,rulerDraws}));
+  for(const archetype of ARCHETYPES){
+    const bySeat=rulerDraws[archetype.id];
+    assert.ok(bySeat.first>0 && bySeat.second>0,
+      `Ruler draw missing for ${archetype.id}: first=${bySeat.first}, second=${bySeat.second}`);
+  }
   assert.equal(count,288);
   assert.ok(finished>0);
   assert.ok(combat>10 && legends>0 && artifacts>0 && actions>700,
     `coverage: combats=${combat} legends=${legends} artifacts=${artifacts} actions=${actions}`);
-  console.log(`288 simulated matches: ${actions} operations, ${combat} combats, ${legends} legends, ${artifacts} artifacts, ${rituals} rituals`);
+  console.log(`288 simulated matches: ${actions} operations, ${combat} combats, ${legends} legends, ${artifacts} artifacts, ${rituals} rituals; Ruler draws ${Object.values(rulerDraws).reduce((n,p)=>n+p.first+p.second,0)}`);
 });
 
 
