@@ -84,12 +84,12 @@ function deckFor(id:Parameters<typeof testDeck>[0],scenario:'before'|'after'){
 test('controlled before/after reward balance simulation (1728 seeded matches)',()=>{
  for(const scenario of ['before','after'] as const){
   let finished=0,cutoff=0,draws=0;const wins:Record<string,number>={},pairings:Record<string,{first:number;second:number;cutoff:number}>={};
-  let count=0,rituals=0,legends=0,artifacts=0,combat=0, actions=0;
+  let count=0,rituals=0,rewards=0,ritualWins=0,ritualLosses=0,ritualDraws=0,postRitualTurns=0,legends=0,artifacts=0,combat=0, actions=0;
   const rulerDraws:Record<string,{first:number;second:number}> = Object.fromEntries(ARCHETYPES.map(a=>[a.id,{first:0,second:0}]));
   for (let i=0;i<ARCHETYPES.length;i++) for (let j=0;j<ARCHETYPES.length;j++) for (let repeat=0;repeat<24;repeat++) {
     let g=openingGame(openingHand(deckFor(ARCHETYPES[i].id,scenario),1001+i*29+j*11+repeat),
       openingHand(deckFor(ARCHETYPES[j].id,scenario),4001+j*37+i*13+repeat));
-    let serial=0;
+    let serial=0;const ritualOwners=new Map<PlayerId,number>();
     g=step(g,{type:'mulligan',actor:0,indices:[]},serial++);
     g=step(g,{type:'mulligan',actor:1,indices:[]},serial++);
     for(let round=0;round<160 && g.phase!=='finished' && g.phase!=='paused';round++) {
@@ -99,10 +99,12 @@ test('controlled before/after reward balance simulation (1728 seeded matches)',(
         const choice=g.readyRituals![0];
         g=step(g,{type:'chooseRitual',actor,effectId:choice.effect.id,objectIds:choice.eligibleIds.slice(0,choice.effect.threshold)},serial++);
       } else if (g.phase==='reward') {
-        const reward=g.pendingReward!.pool.find(c=>c.id===g.pendingReward!.offeredIds[0])!;
+        const offers=g.pendingReward!.pool.filter(c=>g.pendingReward!.offeredIds.includes(c.id));
+        const reward=offers.sort((a,b)=>((b.attack??0)*1.3+(b.health??0)+Number(!!b.firstStrike)*3+Number(!!b.lifesteal)*3+Number(!!b.guard)*2)-((a.attack??0)*1.3+(a.health??0)+Number(!!a.firstStrike)*3+Number(!!a.lifesteal)*3+Number(!!a.guard)*2))[0];
         const zone=reward.createdToken?p.auxiliary:p.main;
         const replace=zone.length>=(reward.createdToken?4:8)?zone.find(c=>!c.card.majestic)?.objectId:undefined;
         g=step(g,{type:'chooseReward',actor,rewardId:reward.id,replaceId:replace},serial++);
+        rewards++;ritualOwners.set(actor,g.turn);
       } else if (g.phase==='discard') {
         g=step(g,{type:'discard',actor,handIndex:0},serial++);
       } else if (g.phase==='intercept') {
@@ -131,7 +133,12 @@ test('controlled before/after reward balance simulation (1728 seeded matches)',(
           }
           const hand=g.players[actor].hand;
           let played=false;
-          for(let index=0;index<hand.length;index++) {
+          // Purple actively pursues rituals and deploys Sacrifice creators before expendable bodies.
+          const ordered=hand.map((card,index)=>({card,index})).sort((a,b)=>{
+            const score=(card:typeof a.card)=>card.ritual?100:card.kind==='creature'&&card.sacrifice?80:card.kind==='creature'&&card.onEntry?.kind==='summon'?70:card.kind==='legend'?60:card.kind==='creature'?40:card.kind==='artifact'?30:card.kind==='technique'?20:0;
+            return (actor===0?i:j)===4?score(b.card)-score(a.card):0;
+          });
+          for(const {index} of ordered) {
             const kind=hand[index].kind;
             const type=kind==='creature'?'playCreature':kind==='technique'?'playTechnique':kind==='legend'?'playLegend':kind==='artifact'?'playArtifact':null;
             if(!type)continue;
@@ -174,10 +181,10 @@ test('controlled before/after reward balance simulation (1728 seeded matches)',(
     }
     assert.notEqual(g.phase,'paused');
     const pairing=ARCHETYPES[i].id+' vs '+ARCHETYPES[j].id;pairings[pairing]??={first:0,second:0,cutoff:0};
-    if(g.phase==='finished'){finished++;if(g.winner==='draw')draws++;else{const winner=ARCHETYPES[g.winner===0?i:j].id;wins[winner]=(wins[winner]||0)+1;pairings[pairing][g.winner===0?'first':'second']++}}else{cutoff++;pairings[pairing].cutoff++}
+    if(g.phase==='finished'){finished++;for(const [owner,turn] of ritualOwners){if(g.winner==='draw')ritualDraws++;else if(g.winner===owner){ritualWins++;postRitualTurns+=g.turn-turn}else ritualLosses++}if(g.winner==='draw')draws++;else{const winner=ARCHETYPES[g.winner===0?i:j].id;wins[winner]=(wins[winner]||0)+1;pairings[pairing][g.winner===0?'first':'second']++}}else{cutoff++;pairings[pairing].cutoff++}
     count++;
   }
-  console.log('SIMULATION_AB_REPORT '+JSON.stringify({scenario,matches:count,finished,cutoff,draws,rituals,wins,pairings,rulerDraws}));
+  console.log('SIMULATION_AB_REPORT '+JSON.stringify({scenario,matches:count,finished,cutoff,draws,rituals,rewards,ritualWins,ritualLosses,ritualDraws,meanTurnsToWinAfterReward:ritualWins?postRitualTurns/ritualWins:null,wins,pairings,rulerDraws}));
   for(const archetype of ARCHETYPES){
     const bySeat=rulerDraws[archetype.id];
     assert.ok(bySeat.first>0 && bySeat.second>0,
