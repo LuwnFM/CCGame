@@ -1,5 +1,11 @@
 {
   "framework": null,
   "buildCommand": null,
-  "outputDirectory": "web"
+  "outputDirectory": "web",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://home-pc.taild16ba7.ts.net/api/:path*"
+    }
+  ]
 }
