@@ -150,6 +150,13 @@ try {
   await b.locator('#domainDetails summary').click();
   await b.locator('#myDomains button').first().waitFor({ state: 'visible' });
   assert.match(await b.locator('#domainSummary').innerText(),/\d+ всего · \d+ готовы · \d+ истощены/);
+  await b.locator('#myDomains .domain-inspect').first().click();
+  await b.locator('#cardInspector').waitFor({state:'visible'});
+  await b.locator('#inspectorClose').click();
+  await a.locator('#enemyDomains').locator('..').locator('summary').click();
+  await a.locator('#enemyDomains button').first().click();
+  await a.locator('#cardInspector').waitFor({state:'visible'});
+  await a.locator('#inspectorClose').click();
   // Inject a battle-ready server state to verify the entire client -> command -> server -> board path.
   // The same browser sessions and authenticated room are preserved.
   const row = app.db.prepare('SELECT game FROM rooms WHERE code=?').get(code);

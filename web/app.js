@@ -445,13 +445,24 @@ function renderGame(ready) {
   const readyDomains=me.domains.filter(p=>!p.exhausted);
   $('domainSummary').textContent=me.domains.length+' всего · '+readyDomains.length+' готовы · '+(me.domains.length-readyDomains.length)+' истощены';
   $('myDomains').replaceChildren(...me.domains.map(p=>{
+    const wrapper=document.createElement('span');wrapper.className='domain-item';
     const el=button(domainLabels[p.card.produces]||'◇',()=>send({type:'tapDomain',objectId:p.objectId}),
       !mine||p.exhausted,'domain-chip '+(p.card.produces||'neutral')+(p.exhausted?' spent':''));
     el.title=p.card.name+(p.exhausted?' · истощено':' · готово');
-    el.setAttribute('aria-label',el.title);
+    el.setAttribute('aria-label','Получить Энергию: '+el.title);
+    const inspect=button('ⓘ',()=>showCardDetails(p.card,p),false,'domain-inspect');
+    inspect.setAttribute('aria-label','Подробнее о Владении '+p.card.name);
+    wrapper.append(el,inspect);
+    return wrapper;
+  }));
+  $('enemyDomainCount').textContent=String(enemy.domains.length);
+  $('enemyDomains').replaceChildren(...enemy.domains.map(p=>{
+    const el=button(domainLabels[p.card.produces]||'◇',()=>showCardDetails(p.card,p),false,
+      'domain-chip '+(p.card.produces||'neutral')+(p.exhausted?' spent':''));
+    el.title=p.card.name+(p.exhausted?' · истощено':' · готово');
+    el.setAttribute('aria-label','Подробнее о Владении соперника '+el.title);
     return el;
   }));
-  $('enemyDomains').textContent=enemy.domains.length+' Владений';
   $('hand').replaceChildren(...(me.hand||[]).map((c,i)=>cardButton(c,kindName(c.kind)+(c.cost?' · '+(c.cost.generic+Object.values(c.cost.colored).reduce((a,b)=>a+b,0))+' энергии':''),
     ()=>{if(game.phase==='discard')send({type:'discard',handIndex:i});
       else if(c.kind==='legend'&&me.legends.some(p=>p.card.name===c.name))
@@ -604,4 +615,5 @@ if(token)api('/api/me').then(async data=>{setAccount(data.account);await loadDat
 observeLocalization();
 setInterval(refresh,2500);setInterval(tick,1000);setInterval(updateChatCooldown,250);
 updateChatCooldown();
+
 
