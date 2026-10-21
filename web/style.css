@@ -18,3 +18,11 @@ label{display:block;margin:10px 0;font-size:.9rem;color:var(--muted)}input,selec
 
 /* Keep disabled cards readable for players inspecting their hand. */
 .card:disabled{opacity:.83;cursor:default}.board .card:disabled{opacity:.78}#turnLabel{display:inline-block;margin-left:9px}.leaderboard{margin:0;padding-left:25px}.leaderboard-entry{margin-bottom:7px;display:flex;justify-content:space-between;gap:10px;align-items:center;overflow-wrap:anywhere}.leaderboard-entry>div{min-width:0;display:grid}.leaderboard-entry strong{color:#f4f1e9}.leaderboard-entry small{color:var(--muted);font-size:.75rem}.leaderboard-entry b{color:var(--accent);white-space:nowrap}@media(max-width:390px){.hand .card small{font-size:.72rem}.board .card b{font-size:.72rem}}
+
+/* API health is independent of player session */
+.connection-status{display:inline-flex;align-items:center;gap:7px;white-space:normal}
+.connection-status:before{content:'';width:8px;height:8px;border-radius:50%;background:#a5a8b2;flex:none}
+.connection-status[data-state="online"]{color:#91dfad;border-color:#478a60;background:#1b352b}
+.connection-status[data-state="online"]:before{background:#69d28d}
+.connection-status[data-state="offline"]{color:#ffb0b6;border-color:#a94f5d;background:#412330}
+.connection-status[data-state="offline"]:before{background:#ff6573}
