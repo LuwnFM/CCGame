@@ -58,7 +58,7 @@ const extraEffects: Record<ArchetypeId, Unit[]> = {
  blue:[unit(['Летописец флотилии',3,2,2,{onEntry:{kind:'draw',amount:1}}]),unit(['Небесный завещатель',4,3,3,{flying:true,onDeath:{kind:'damageOpponent',amount:1}}])],
  green:[unit(['Травница Кайров',3,2,3,{onEntry:{kind:'healRuler',amount:2}}]),unit(['Вернувшийся следопыт',4,3,4,{secondChance:{kind:'healRuler',amount:2}}])],
  gold:[unit(['Госпитальер короны',3,2,3,{onEntry:{kind:'healRuler',amount:2}}]),unit(['Верный до конца',4,3,4,{guard:true,onDeath:{kind:'damageOpponent',amount:1}}])],
- violet:[unit(['Ученик Церы',3,2,2,{onEntry:{kind:'summonSkeleton',amount:1},sacrifice:true}]),unit(['Некромант родовой крипты',4,3,3,{secondChance:{kind:'summonSkeleton',amount:2},sacrifice:true}])],
+ violet:[unit(['Ученик Некроманта',5,2,3,{onEntry:{kind:'summonBonePair',amount:2},secondChance:{kind:'summonSkeleton',amount:1},sacrifice:true}]),unit(['Некромант родовой крипты',4,3,3,{secondChance:{kind:'summonSkeleton',amount:2},sacrifice:true}])],
  neutral:[unit(['Летописец Ордена',3,2,2,{onEntry:{kind:'draw',amount:1}}]),unit(['Последний часовой',4,3,4,{onDeath:{kind:'damageOpponent',amount:1}}])],
 };
 function unit(entry: (string | number | Partial<Card>)[]): Unit {
