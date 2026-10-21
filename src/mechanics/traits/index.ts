@@ -1,0 +1,15 @@
+import './guard.ts';
+import './flying.ts';
+import './firstStrike.ts';
+import './piercing.ts';
+import './lifesteal.ts';
+import './haste.ts';
+import './zeal.ts';
+import './extraAttacks.ts';
+import './stealth.ts';
+import './poisonHit.ts';
+import './shield.ts';
+import './majestic.ts';
+import './cannotAttack.ts';
+import './sacrifice.ts';
+import './auraAttack.ts';
