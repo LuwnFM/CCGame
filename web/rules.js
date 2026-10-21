@@ -142,7 +142,7 @@ const content = {
     ],
     [
       "Legends and Loyalty",
-      "Legends have their own zone and Loyalty instead of Health. Each starter Legend has two choices: a modest +1 Loyalty ability and a stronger -2 Loyalty ability. Each Legend can activate one ability per own turn, including its entry turn. At zero Loyalty it leaves play; duplicate-name Unique Legends require a survivor choice. Attacks can target Legends and reduce Loyalty."
+      "Legends have their own zone and Loyalty instead of Health. Each starter Legend has two choices: a modest +1 Loyalty ability and a stronger -2 Loyalty ability. Each Legend can activate one ability per own turn, including its entry turn. At zero Loyalty it leaves play; duplicate-name Unique Legends require a survivor choice. Attacks can target Legends and reduce Loyalty. Cera Van Troupe summons a 2/2 Undead with Sacrifice. If that enables a ready Ritual, you may perform it immediately; while Cera remains in play, each Ritual you complete also lets you draw one card."
     ],
     [
       "Ruler draw ability",
