@@ -60,7 +60,7 @@ const content = {
     ],
     [
       "Легенды и Лояльность",
-      "Легенды находятся в отдельной зоне и вместо здоровья используют Лояльность. Каждая стартовая Легенда имеет два выбора: первый даёт +1 Лояльность и небольшой эффект, второй тратит 2 Лояльности ради более сильного эффекта. Можно использовать одну способность каждой Легенды за свой ход, включая ход выхода. При нуле Лояльности Легенда уходит; одноимённые Уникальные Легенды требуют выбрать, какая останется. Легенда может быть целью атаки и теряет Лояльность от урона по правилам боя. Цера Ван Троуп призывает Умертвие 2/2 с Жертвой. Если это позволяет выполнить готовый Ритуал, его можно провести сразу; пока Цера на поле, каждый завершённый вами Ритуал также позволяет взять одну карту."
+      "Легенды находятся в отдельной зоне и вместо здоровья используют Лояльность. Каждая стартовая Легенда имеет два выбора: первый даёт +1 Лояльность и небольшой эффект, второй тратит 2 Лояльности ради более сильного эффекта. Можно использовать одну способность каждой Легенды за свой ход, включая ход выхода. При нуле Лояльности Легенда уходит; одноимённые Уникальные Легенды требуют выбрать, какая останется. Легенда может быть целью атаки и теряет Лояльность от урона по правилам боя."
     ],
     [
       "Способность Владетеля",
@@ -142,7 +142,7 @@ const content = {
     ],
     [
       "Legends and Loyalty",
-      "Legends have their own zone and Loyalty instead of Health. Each starter Legend has two choices: a modest +1 Loyalty ability and a stronger -2 Loyalty ability. Each Legend can activate one ability per own turn, including its entry turn. At zero Loyalty it leaves play; duplicate-name Unique Legends require a survivor choice. Attacks can target Legends and reduce Loyalty. Cera Van Troupe summons a 2/2 Undead with Sacrifice. If that enables a ready Ritual, you may perform it immediately; while Cera remains in play, each Ritual you complete also lets you draw one card."
+      "Legends have their own zone and Loyalty instead of Health. Each starter Legend has two choices: a modest +1 Loyalty ability and a stronger -2 Loyalty ability. Each Legend can activate one ability per own turn, including its entry turn. At zero Loyalty it leaves play; duplicate-name Unique Legends require a survivor choice. Attacks can target Legends and reduce Loyalty."
     ],
     [
       "Ruler draw ability",
