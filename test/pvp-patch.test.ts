@@ -78,15 +78,14 @@ test('Legends: weak +1 loyalty and stronger -2 are mutually exclusive per turn',
  assert.equal(g.players[0].legends[0].loyalty,2);
  assert.equal(g.players[1].hp,38);
 });
-test('old games keep frozen core and original version while new games use updated core',()=>{
+test('old match versions are rejected; new matches use the current 40 HP rules',()=>{
  const old=legacyGame(legacyPlayer(),legacyPlayer());
  const newer=initialGame(player(),player());
  assert.equal(old.rulesVersion,'0.9.13-alpha');
  assert.equal(newer.rulesVersion,'0.9.15-alpha');
+ assert.equal(newer.players[0].hp,40);
  const cmd={type:'startTurn',actor:0,expectedRevision:old.revision,key:'legacy-start'} as Command;
- const continued=applyForMatch(old as any,cmd);
- assert.equal(continued.rulesVersion,'0.9.13-alpha');
- assert.equal(continued.turn,1);
+ assert.throws(()=>applyForMatch(old as any,cmd),/Устаревший матч/);
 });
 
 
