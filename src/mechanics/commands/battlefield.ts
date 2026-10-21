@@ -9,7 +9,7 @@ import {emptyEnergy,payForCard} from '../energy.ts';
 import {activateLegend} from '../legends.ts';
 import {enterTrigger,resolveTechnique} from '../techniques.ts';
 import {removePermanents,collectLethal,resolveDeaths,finishIfLethal} from '../death-queue.ts';
-import {drawCards,leaveCard,moveCard,takeCard,placePermanent,departPermanent,addCard} from '../zones.ts';
+import {drawCards,leaveCard,moveCard,takeCard,placePermanent,departPermanent,addCard,discardDetached} from '../zones.ts';
 import {emitGameEvent} from '../events.ts';
 import {advance} from '../turns.ts';
 registerCommand('playDomain',(next,command)=>{const p=next.players[command.actor];
@@ -17,7 +17,7 @@ registerCommand('playDomain',(next,command)=>{const p=next.players[command.actor
       requireRule(p.domainsPlayed < 1, 'Владение уже разыграно');
       const card = p.hand[command.handIndex];
       requireRule(card?.kind === 'domain' && !!card.produces, 'Неверное Владение');
-      takeCard(p,'hand',command.handIndex);
+      takeCard(p,'hand',command.handIndex,next,command.actor);
       placePermanent(next,command.actor,'domains',card,{exhausted:false,shield:0});
       p.domainsPlayed++;
       return;
@@ -41,7 +41,7 @@ registerCommand('playCreature',(next,command)=>{const p=next.players[command.act
       const duplicate = card.unique ? [...p.main,...p.auxiliary].find(u=>u.card.name===card.name) : undefined;
       if(duplicate){
         requireRule(typeof command.keepExisting==='boolean','Выберите, какую Уникальную оставить');
-        if(command.keepExisting){p.energy=payForCard(p,card.cost);takeCard(p,'hand',command.handIndex);sendToDiscard(p,card,!!card.ritualReward);return;}
+        if(command.keepExisting){p.energy=payForCard(p,card.cost);takeCard(p,'hand',command.handIndex,next,command.actor);discardDetached(next,command.actor,card,!!card.ritualReward);return;}
         departPermanent(next,command.actor,duplicate.objectId);
       }
       const zone = card.createdToken ? p.auxiliary : p.main;
@@ -54,7 +54,7 @@ registerCommand('playCreature',(next,command)=>{const p=next.players[command.act
         departPermanent(next,command.actor,replaced.objectId);
       }
       const energy = payForCard(p, card.cost);
-      p.energy = energy; takeCard(p,'hand',command.handIndex);
+      p.energy = energy; takeCard(p,'hand',command.handIndex,next,command.actor);
       placePermanent(next,command.actor,card.createdToken?'auxiliary':'main',card,
         {exhausted:!card.haste&&!card.zeal,ritualReward:!!card.ritualReward});
       enterTrigger(next,command.actor,card,'hand',command.targetId);
@@ -73,9 +73,9 @@ registerCommand('playArtifact',(next,command)=>{const p=next.players[command.act
         departPermanent(next,command.actor,replaced.objectId,['auxiliary']);
       }
       p.energy = payForCard(p, card.cost);
-      takeCard(p,'hand',command.handIndex);
+      takeCard(p,'hand',command.handIndex,next,command.actor);
       if (sameItem) {
-        if (command.keepExisting) { sendToDiscard(p, card); return; }
+        if (command.keepExisting) { discardDetached(next,command.actor,card); return; }
         departPermanent(next,command.actor,sameItem.objectId,['auxiliary']);
       }
       placePermanent(next,command.actor,'auxiliary',card,{exhausted:false,shield:0});
