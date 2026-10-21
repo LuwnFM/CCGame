@@ -196,7 +196,7 @@ test('unique auxiliary item boosts combat and can displace a token without death
   for (let i = 2; i <= 4; i++) g.players[0].auxiliary.push(victim(i));
   assert.throws(() => step(g, { type: 'playArtifact', actor: 0, handIndex: 0 }, 'blocked'), /Вытеснения/);
   g = step(g, { type: 'playArtifact', actor: 0, handIndex: 0, replaceId: 1 }, 'artifact');
-  assert.equal(g.players[0].hp, 30);
+  assert.equal(g.players[0].hp, 40);
   assert.equal(g.players[0].erased.length, 1);
   assert.equal(g.players[0].auxiliary.length, 4);
   g.players[0].main.push({ ...victim(5), card: { ...victim(5).card, attack: 2 }, enteredTurn: 0 });
