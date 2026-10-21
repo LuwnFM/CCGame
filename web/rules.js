@@ -1,49 +1,177 @@
 import { locale } from './i18n.js';
-const content={
- ru:[
- ['Как победить','Играют два Владетеля. У каждого 30 здоровья. Если здоровье соперника становится нулём, он проигрывает. Одновременное поражение обоих приводит к ничьей.'],
- ['Законная колода','Ровно 70 карт, не менее 26 Владений и хотя бы одно базовое цветное Владение. Допустимы любые сочетания цветов. В колоде максимум три разных Легенды; каждая Легенда и Уникальная карта — одна копия с таким названием. Обычные карты — до трёх копий. В стартовых колодах Существа представлены максимум двумя копиями; это состав набора, а не ограничение редактора. Базовые Владения не имеют ограничения копий.'],
- ['Начальная рука','Каждый игрок берёт семь карт. Если среди них нет Владения, игра гарантирует появление базового цветного Владения. Один раз в начале матча можно выбрать карты на замену — это выборочный муллиган. Первому игроку в первый ход дополнительную карту не дают.'],
- ['Ход','В начале каждого последующего хода берётся карта из колоды, а ранее истощённые карты готовятся. Можно разыграть одно Владение за ход, использовать доступную Энергию, разыгрывать подходящие карты, активировать Легенду, атаковать Существами и завершить ход. В конце хода Энергия исчезает. Если в конце хода в руке больше восьми карт, надо сбросить до восьми.'],
- ['Владения и Энергия','При оплате карты готовые Владения истощаются автоматически в необходимом количестве. Владение — источник Энергии. Истощение подготовленного Владения создаёт одну Энергию указанного цвета. Цветную часть стоимости обязательно платят соответствующим цветом; общую часть разрешено платить любой Энергией. Нейтральная Энергия не заменяет обязательные цветные требования. Владений на поле может быть сколько угодно.'],
- ['Зоны и типы карт','Основное поле вмещает восемь обычных Существ, вспомогательное — четыре токена и предмета. Отдельно располагаются Владения и Легенды. Существа атакуют и перехватывают, Техники имеют специальные эффекты, Легенды используют Лояльность, Артофакты усиливают поле. Карты в руке скрыты от соперника.'],
- ['Легенды','Легенда выходит в отдельную зону и имеет Лояльность вместо обычного здоровья. По общему правилу одна её способность может быть активирована за собственный ход при соблюдении стоимости Лояльности. При нуле Лояльности она покидает поле. Одноимённые Легенды нельзя сохранять на поле одновременно без выбора, какая останется. Колдрейк Шоу — лич: потратив Лояльность, он возвращает выбранное Существо из вашего сброса в руку, а не прямо на поле. Цера Ван Троуп — девушка, умертвие-некромант: она вызывает на вспомогательное поле умертвие 2/2 с Жертвой. Если есть готовый Ритуал, который теперь можно выполнить, вы получаете право выполнить его сразу. Пока Цера действует на поле, завершённый вами Ритуал также позволяет добрать одну карту.'],
- ['Способности Легенд','У каждой стартовой Легенды два выбора: слабый эффект даёт +1 Лояльность, сильный расходует 2. Можно выбрать только одну способность за собственный ход, в том числе сразу после выхода.'],
- ['Владетель','Один раз за собственный ход можно заплатить 2 HP и взять 2 карты, если в руке не более 3 карт, в колоде есть минимум 2 карты, а после оплаты остаётся хотя бы 1 HP.'],
- ['Вступление, Второй шанс и Последнее слово','Вступление срабатывает при розыгрыше Существа из руки. Второй шанс — при возвращении из сброса непосредственно на поле, но не в руку. Последнее слово срабатывает при гибели; Стазис и Немота подавляют его. Призванные скелеты 1/1 с Жертвой занимают вспомогательные места, максимум четыре вместе с предметами и другими токенами.'],
- ['Бой и перехват','Атакующее Существо выбирает Владетеля, доступную вражескую цель или Легенду. Обороняющийся может назначить подходящего перехватчика. При обычном обмене Существа наносят друг другу урон. Получив смертельный урон, Существо погибает. Подготовленное Существо с Ошеломлением может защищаться, но не может самостоятельно атаковать.'],
- ['Боевые качества','Страж предназначен для защиты союзников. Полёт затрудняет перехват наземными Существами. Первый удар срабатывает раньше обычного ответного удара. Пробивание переносит избыток урона к исходной цели при перехвате. Похищение жизни восстанавливает здоровье Владетеля. Натиск и Рвение позволяют атаковать в ход появления в зависимости от текста карты. Скрытность защищает от некоторых направленных атак.'],
- ['Статусы','Отрава наносит периодический урон в указанные ходы. Щит поглощает урон до собственных показателей. Ошеломление запрещает часть самостоятельных действий; Стазис временно блокирует способности и приостанавливает действие Отравы. Когда Стазис прекращается, Отрава может продолжить действовать.'],
- ['Жертва и Ритуал','Существа со статусом Жертвы подходят для соответствующих Ритуалов. Когда выполнено требуемое число подходящих Существ под вашим контролем, вы можете выбрать их в основной и вспомогательной зонах и провести Ритуал. Выбранные Жертвы гибнут; затем игра предлагает три разные награды из пяти возможных. Вы выбираете одну. Ритуальные награды и токены при попытке отправить их в сброс стираются.'],
- ['Уникальность и замены','Если появляется второй одноимённый Уникальный объект, нужно выбрать, какой сохранить. При переполненном вспомогательном поле вы можете вытеснить допустимый объект; Величественного вытеснять нельзя. При заполненном основном поле некоторые награды потребуют выбрать замену.'],
- ['Глоссарий и разработка','Основные действующие механики: Щит, Страж, Полёт, Первый удар, Пробивание, Похищение жизни, Натиск, Рвение, Скрытность, Отрава, Ошеломление, Стазис, Жертва, Ритуал и Уникальность. Дополнительные эффекты, включая Предвидение, Оберег, Очищение, Немоту, Сковывание, Детонацию и Рикошет, до реализации не представлены как работающие карты. Эти правила описывают доступный игроку набор альфы, без внутренних алгоритмов разрешения одновременных событий.']
- ],
- en:[
- ['Victory','Two Rulers duel. Each begins with 30 Health. Reduce the enemy Ruler to zero to win. If both Rulers fall in the same resolution, the match is a draw.'],
- ['Legal decks','A deck has exactly 70 cards, at least 26 Domains and at least one basic colored Domain. Any color combination is legal. Up to three different Legends are allowed; each Unique card or Legend may appear once by name. Ordinary cards allow three copies. Starter lists use at most two copies of each Creature; custom decks retain the three-copy limit. Basic Domains have no copy limit.'],
- ['Opening hand','Both players draw seven cards. A hand without a Domain receives a guaranteed basic colored Domain. Each player may select cards for one selective mulligan. The first player does not draw an additional card on the first turn.'],
- ['Your turn','Draw a card at the beginning of later turns and ready your exhausted cards. Play one Domain per turn, gather Energy, summon Creatures, play Techniques, use Legends, attack and end your turn. Unspent Energy is cleared at the end of your turn. Discard down to eight cards when required.'],
- ['Domains and Energy','Card payment automatically exhausts the necessary ready Domains. A ready Domain can be exhausted for one Energy of its printed color. Colored costs require that color; generic costs may be paid with any remaining Energy. Neutral Energy cannot cover mandatory colored costs. There is no maximum number of Domains on the field.'],
- ['Zones and card types','The main field supports eight ordinary Creatures; the auxiliary field holds four tokens or items. Domains and Legends have their own zones. Creatures attack and intercept; Techniques perform special effects; Legends spend Loyalty; Artifice and items may strengthen units. Opponents cannot see your hand.'],
- ['Legends','Legends occupy their own zone and use Loyalty rather than Health. Normally a Legend may activate one ability on your turn when you can afford the Loyalty change. A Legend at zero Loyalty leaves the field. You must choose which same-name Legend remains if a duplicate is played. Coldrake Shaw is a lich: spending Loyalty returns a chosen Creature from your discard pile to your hand, not directly to the field. Cera Van Troupe is a female revenant necromancer: she summons a 2/2 Sacrifice revenant into an auxiliary slot. If this enables an active Ritual, it can be performed immediately. While Cera remains active, completing a Ritual also draws one card.'],
- ['Legend abilities','Each starter Legend has two choices: a modest effect adds 1 Loyalty, and a strong effect spends 2. Choose only one ability per own turn, including the turn the Legend enters.'],
- ['Ruler ability','Once per own turn, pay 2 HP to draw 2 cards. Requires at most 3 cards in hand, at least 2 in the deck, and at least 1 HP remaining after payment.'],
- ['Entry, Second Chance and Last Word','Entry triggers when a Creature is played from hand. Second Chance triggers only when returning directly from discard to the field. Last Word triggers on death and is suppressed by Stasis or Silence. Summoned 1/1 Sacrifice Skeletons share the four auxiliary slots with other tokens and items.'],
- ['Combat and intercept','An attacking Creature chooses the enemy Ruler, an eligible enemy Creature, or a Legend. The defender may declare an eligible interceptor. Ordinary combat deals damage to both Creatures. Lethally damaged Creatures die. A ready Stunned Creature may still intercept even though it cannot initiate an attack.'],
- ['Combat abilities','Guard protects allies. Flying is harder for ground Creatures to intercept. First Strike resolves its hit first. Piercing transfers excess damage through interception to the original target. Lifesteal restores Ruler Health. Haste and Zeal may permit attacking on entry, as stated on cards. Stealth prevents some direct targeting.'],
- ['Statuses','Poison deals damage over time. Shield absorbs incoming damage. Stun prevents some actions; Stasis temporarily suppresses abilities and pauses Poison. Poison may resume when Stasis ends.'],
- ['Sacrifice and Ritual','Creatures with Sacrifice qualify for matching Rituals. When you control enough eligible units, select the required number from the main and auxiliary zones to perform the Ritual. Those units die. Three different rewards are offered from a pool of five, and you choose one. Ritual rewards and created tokens are erased whenever they would enter the discard pile.'],
- ['Uniqueness and replacement','If a second same-name Unique permanent would remain on the field, choose which one survives. A full auxiliary zone allows permitted displacement, except of Majestic objects. A full main field may require a replacement when a reward appears.'],
- ['Glossary and development','Implemented alpha mechanics include Shield, Guard, Flying, First Strike, Piercing, Lifesteal, Haste, Zeal, Stealth, Poison, Stun, Stasis, Sacrifice, Ritual and Unique. Future features such as Foresee, Ward, Cleanse, Silence, Bind, Detonate and Ricochet are not presented as functioning cards. This page is the player-facing alpha rulebook, without disclosing internal event-order edge cases.']
- ]
+// Player-facing rules are based on the current gameplay kernel and the starter catalog.
+const content = {
+  "ru": [
+    [
+      "Цель игры и здоровье",
+      "Два Владетеля начинают матч с 40 HP. Побеждает игрок, оставшийся в игре после снижения HP противника до нуля или меньше; одновременная гибель обоих — ничья. Начальные 40 HP относятся к новым матчам."
+    ],
+    [
+      "Колода и начало матча",
+      "В колоде ровно 70 карт: не менее 26 Владений и хотя бы одно базовое цветное Владение. Цвета можно сочетать. Не более трёх разных Легенд. Уникальная карта и каждая Легенда — максимум одна копия по названию, прочие небазовые — до трёх, базовые Владения без ограничения. Игроки берут по семь карт; если в руке нет Владения, гарантируется базовое цветное. Один раз можно выборочно заменить карты (муллиган). Первый игрок в свой первый ход карту не добирает."
+    ],
+    [
+      "Ход, ресурсы и добор",
+      "В начале своего хода восстанавливаются истощённые Владения и Существа, обнуляется число атак за ход, добирается карта, обрабатываются статусы и доступные Ритуалы. За ход можно сыграть одно Владение, разыгрывать карты, использовать Легенд, Владетеля и атаки, затем завершить ход. Владение истощается и создаёт одну Энергию своего цвета; обязательную цветную часть стоимости нельзя оплатить другим цветом, общую можно оплатить любой Энергией. Энергия в конце хода исчезает. При руке больше восьми карт нужно сбросить лишние."
+    ],
+    [
+      "Зоны и типы карт",
+      "Основная зона: максимум восемь обычных Существ. Вспомогательная зона: максимум четыре токена и Артефакта вместе. Владения, Легенды, рука, колода, Сброс и стёртые карты — отдельные зоны. Существо сражается, Техника разрешает свой эффект, Артефакт даёт свойства, Легенда использует Лояльность. Рука противника скрыта; токены и ритуальные награды стираются вместо попадания в Сброс."
+    ],
+    [
+      "Как объявлять атаку",
+      "В основную фазу выберите готовое Существо и цель: Владетель противника, доступное Существо или Легенда. Атаки идут по одной, не общей пачкой. Обычное Существо не атакует в ход появления, атакует не более одного раза за собственный ход и истощается при атаке. Истощённое Существо не может перехватывать до восстановления готовности в начале следующего своего хода."
+    ],
+    [
+      "Перехват и расчёт боя",
+      "После каждой атаки защищающийся может выбрать одного готового подходящего перехватчика или принять удар. Только Страж может перехватывать атаку, изначально направленную на дружественное Существо; атакующего с Полётом может перехватить только Существо с Полётом. Один перехватчик используется не больше одного раза за ход противника. Без перехвата урон получает выбранная цель. При столкновении Существа обычно одновременно наносят урон друг другу. Полученный урон сохраняется; при уроне не меньше здоровья Существо погибает. Первый удар изменяет порядок нанесения урона."
+    ],
+    [
+      "Мгновенная атака и Рвение",
+      "**Мгновенная атака** (haste): Существо может атаковать уже в ход выхода, включая Владетеля и Легенду. **Рвение** (zeal): Существо может атаковать в ход выхода только вражеское Существо; не разрешает немедленную атаку по Владетелю. Это разные свойства и не заменяют друг друга."
+    ],
+    [
+      "Неутомимость и Ещё удар!",
+      "**Неутомимость** (untiring): при объявлении атаки Существо остаётся готовым и может потом перехватывать, если не истощено другим эффектом; сама по себе не даёт вторую атаку. **Ещё удар! (N)** (extraAttacks): допускает до N дополнительных самостоятельных атак за свой ход. Для каждой отдельной атаки выбирается цель и может назначаться новый перехватчик. Лимит — 1+N атак за ход даже при Неутомимости. Это НЕ «Двойной удар» MTG с двумя этапами урона в одной схватке."
+    ],
+    [
+      "Страж, Полёт и Скрытность",
+      "**Страж** (guard) может защищать другого союзного Существа от прямой атаки. **Полёт** (flying) не даёт наземным Существам перехватывать атакующего с Полётом; летающий защитник может перехватывать наземных. **Скрытность** (stealth) запрещает выбирать Существо прямой целью атаки, но не делает его бессмертным и не отменяет массовый урон."
+    ],
+    [
+      "Первый удар, Пробивание и Похищение жизни",
+      "**Первый удар** (firstStrike): если только один участник столкновения имеет свойство, он наносит удар первым; уничтоженный противник не отвечает. Если свойство есть у обоих либо ни у кого, обычный урон одновременен. **Пробивание** (piercing): при перехвате избыток урона после поглощения Щитом и оставшегося здоровья перехватчика проходит к первоначальной цели; не создаёт второй атаки. **Похищение жизни** (lifesteal): восстанавливает HP своего Владетеля по фактически нанесённому урону."
+    ],
+    [
+      "Щит, Аура атаки, запрет атаки",
+      "**Щит (N)** (shield) сначала поглощает до N единиц полученного урона и расходуется. **Аура атаки (N)** (auraAttack) усиливает атаку союзных Существ, пока действует её источник. **Не может атаковать** (cannotAttack) запрещает самому объявлять атаку, но не исключает допустимый перехват готовым Существом. **Величественный** (majestic) нельзя вытеснить при замене объекта на заполненном поле."
+    ],
+    [
+      "Отрава, Ошеломление, Стазис и Немота",
+      "**Отрава при попадании** (poisonHit) накладывает на цель периодический урон указанной силы и длительности; новое наложение учитывает более сильную или продолжительную Отраву по правилам движка. **Ошеломление** (stun) запрещает Существу атаковать, но готовое Существо может перехватывать. **Стазис** (stasis) временно блокирует действия и свойства Существа и приостанавливает ход Отравы, которая продолжится после прекращения Стазиса. **Немота** (silence) подавляет свойства и способности, в том числе соответствующие предсмертные эффекты."
+    ],
+    [
+      "Вступление, Второй шанс, Последнее слово",
+      "**Вступление** (onEntry) срабатывает при обычном розыгрыше Существа из руки. **Второй шанс** (secondChance) — при возвращении из Сброса сразу на поле, но не при возвращении в руку. **Последнее слово** (onDeath) срабатывает при гибели Существа, кроме случаев подавления или простого вытеснения без смерти. Возможные эффекты включают добор карт, призыв, урон, лечение и воздействие на Существа."
+    ],
+    [
+      "Техники и направленные эффекты",
+      "Техники могут наносить урон Владетелю, лечить, добирать карты, воскрешать Существ из Сброса, очищать отрицательные статусы, накладывать Немоту или Сковывание и выполнять другие явно напечатанные действия. Если эффект требует цель, её выбирают при розыгрыше; недопустимую цель выбрать нельзя. **Очищение** снимает негативные статусы; **Сковывание** ограничивает действие цели. Не вся потенциальная механика из реестра уже назначена карте: считайте рабочими только способности, реально указанные на карте."
+    ],
+    [
+      "Легенды и Лояльность",
+      "Легенды находятся в отдельной зоне и вместо здоровья используют Лояльность. Каждая стартовая Легенда имеет два выбора: первый даёт +1 Лояльность и небольшой эффект, второй тратит 2 Лояльности ради более сильного эффекта. Можно использовать одну способность каждой Легенды за свой ход, включая ход выхода. При нуле Лояльности Легенда уходит; одноимённые Уникальные Легенды требуют выбрать, какая останется. Легенда может быть целью атаки и теряет Лояльность от урона по правилам боя."
+    ],
+    [
+      "Способность Владетеля",
+      "Раз в собственный основной ход Владетель может потратить 2 HP, чтобы взять две карты. Условия: в руке не более трёх карт, в колоде минимум две карты, после оплаты останется минимум 1 HP. Способность доступна всем цветам."
+    ],
+    [
+      "Жертва и Ритуал",
+      "**Жертва** (sacrifice) — отметка Существа, которое можно использовать в Ритуале. При готовом Ритуале и достаточном числе подходящих Жертв игрок выбирает требуемое количество из основной и вспомогательной зон. Выбранные Существа погибают с последствиями смерти. Затем показываются три разные награды из пула пяти — игрок получает одну выбранную. Обычная награда размещается в основной зоне, награда-токен — во вспомогательной. Награды и токены стираются вместо Сброса; другие эффекты могут отдельно давать бонус за Ритуал."
+    ],
+    [
+      "Уникальность и заполнение поля",
+      "Если вводится второй одноимённый Уникальный объект, игрок явно выбирает, какой сохранить. Заполненное основное поле при ритуальной награде может потребовать заменить допустимое Существо, причём такая замена считается смертью. Во вспомогательной зоне вытеснение допустимого объекта не считается смертью. Величественных нельзя вытеснять. Если награду нельзя разместить из-за отсутствия допустимой замены, применяется резервная выдача награды в руку по правилам Ритуала."
+    ],
+    [
+      "Особенности цветовых колод",
+      "**Красный — Стальное королевство / Горная стража:** быстрые атаки, Мгновенная атака, Рвение, Пробивание, Первый удар, «Ещё удар!», прямой урон и аура атаки. Рвение и Пробивание распределены между разными существами. **Синий — Талдрейк / Воздушная флотилия:** Полёт, контроль темпа, Ошеломление и отдельные Существа с «Ещё удар!». **Зелёный — Сувар / Дом Кайров:** живучие Существа, Страж, Щиты, лечение и усиление устойчивости. **Золотой — Ивелтин / Королевские рыцари:** Страж, Щиты, защита и поддержка; некоторые защитники обладают Неутомимостью. **Фиолетовый — Ван Троупы / Искажение:** Жертвы, Ритуалы, призыв, возвращение и награды. **Нейтральный — Орден Хранителей:** универсальные Существа и доступные без жёсткой привязки к одному цвету инструменты. Это стили стартовых колод, а не запреты смешивать цвета."
+    ],
+    [
+      "Пока не введённые механики",
+      "**Магомутация** обсуждается как будущая способность выбора улучшений Существа, но в движке пока не реализована. **Двойной удар** в смысле MTG отсутствует: «Ещё удар!» — отдельные атаки. Неработающие или ещё не назначенные картам концепции не следует считать доступными. Для конкретной карты числовые параметры всегда определяются её актуальным текстом."
+    ]
+  ],
+  "en": [
+    [
+      "Victory and starting Health",
+      "Two Rulers start at 40 HP each. A Ruler at zero HP or lower loses; simultaneous defeats are draws. Existing saved games retain their recorded state."
+    ],
+    [
+      "Deck construction and opening",
+      "Exactly 70 cards with at least 26 Domains and one basic colored Domain. You may mix colors. Up to three distinct Legends. Unique cards and Legends: one copy per name; other nonbasic cards: up to three; basic Domains are unlimited. Both players draw seven cards, with a guaranteed basic colored Domain if the hand has none. One selective mulligan is allowed; the first player skips their first normal draw."
+    ],
+    [
+      "Turn and resources",
+      "Ready your exhausted Domains and Creatures, reset the turn's attack counters, draw a card, process statuses and ready Rituals. Play up to one Domain per turn, use Energy to play cards and activate abilities and attacks, then end the turn. Each exhausted Domain produces one Energy of its color; colored requirements must match, generic costs accept any Energy. Unspent Energy clears at turn end; discard down to eight cards if necessary."
+    ],
+    [
+      "Zones and card types",
+      "Main zone: eight normal Creatures maximum. Auxiliary zone: four tokens or Artifacts total. Domains and Legends use separate zones. The hand, deck, discard and erased cards are distinct. Creatures fight; Techniques resolve their effect; Artifacts grant abilities; Legends use Loyalty. Opponent hands are hidden. Tokens and Ritual rewards are erased instead of entering discard."
+    ],
+    [
+      "Declaring attacks",
+      "During your main phase select a ready Creature and an eligible target: enemy Ruler, Creature or Legend. Attacks are declared one at a time. Normally a Creature cannot attack on its entry turn, attacks once per own turn and exhausts when attacking. Exhausted Creatures cannot intercept until readied on the next own turn."
+    ],
+    [
+      "Interception and combat",
+      "After each attack the defender may designate one ready, legal interceptor or accept the hit. Only Guard can intercept an attack directed at an allied Creature. A Flying attacker can be intercepted only by Flying. Each Creature intercepts at most once per opposing turn. Without interception damage hits the original target. Creature combat usually deals simultaneous damage; damage persists and lethal damage destroys a Creature. First Strike changes damage order."
+    ],
+    [
+      "Haste and Zeal",
+      "Haste enables a Creature to attack any legal target on the turn it enters. Zeal enables attacking an enemy Creature only on entry, not the opposing Ruler. These are distinct traits."
+    ],
+    [
+      "Untiring and Extra Attack",
+      "Untiring lets a Creature attack without becoming exhausted, so it can later intercept if otherwise eligible. It does not grant another attack. Extra Attack (N) permits N additional separately declared attacks per own turn with fresh target and interception decisions. Even with Untiring the limit is 1+N. This differs from MTG's Double Strike, which makes two damage steps within one combat."
+    ],
+    [
+      "Guard, Flying and Stealth",
+      "Guard may intercept attacks aimed at allied Creatures. Flying attackers can only be intercepted by Flying units; Flying defenders may block ground attacks. Stealth prevents being directly selected as an attack target but does not prevent damage from other effects."
+    ],
+    [
+      "First Strike, Piercing and Lifesteal",
+      "First Strike strikes before retaliation if only one participant has it; otherwise damage is simultaneous. Piercing carries intercepted excess damage past Shield and remaining Health to the originally selected target; it does not grant a second attack. Lifesteal heals the controller's Ruler according to damage actually dealt."
+    ],
+    [
+      "Shield, Attack Aura and attack limits",
+      "Shield (N) absorbs N incoming damage first and is depleted. Attack Aura (N) adds attack to allied Creatures while its source is active. Cannot Attack stops attack declarations but not otherwise legal interceptions. Majestic permanents cannot be displaced from full zones."
+    ],
+    [
+      "Poison, Stun, Stasis and Silence",
+      "Poison on Hit applies damage over time with printed strength and duration; new applications use stronger or longer compatible values. Stun prevents attacking but may leave a ready unit available to intercept. Stasis stops actions and suppresses traits while pausing Poison; Poison resumes afterwards. Silence suppresses card traits and relevant triggered abilities."
+    ],
+    [
+      "Entry, Second Chance and Last Word",
+      "Entry triggers when played from hand. Second Chance triggers when returning from discard directly onto the field, not merely to hand. Last Word triggers on death unless suppressed; displacement without death does not trigger it. Printed effects can summon, draw, deal damage, heal and interact with Creatures."
+    ],
+    [
+      "Techniques and targeted effects",
+      "Techniques can deal damage, heal, draw cards, revive Creatures, Cleanse harmful statuses, Silence, Bind or perform other printed actions. A targeted Technique requires an eligible target. Cleanse removes negative statuses; Bind restricts a target. Not every registered possible effect is currently present on playable cards."
+    ],
+    [
+      "Legends and Loyalty",
+      "Legends have their own zone and Loyalty instead of Health. Each starter Legend has two choices: a modest +1 Loyalty ability and a stronger -2 Loyalty ability. Each Legend can activate one ability per own turn, including its entry turn. At zero Loyalty it leaves play; duplicate-name Unique Legends require a survivor choice. Attacks can target Legends and reduce Loyalty."
+    ],
+    [
+      "Ruler draw ability",
+      "Once per own main phase, pay 2 HP to draw two cards. Your hand must contain at most three cards, deck at least two cards, and HP must remain at least one after payment. All colors have this ability."
+    ],
+    [
+      "Sacrifice and Ritual",
+      "Sacrifice marks eligible ritual participants. With a ready Ritual and enough units, choose the required number from main and auxiliary zones. They die with ordinary death consequences. Three distinct rewards out of a pool of five are offered; select one. Normal rewards go to main, reward tokens to auxiliary. Ritual rewards and tokens are erased instead of discarded. Other abilities may grant extra ritual bonuses."
+    ],
+    [
+      "Unique cards and full fields",
+      "Duplicate-name Unique permanents require an explicit choice of survivor. Placing a Ritual reward into a full main zone may require replacing an eligible Creature, which counts as death. Auxiliary displacement does not count as death. Majestic cannot be displaced. If no replacement is legal, the Ritual has a fallback reward-to-hand route."
+    ],
+    [
+      "Color archetypes",
+      "Red (Steel Kingdom / Mountain Guard): aggression, Haste, Zeal, Piercing, First Strike, Extra Attack, direct damage and Attack Aura; Zeal and Piercing sit on different Creatures. Blue (Taldreik / Air Flotilla): Flying, Stun, tempo control and Extra Attack. Green (Suvar / Kayr house): resilient Creatures, Guard, Shield and healing. Gold (Iveltin / Royal Knights): Guard, Shield, support and some Untiring defenders. Violet (Van Troupe / Distortion): Sacrifice, Rituals, summon, recovery and rewards. Neutral (Keepers' Order): flexible general-purpose tools. These describe starter playstyles; deck building can mix colors."
+    ],
+    [
+      "Not yet implemented",
+      "Magomutation, a proposed Creature improvement choice, is not yet implemented. MTG-style Double Strike is not currently a separate mechanic. Unimplemented concepts are not playable effects; each card's current text specifies its numeric parameters."
+    ]
+  ]
 };
 export function renderPublicRules(){
  const root=document.getElementById('rulesContent');
  root.replaceChildren(...content[locale()].map(([name,body],i)=>{
   const part=document.createElement('section');part.className='rule-section';
   const title=document.createElement('h2');title.textContent=(i+1)+'. '+name;
-  const text=document.createElement('p');text.textContent=body;
+  const text=document.createElement('p');text.textContent=body.replace(/\*\*/g,'');
   part.append(title,text);return part;
  }));
 }
-
