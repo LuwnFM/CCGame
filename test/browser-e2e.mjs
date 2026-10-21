@@ -53,6 +53,17 @@ try {
 
   checkpoint("desktop registration");
   await register(a, 'AlphaBrowser');
+  await a.waitForFunction(()=>document.querySelector('#connection')?.dataset.state==='online',null,{timeout:12000});
+  // Availability indicator must describe the API, not authentication state.
+  await a.route('**/api/health',route=>route.fulfill({
+    status:503,contentType:'application/json',
+    body:JSON.stringify({error:'test: backend unreachable'})
+  }));
+  await a.reload({waitUntil:'domcontentloaded'});
+  await a.waitForFunction(()=>document.querySelector('#connection')?.dataset.state==='offline',null,{timeout:12000});
+  await a.unroute('**/api/health');
+  await a.reload({waitUntil:'domcontentloaded'});
+  await a.waitForFunction(()=>document.querySelector('#connection')?.dataset.state==='online',null,{timeout:12000});
   await a.locator('#leaderboard').waitFor({state:'visible'});
   assert.equal(await a.locator('#leaderboard li').count(),1);
   await a.reload({waitUntil:'domcontentloaded'});
@@ -209,7 +220,7 @@ try {
     crossApp=createApp({databasePath:join(temp,'cross.sqlite'),accessPassword:'test-access-password-123',clientOrigin:externalOrigin});
     await new Promise(resolve=>crossApp.server.listen(0,'127.0.0.1',resolve));
     const backend='http://127.0.0.1:'+crossApp.server.address().port;
-    const crossPage=await browser.newPage();pages.push(crossPage);
+    const crossPage=await browser.newPage();pages.push(crossPage);crossPage.setDefaultTimeout(12000);
     crossPage.on('pageerror',error=>errors.push(error.message));
     await crossPage.goto(externalOrigin);
     await crossPage.locator('#apiUrl').fill(backend);
@@ -221,7 +232,15 @@ try {
     await crossPage.waitForFunction(()=>document.querySelector('#deck')?.options.length===6);
     await crossPage.screenshot({path:join(artifacts,'alpha-separate-client-origin.png'),fullPage:true});
   } finally {
-    if(crossApp){await new Promise(resolve=>crossApp.server.close(resolve));crossApp.db.close()}
+    // Stop browsers polling these HTTP fixtures *before* awaiting server.close().
+    // Otherwise idle keep-alive sockets can prevent the E2E from exiting.
+    for(const crossPage of pages.slice(2))if(!crossPage.isClosed())await crossPage.close({runBeforeUnload:false}).catch(()=>{});
+    if(crossApp){
+      crossApp.server.closeAllConnections();
+      await new Promise(resolve=>crossApp.server.close(resolve));
+      crossApp.db.close();
+    }
+    staticSite.closeAllConnections();
     await new Promise(resolve=>staticSite.close(resolve));
   }
   checkpoint("cross-origin registration passed");
