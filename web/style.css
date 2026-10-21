@@ -100,3 +100,15 @@ button.domain-chip.spent{opacity:.4;text-decoration:line-through}
 .spectator-board{display:flex;flex-wrap:wrap;gap:7px;border-bottom:1px solid var(--line);padding-bottom:14px}
 .shared-chat-panel details{margin:0}.shared-chat-panel .chat{height:150px}
 @media(max-width:390px){.board{grid-template-columns:repeat(2,minmax(0,1fr))}.board .card{min-height:120px}.board .card b{font-size:.82rem;overflow-wrap:normal;word-break:normal}.card .card-summary{font-size:.76rem}}
+
+/* Sibling info controls avoid button-in-button and work on touch screens. */
+.card-wrapper{position:relative;display:inline-flex;flex:0 0 118px;min-width:0;vertical-align:top}
+.card-wrapper>.card{flex:1 1 100%;width:100%;min-width:0;padding-top:36px}
+.card-wrapper>.inspect-card{position:absolute;top:4px;right:4px;z-index:5;display:grid;place-items:center;min-width:36px;min-height:36px;width:36px;height:36px;padding:0;border-radius:50%;border:2px solid #e8c489;background:#10182d;color:white;font-size:1.15rem;opacity:1;touch-action:manipulation}
+.board .card-wrapper{width:100%;flex:1 1 auto}
+.hand .card-wrapper{flex:0 0 146px}
+.board{align-items:stretch}
+.ruler-ability-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;border-color:#c7a367;background:#242d3f}
+.ruler-ability-bar strong{color:#f7d79b}.ruler-ability-bar button{font-weight:800;border:2px solid #ffdb95}
+.ruler-ability-bar .hint{flex:1 1 240px;margin:0}
+@media(max-width:390px){.board .card-wrapper{min-width:0}.board .card-wrapper>.card{padding-top:42px}.hand .card-wrapper{flex-basis:146px}}

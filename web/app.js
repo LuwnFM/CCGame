@@ -180,12 +180,12 @@ function cardButton(card, label, onClick, disabled = false, active = false, perm
   element.classList.toggle('unavailable',disabled);
   element.onclick=()=>disabled?showCardDetails(card,permanent):onClick();
   element.append(textElement('span',initials(cardName(card)),'glyph'),textElement('b',cardName(card)));
-  const inspect=textElement('span','ⓘ','inspect-card');
-  inspect.setAttribute('role','button'); inspect.tabIndex=0;inspect.setAttribute('aria-label','Подробнее о карте '+cardName(card));
-  const reveal=e=>{e.stopPropagation();showCardDetails(card,permanent)};
-  inspect.onclick=reveal;
-  inspect.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();reveal(e)}};
-  element.append(inspect);
+  // Card is a button itself. A nested interactive element is invalid HTML and
+  // mobile browsers may swallow taps; use a sibling info button instead.
+  const inspect=button('ⓘ',()=>showCardDetails(card,permanent),false,'inspect-card');
+  inspect.setAttribute('aria-label','Подробнее о карте '+cardName(card));
+  const wrapper=document.createElement('span');wrapper.className='card-wrapper';
+  wrapper.append(element,inspect);
   element.append(textElement('small',cardSummary(card),'card-summary'),textElement('small',label));
   const flags = [['unique','Уникальная'],['guard','Страж'],['flying','Полёт'],['firstStrike','Первый удар'],
     ['piercing','Пробивание'],['lifesteal','Похищение жизни'],['stealth','Скрытность'],['majestic','Величественный'],
@@ -199,7 +199,7 @@ function cardButton(card, label, onClick, disabled = false, active = false, perm
   element.setAttribute('aria-label',cardName(card)+' · '+label+(flags.length?' · '+flags.join(', '):''));
   if(flags.length)element.append(textElement('small',flags.slice(0,2).join(' · ')+(flags.length>2?' · +'+(flags.length-2):''),'card-flags'));
   if(card.abilities?.length)element.append(textElement('small','⚠ Способность пока не работает','inactive-ability'));
-  return element;
+  return wrapper;
 }
 function setAccount(value) {
   account = value;
@@ -357,7 +357,10 @@ function renderGame(ready) {
   }
   const seat=game.seat, me=game.players[seat], enemy=game.players[1-seat];
   const mine=game.active===seat&&game.phase==='main', defense=game.phase==='intercept'&&game.pendingAttack?.defender===seat;
-  $('rulerDraw').disabled=!mine||me.hp<=2||me.handCount>3||me.deckCount<2||me.lastRulerDrawTurn===game.turn;
+  const canRulerDraw=mine&&me.hp>2&&me.handCount<=3&&me.deckCount>=2&&me.lastRulerDrawTurn!==game.turn;
+  $('rulerDraw').disabled=!canRulerDraw;
+  $('rulerAbilityBar').classList.toggle('hidden',!ready||!game||game.phase==='finished');
+  $('rulerDrawHint').textContent=!mine?'Доступно в свой основной ход':me.lastRulerDrawTurn===game.turn?'Уже использована в этом ходу':me.handCount>3?'Для добора оставь максимум 3 карты в руке':me.deckCount<2?'В колоде должно быть минимум 2 карты':me.hp<=2?'Нужно более 2 HP':'Можно взять 2 карты за 2 HP';
   const attack=defense?game.pendingAttack:null;
   const incoming=attack?[...enemy.main,...enemy.auxiliary].find(p=>p.objectId===attack.attackerId):null;
   const attackKey=attack?game.turn+':'+attack.attackerId+':'+JSON.stringify(attack.target):null;
