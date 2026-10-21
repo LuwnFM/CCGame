@@ -9,7 +9,7 @@ import {emptyEnergy,payForCard} from '../energy.ts';
 import {activateLegend} from '../legends.ts';
 import {enterTrigger,resolveTechnique} from '../techniques.ts';
 import {removePermanents,collectLethal,resolveDeaths,finishIfLethal} from '../death-queue.ts';
-import {drawCards,leaveCard,moveCard,takeCard,placePermanent,departPermanent,addCard} from '../zones.ts';
+import {drawCards,leaveCard,moveCard,takeCard,placePermanent,departPermanent,addCard,discardDetached} from '../zones.ts';
 import {emitGameEvent} from '../events.ts';
 import {advance} from '../turns.ts';
 registerCommand('mulligan',(next,command)=>{const p=next.players[command.actor];
@@ -37,7 +37,7 @@ registerCommand('rulerDraw',(next,command)=>{const p=next.players[command.actor]
       requireRule(p.hand.length<=3,'Для добора должно быть не больше 3 карт в руке');
       requireRule(p.deck.length>=2,'В колоде должно быть не менее двух карт');
       p.hp-=2;p.lastRulerDrawTurn=next.turn;
-      drawCards(p,2);
+      drawCards(p,2,next,command.actor);
       return;
 });
 
@@ -58,7 +58,7 @@ registerCommand('endTurn',(next,command)=>{const p=next.players[command.actor];
 registerCommand('discard',(next,command)=>{const p=next.players[command.actor];
       requireRule(next.phase === 'discard', 'Сейчас нет сброса');
       requireRule(Number.isInteger(command.handIndex) && command.handIndex >= 0 && command.handIndex < p.hand.length, 'Неверная карта');
-      sendToDiscard(p, takeCard(p,'hand',command.handIndex));
+      discardDetached(next,command.actor,takeCard(p,'hand',command.handIndex,next,command.actor));
       if (p.hand.length <= 8) advance(next);
       return;
 });
