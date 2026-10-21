@@ -1,11 +1,11 @@
-import {RuleError,type Card,type Permanent} from '../core.ts';
+import type {Card,Permanent} from '../core.ts';
 export type TraitResolver<K extends keyof Card>=(unit:Permanent)=>Card[K]|undefined;
 const traits=new Map<keyof Card,(unit:Permanent)=>unknown>();
 /** One trait module = one resolver. Printed card data is immutable and all
  * suppressed traits read as inactive while Nemota/Stasis applies.
  */
 export function registerTrait<K extends keyof Card>(name:K,resolve:TraitResolver<K>):()=>void{
- if(traits.has(name))throw new RuleError('Игровое свойство уже зарегистрировано: '+String(name));
+ if(traits.has(name))throw new Error('Игровое свойство уже зарегистрировано: '+String(name));
  traits.set(name,resolve);
  return ()=>{if(traits.get(name)===resolve)traits.delete(name)};
 }
