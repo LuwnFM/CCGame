@@ -99,6 +99,7 @@ test('all six starter Legend plus loyalty token abilities use the same executor,
   if(ability.kind!=='summon')throw Error('expected data-driven summon');
   const expected=ability.cards[0];
   const g=initialGame(player([],[legend]),player());g.turn=1;
+  Object.assign(g.players[0].energy,{red:20,blue:20,green:20,gold:20,violet:20,neutral:20});
   const cast=act(g,{type:'playLegend',handIndex:0});
   const objectId=cast.players[0].legends[0].objectId;
   const spawned=act(cast,{type:'activateLegend',objectId,abilityIndex:0});
