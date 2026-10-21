@@ -7,7 +7,7 @@ import {emptyEnergy,payForCard} from './energy.ts';
 import {activateLegend} from './legends.ts';
 import {enterTrigger,resolveTechnique} from './techniques.ts';
 import {removePermanents,collectLethal,resolveDeaths,finishIfLethal} from './death-queue.ts';
-import {drawCards,leaveCard,moveCard,takeCard,placePermanent} from './zones.ts';
+import {drawCards,leaveCard,moveCard,takeCard,placePermanent,departPermanent,addCard} from './zones.ts';
 import {emitGameEvent} from './events.ts';
 import {advance} from './turns.ts';
 type Handler<T extends Command['type']>=(game:Game,command:Extract<Command,{type:T}>)=>void;
@@ -66,9 +66,8 @@ registerCommand('playCreature',(next,command)=>{const p=next.players[command.act
       const duplicate = card.unique ? [...p.main,...p.auxiliary].find(u=>u.card.name===card.name) : undefined;
       if(duplicate){
         requireRule(typeof command.keepExisting==='boolean','Выберите, какую Уникальную оставить');
-        if(command.keepExisting){p.energy=payForCard(p,card.cost);p.hand.splice(command.handIndex,1);sendToDiscard(p,card,!!card.ritualReward);return;}
-        const removed=removePermanents(p,[duplicate.objectId]);
-        for(const unit of removed)sendToDiscard(p,unit.card,unit.ritualReward);
+        if(command.keepExisting){p.energy=payForCard(p,card.cost);takeCard(p,'hand',command.handIndex);sendToDiscard(p,card,!!card.ritualReward);return;}
+        departPermanent(next,command.actor,duplicate.objectId);
       }
       const zone = card.createdToken ? p.auxiliary : p.main;
       const limit = card.createdToken ? 4 : 8;
@@ -77,8 +76,7 @@ registerCommand('playCreature',(next,command)=>{const p=next.players[command.act
         const replaced = zone.find(unit => unit.objectId === command.replaceId && !unit.card.majestic);
         requireRule(replaced, 'Выберите допустимый объект для Вытеснения токеном');
         // Displacement is a departure, not a death. Never trigger onDeath.
-        zone.splice(zone.indexOf(replaced), 1);
-        sendToDiscard(p, replaced.card, replaced.ritualReward);
+        departPermanent(next,command.actor,replaced.objectId);
       }
       const energy = payForCard(p, card.cost);
       p.energy = energy; takeCard(p,'hand',command.handIndex);
@@ -94,7 +92,7 @@ registerCommand('playTechnique',(next,command)=>{const p=next.players[command.ac
       // Validate targets before committing costs; apply() works on a transactionally cloned game.
       if(card.ritual)requireRule(Number.isSafeInteger(card.ritual.duration) && card.ritual.duration > 0, 'Неверный срок Ритуала');
       p.energy = payForCard(p, card.cost);
-      p.hand.splice(command.handIndex, 1);
+      takeCard(p,'hand',command.handIndex);
       if(card.ritual)p.rituals.push({ id: `ritual-${next.nextObjectId++}`, color: card.ritual.color, threshold: card.ritual.threshold,
         rewardPool: card.ritual.rewardPool, requiresSource: false, remainingStarts: card.ritual.duration });
       else resolveTechnique(next,command.actor,card,command);
@@ -120,11 +118,10 @@ registerCommand('playLegend',(next,command)=>{const p=next.players[command.actor
       const sameLegend = p.legends.find(legend => legend.card.name === card.name);
       requireRule(!sameLegend || typeof command.keepExisting === 'boolean', 'Выберите, какую одноимённую Легенду оставить');
       p.energy = payForCard(p, card.cost);
-      p.hand.splice(command.handIndex, 1);
+      takeCard(p,'hand',command.handIndex);
       if (sameLegend) {
         if (command.keepExisting) { sendToDiscard(p, card); return; }
-        p.legends.splice(p.legends.indexOf(sameLegend), 1);
-        sendToDiscard(p, sameLegend.card, sameLegend.ritualReward);
+        departPermanent(next,command.actor,sameLegend.objectId,['legends']);
       }
       placePermanent(next,command.actor,'legends',card,{loyalty:card.loyalty,exhausted:false});
       return;
@@ -142,15 +139,13 @@ registerCommand('playArtifact',(next,command)=>{const p=next.players[command.act
       if (!sameItem && p.auxiliary.length >= 4) {
         const replaced = p.auxiliary.find(unit => unit.objectId === command.replaceId && !unit.card.majestic);
         requireRule(replaced, 'Выберите допустимый предмет или токен для Вытеснения');
-        p.auxiliary.splice(p.auxiliary.indexOf(replaced), 1);
-        sendToDiscard(p, replaced.card, replaced.ritualReward);
+        departPermanent(next,command.actor,replaced.objectId,['auxiliary']);
       }
       p.energy = payForCard(p, card.cost);
-      p.hand.splice(command.handIndex, 1);
+      takeCard(p,'hand',command.handIndex);
       if (sameItem) {
         if (command.keepExisting) { sendToDiscard(p, card); return; }
-        p.auxiliary.splice(p.auxiliary.indexOf(sameItem), 1);
-        sendToDiscard(p, sameItem.card, sameItem.ritualReward);
+        departPermanent(next,command.actor,sameItem.objectId,['auxiliary']);
       }
       placePermanent(next,command.actor,'auxiliary',card,{exhausted:false,shield:0});
       return;
@@ -193,8 +188,7 @@ registerCommand('chooseReward',(next,command)=>{const p=next.players[command.act
           next.pendingReward = null; next.phase = 'main';
           return;
         }
-        const removed = removePermanents(p, [sameUnique.objectId]);
-        for (const unit of removed) sendToDiscard(p, unit.card, unit.ritualReward);
+        departPermanent(next,command.actor,sameUnique.objectId);
       }
       if (zone.length >= limit) {
         const replacement = zone.find(unit => unit.objectId === command.replaceId && !unit.card.majestic);
@@ -202,7 +196,10 @@ registerCommand('chooseReward',(next,command)=>{const p=next.players[command.act
           const removed = removePermanents(p, [replacement.objectId]);
           if (reward.createdToken) {
             // Ordinary auxiliary displacement is departure, not death.
-            for (const unit of removed) sendToDiscard(p, unit.card, unit.ritualReward);
+            for(const unit of removed){
+              const target=leaveCard(p,unit.card,!!unit.ritualReward);
+              emitGameEvent(next,{type:'zoneMoved',owner:command.actor,cardId:unit.card.id,objectId:unit.objectId,from:'detached',to:target});
+            }
           } else resolveDeaths(next, removed.map(unit => ({ unit, owner: command.actor })));
         } else if (zone.some(unit => !unit.card.majestic)) throw new RuleError('Выберите заменяемое Существо');
       }
@@ -213,7 +210,7 @@ registerCommand('chooseReward',(next,command)=>{const p=next.players[command.act
         // An unplaceable reward goes to hand as a playable card, including temporary token cards.
         // Use printed cost where present; otherwise give generated rewards a zero-cost fallback.
         reward.cost ??= { colored: {}, generic: 0 };
-        p.hand.push(reward);
+        addCard(next,command.actor,'hand',reward,'ritual');
       } else {
         placePermanent(next,command.actor,reward.createdToken?'auxiliary':'main',reward,{ritualReward:true});
       }
@@ -255,7 +252,7 @@ registerCommand('intercept',(next,command)=>{const p=next.players[command.actor]
         resolveCombat(next, attacker, combatTarget ?? null, legendTarget ?? null, p, pending.target, !!interceptor);
         resolveDeaths(next, collectLethal(next));
         for (const owner of next.players) for (let i = owner.legends.length - 1; i >= 0; i--)
-          if (owner.legends[i].loyalty! <= 0) sendToDiscard(owner, owner.legends.splice(i, 1)[0].card);
+          if(owner.legends[i].loyalty!<=0)departPermanent(next,next.players.indexOf(owner) as PlayerId,owner.legends[i].objectId,['legends']);
       }
       if (!finishIfLethal(next)) next.phase = 'main';
       if (attacker && [...next.players[next.active].main, ...next.players[next.active].auxiliary].includes(attacker) &&
