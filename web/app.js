@@ -130,7 +130,7 @@ function traitDescriptions(card) {
   const result=traits.filter(([k])=>card[k]).map(([,txt])=>txt);
   if(card.shield)result.push('Щит '+card.shield+': поглощает урон');
   if(card.poisonHit)result.push('Отрава '+card.poisonHit.strength+' / '+card.poisonHit.ticks);
-  if(card.extraAttacks)result.push('Дополнительные атаки: '+card.extraAttacks);
+  if(card.extraAttacks)result.push('Ещё удар! ('+card.extraAttacks+'): столько дополнительных атак за ход');
   if(card.ritual)result.push('Ритуал: нужно Жертв '+card.ritual.threshold);
   if(card.onDeath)result.push('Последнее слово: '+effectText(card.onDeath));
   if(card.onEntry)result.push('Вступление: '+effectText(card.onEntry));

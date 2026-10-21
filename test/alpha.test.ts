@@ -49,6 +49,39 @@ test('starter catalog covers the implemented card mechanics and two loyalty choi
   }
   for(const kind of ['cleanse','silence','bind'])
     assert.ok(Object.values(decks).some(cards=>cards.some(card=>card.techniqueEffect?.kind===kind)),kind);
+  assert.equal(testDeck('blue').filter(card=>card.name==='Небесный дуэлянт' && card.flying && card.extraAttacks===1).length,2);
+});
+test('blue Flying creature with Ещё удар! (1) can attack twice in one turn',()=>{
+  const card=testDeck('blue').find(card=>card.name==='Небесный дуэлянт')!;
+  let g=step(initialGame(player(),player()),{type:'startTurn',actor:0},'blue-start');
+  g.players[0].main.push({objectId:1,card,exhausted:false,damage:0,shield:0,enteredTurn:0,interceptions:0,attacksMade:0});
+  for(let i=0;i<2;i++){
+    g=step(g,{type:'attack',actor:0,attackerId:1,target:{kind:'player'}},'blue-attack-'+i);
+    g=step(g,{type:'intercept',actor:1,interceptorId:null},'blue-defend-'+i);
+  }
+  assert.equal(g.players[1].hp,26);
+  assert.equal(g.players[0].main[0].exhausted,true);
+  assert.throws(()=>step(g,{type:'attack',actor:0,attackerId:1,target:{kind:'player'}},'blue-third'),/не готов/);
+});
+test('every starter Legend offers balanced +1 and -2 choices, exclusive each turn',()=>{
+  const fallen:Card={id:'fallen',name:'Павший страж',kind:'creature',attack:2,health:2};
+  for(const archetype of ARCHETYPES)for(const legend of testDeck(archetype.id).filter(card=>card.kind==='legend')){
+    const [small,strong]=legend.loyaltyAbilities!;
+    assert.equal(small.delta,1,legend.name);
+    assert.equal(strong.delta,-2,legend.name);
+    assert.ok((legend.loyalty??0)>=2,legend.name);
+    assert.ok(small.amount<=1 && strong.amount<=4,legend.name);
+    for(const abilityIndex of [0,1]){
+      let g=step(initialGame(player(),player()),{type:'startTurn',actor:0},legend.id+'-start-'+abilityIndex);
+      g.players[0].hp=20;
+      g.players[0].discard=[fallen];
+      g.players[0].legends.push({objectId:1,card:legend,loyalty:legend.loyalty,
+        exhausted:false,damage:0,shield:0,enteredTurn:g.turn,interceptions:0});
+      g=step(g,{type:'activateLegend',actor:0,objectId:1,abilityIndex,discardIndex:0},legend.id+'-activate-'+abilityIndex);
+      assert.equal(g.players[0].legends[0].loyalty,legend.loyalty!+(abilityIndex===0?1:-2),legend.name);
+      assert.throws(()=>step(g,{type:'activateLegend',actor:0,objectId:1,abilityIndex:1-abilityIndex,discardIndex:0},legend.id+'-repeat-'+abilityIndex),/недоступна/);
+    }
+  }
 });
 test('First Strike prevents retaliation, and Poison pauses for Stasis then resumes', () => {
   let g = step(initialGame(player(),player()),{type:'startTurn',actor:0},'start');
