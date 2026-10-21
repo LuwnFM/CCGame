@@ -82,7 +82,7 @@ test('old games keep frozen core and original version while new games use update
  const old=legacyGame(legacyPlayer(),legacyPlayer());
  const newer=initialGame(player(),player());
  assert.equal(old.rulesVersion,'0.9.13-alpha');
- assert.equal(newer.rulesVersion,'0.9.14-alpha');
+ assert.equal(newer.rulesVersion,'0.9.15-alpha');
  const cmd={type:'startTurn',actor:0,expectedRevision:old.revision,key:'legacy-start'} as Command;
  const continued=applyForMatch(old as any,cmd);
  assert.equal(continued.rulesVersion,'0.9.13-alpha');
