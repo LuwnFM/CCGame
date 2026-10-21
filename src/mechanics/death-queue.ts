@@ -1,5 +1,5 @@
 import { RuleError, type Game, type Player, type Permanent, type PlayerId } from '../core.ts';
-import {leaveCard} from './zones.ts';
+import {leaveCard,takePlayerPermanent} from './zones.ts';
 import {registerEffect,invokeEffect} from './effects-registry.ts';
 import {emitGameEvent,onGameEvent} from './events.ts';
 import { damage } from './combat.ts';
@@ -9,10 +9,10 @@ export {EffectLimitError,MAX_EFFECT_OPERATIONS} from './limits.ts';
 type Death = { unit: Permanent; owner: PlayerId };
 export function removePermanents(owner: Player, ids: readonly number[]): Permanent[] {
   const removed: Permanent[] = [];
-  for (const id of ids) {
-    const zone = [owner.main, owner.auxiliary].find(group => group.some(unit => unit.objectId === id));
-    if (!zone) throw new RuleError('Существо уже покинуло поле');
-    removed.push(zone.splice(zone.findIndex(unit => unit.objectId === id), 1)[0]);
+  for(const id of ids){
+    if(![...owner.main,...owner.auxiliary].some(unit=>unit.objectId===id))
+      throw new RuleError('Существо уже покинуло поле');
+    removed.push(takePlayerPermanent(owner,id));
   }
   return removed;
 }
@@ -20,11 +20,12 @@ export function collectLethal(game: Game): Death[] {
   const dead: Death[] = [];
   for (const owner of [0, 1] as const) {
     const player = game.players[owner];
-    for (const zone of [player.main, player.auxiliary]) {
-      for (let i = zone.length - 1; i >= 0; i--) {
-        const unit = zone[i];
-        if (unit.card.health !== undefined && unit.damage >= unit.card.health)
-          dead.push({ unit: zone.splice(i, 1)[0], owner });
+    for(const zoneName of ['main','auxiliary'] as const){
+      const zone=player[zoneName];
+      for(let i=zone.length-1;i>=0;i--){
+        const unit=zone[i];
+        if(unit.card.health!==undefined&&unit.damage>=unit.card.health)
+          dead.push({unit:takePlayerPermanent(player,unit.objectId,[zoneName]),owner});
       }
     }
   }
