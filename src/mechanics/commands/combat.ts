@@ -4,6 +4,13 @@ import {RuleError,sendToDiscard,type Game,type Command,type PendingReward,type R
 import {mulligan} from '../../setup.ts';
 import {eligibleVictims,nextRandom,planRitual} from '../../ritual.ts';
 import {ability} from '../abilities.ts';
+import {canGuardIntercept} from '../traits/guard.ts';
+import {canInterceptFlyingAttack} from '../traits/flying.ts';
+import {canSelectAsAttackTarget} from '../traits/stealth.ts';
+import {hasImmediateAttack} from '../traits/haste.ts';
+import {hasCreatureOnlyImmediateAttack} from '../traits/zeal.ts';
+import {canAttackAgain} from '../traits/extraAttacks.ts';
+import {isAttackProhibited} from '../traits/cannotAttack.ts';
 import {resolveCombat} from '../combat.ts';
 import {emptyEnergy,payForCard} from '../energy.ts';
 import {activateLegend} from '../legends.ts';
@@ -15,12 +22,12 @@ import {advance} from '../turns.ts';
 registerCommand('attack',(next,command)=>{const p=next.players[command.actor];
       requireRule(next.turn > 0 && next.phase === 'main', 'Недоступная фаза');
       const attacker = [...p.main, ...p.auxiliary].find(c => c.objectId === command.attackerId && c.card.kind === 'creature');
-      requireRule(attacker && !attacker.card.cannotAttack && !attacker.exhausted && !attacker.stunned && !attacker.stasis &&
-        (attacker.enteredTurn < next.turn || ability(attacker,'haste') || ability(attacker,'zeal') && command.target?.kind === 'creature'), 'Атакующий не готов');
+      requireRule(attacker && !isAttackProhibited(attacker) && !attacker.exhausted && !attacker.stunned && !attacker.stasis &&
+        (attacker.enteredTurn < next.turn || hasImmediateAttack(attacker) || hasCreatureOnlyImmediateAttack(attacker,command.target?.kind)), 'Атакующий не готов');
       const defender = (1 - command.actor) as PlayerId;
       requireRule(command.target?.kind === 'player' || command.target?.kind === 'creature' || command.target?.kind === 'legend', 'Неверная цель');
       if (command.target.kind === 'creature') {
-        requireRule([...next.players[defender].main, ...next.players[defender].auxiliary].some(c => c.objectId === command.target.objectId && c.card.kind === 'creature' && !ability(c,'stealth')), 'Цель недоступна');
+        requireRule([...next.players[defender].main, ...next.players[defender].auxiliary].some(c => c.objectId === command.target.objectId && c.card.kind === 'creature' && canSelectAsAttackTarget(c)), 'Цель недоступна');
       } else if (command.target.kind === 'legend') {
         requireRule(next.players[defender].legends.some(c => c.objectId === command.target.objectId), 'Легенда недоступна');
       }
@@ -38,8 +45,8 @@ registerCommand('intercept',(next,command)=>{const p=next.players[command.actor]
       const interceptor = command.interceptorId === null ? null : [...p.main, ...p.auxiliary].find(c => c.objectId === command.interceptorId && c.card.kind === 'creature');
       if (command.interceptorId !== null) {
         requireRule(interceptor && !interceptor.exhausted && !interceptor.stasis && interceptor.interceptions === 0, 'Перехватчик недоступен');
-        requireRule(pending.target.kind !== 'creature' || ability(interceptor,'guard'), 'Только Страж перехватывает атаку по Существу');
-        requireRule(!attacker || !ability(attacker,'flying') || ability(interceptor,'flying'), 'Наземное Существо не перехватывает Полёт');
+        requireRule(pending.target.kind !== 'creature' || canGuardIntercept(interceptor), 'Только Страж перехватывает атаку по Существу');
+        requireRule(canInterceptFlyingAttack(attacker??null,interceptor), 'Наземное Существо не перехватывает Полёт');
         interceptor.interceptions++;
       }
       const legendTarget = pending.target.kind === 'legend' ? p.legends.find(c => c.objectId === pending.target.objectId) : null;
@@ -52,7 +59,7 @@ registerCommand('intercept',(next,command)=>{const p=next.players[command.actor]
       }
       if (!finishIfLethal(next)) next.phase = 'main';
       if (attacker && [...next.players[next.active].main, ...next.players[next.active].auxiliary].includes(attacker) &&
-          (attacker.attacksMade ?? 0) <= (ability(attacker,'extraAttacks') ?? 0)) attacker.exhausted = false;
+          canAttackAgain(attacker)) attacker.exhausted = false;
       next.pendingAttack = null;
       emitGameEvent(next,{type:'combatResolved',owner:next.active,objectId:pending.attackerId});
       return;
