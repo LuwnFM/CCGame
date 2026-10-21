@@ -64,13 +64,31 @@ function defend(g:Game,n:number):Game {
  const chosen=candidates.find(x=>x.card.health!-x.damage+x.shield>totalAttack(g.players[g.active],a)||totalAttack(p,x)>=a.card.health!-a.damage+a.shield||p.hp<=totalAttack(g.players[g.active],a));
  return step(g,{type:'intercept',actor:g.pendingAttack!.defender,interceptorId:chosen?.objectId??null},n);
 }
-test('288 seeded matches exercise every ordered starter pairing and preserve field invariants',()=>{
+
+/** Controlled A/B: keep the exact same decks, seeds and legal bot policy. */
+function deckFor(id:Parameters<typeof testDeck>[0],scenario:'before'|'after'){
+ const cards=structuredClone(testDeck(id));
+ if(scenario==='before')for(const card of cards){
+   if(!card.ritual?.rewardPool)continue;
+   const old:Record<string,[number,number]>={
+     'vt-echo':[4,4],'vt-mechanism':[5,3],'vt-guardian':[3,6],
+     'vt-specter':[4,4],'vt-spark':[3,3]
+   };
+   for(const reward of card.ritual.rewardPool){
+     const stats=old[reward.id];if(stats){reward.attack=stats[0];reward.health=stats[1]}
+   }
+ }
+ return cards;
+}
+
+test('controlled before/after reward balance simulation (1728 seeded matches)',()=>{
+ for(const scenario of ['before','after'] as const){
   let finished=0,cutoff=0,draws=0;const wins:Record<string,number>={},pairings:Record<string,{first:number;second:number;cutoff:number}>={};
   let count=0,rituals=0,legends=0,artifacts=0,combat=0, actions=0;
   const rulerDraws:Record<string,{first:number;second:number}> = Object.fromEntries(ARCHETYPES.map(a=>[a.id,{first:0,second:0}]));
-  for (let i=0;i<ARCHETYPES.length;i++) for (let j=0;j<ARCHETYPES.length;j++) for (let repeat=0;repeat<8;repeat++) {
-    let g=openingGame(openingHand(testDeck(ARCHETYPES[i].id),1001+i*29+j*11+repeat),
-      openingHand(testDeck(ARCHETYPES[j].id),4001+j*37+i*13+repeat));
+  for (let i=0;i<ARCHETYPES.length;i++) for (let j=0;j<ARCHETYPES.length;j++) for (let repeat=0;repeat<24;repeat++) {
+    let g=openingGame(openingHand(deckFor(ARCHETYPES[i].id,scenario),1001+i*29+j*11+repeat),
+      openingHand(deckFor(ARCHETYPES[j].id,scenario),4001+j*37+i*13+repeat));
     let serial=0;
     g=step(g,{type:'mulligan',actor:0,indices:[]},serial++);
     g=step(g,{type:'mulligan',actor:1,indices:[]},serial++);
@@ -159,17 +177,18 @@ test('288 seeded matches exercise every ordered starter pairing and preserve fie
     if(g.phase==='finished'){finished++;if(g.winner==='draw')draws++;else{const winner=ARCHETYPES[g.winner===0?i:j].id;wins[winner]=(wins[winner]||0)+1;pairings[pairing][g.winner===0?'first':'second']++}}else{cutoff++;pairings[pairing].cutoff++}
     count++;
   }
-  console.log('SIMULATION_REPORT '+JSON.stringify({matches:count,finished,cutoff,draws,wins,pairings,rulerDraws}));
+  console.log('SIMULATION_AB_REPORT '+JSON.stringify({scenario,matches:count,finished,cutoff,draws,rituals,wins,pairings,rulerDraws}));
   for(const archetype of ARCHETYPES){
     const bySeat=rulerDraws[archetype.id];
     assert.ok(bySeat.first>0 && bySeat.second>0,
       `Ruler draw missing for ${archetype.id}: first=${bySeat.first}, second=${bySeat.second}`);
   }
-  assert.equal(count,288);
+  assert.equal(count,864);
   assert.ok(finished>0);
   assert.ok(combat>10 && legends>0 && artifacts>0 && actions>700,
     `coverage: combats=${combat} legends=${legends} artifacts=${artifacts} actions=${actions}`);
-  console.log(`288 simulated matches: ${actions} operations, ${combat} combats, ${legends} legends, ${artifacts} artifacts, ${rituals} rituals; Ruler draws ${Object.values(rulerDraws).reduce((n,p)=>n+p.first+p.second,0)}`);
+  console.log(`864 ${scenario} simulated matches: ${actions} operations, ${combat} combats, ${legends} legends, ${artifacts} artifacts, ${rituals} rituals; Ruler draws ${Object.values(rulerDraws).reduce((n,p)=>n+p.first+p.second,0)}`);
+ }
 });
 
 
