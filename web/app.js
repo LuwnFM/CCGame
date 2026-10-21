@@ -76,11 +76,12 @@ function abilityText(ability) {
   const effects={healRuler:'Восстановить '+ability.amount+' HP Владетелю',
     damageOpponent:'Нанести '+ability.amount+' урона Владетелю противника',
     draw:'Взять карт: '+ability.amount, recoverCreature:'Вернуть Существо из сброса в руку',
-    raiseSacrifice:'Создать Жертву 2/2 во вспомогательной зоне'};
+    raiseSacrifice:'Создать Жертву 2/2 во вспомогательной зоне',
+    summonSignature:'Призвать сигнатурного бойца во вспомогательную зону'};
   return (ability.delta>0?'+':'')+ability.delta+' лояльности · '+(effects[ability.kind]||ability.kind);
 }
 function effectText(e) {
-  const descriptions={summonSkeleton:'Призвать скелетов 1/1 с Жертвой: ',healRuler:'Восстановить HP Владетелю: ',draw:'Взять карт: ',damageOpponent:'Урон Владетелю соперника: ',damageController:'Урон своему Владетелю: ',damageAllCreatures:'Урон всем Существам: ',reanimate:'Вернуть Существо из своего сброса на поле: ',cleanse:'Снять отрицательные статусы: ',silence:'Подавить способности: ',bind:'Сковывание: '};
+  const descriptions={summonSkeleton:'Призвать скелетов 1/1 с Жертвой: ',stunEnemy:'Ошеломить Существо противника: ',healRuler:'Восстановить HP Владетелю: ',draw:'Взять карт: ',damageOpponent:'Урон Владетелю соперника: ',damageController:'Урон своему Владетелю: ',damageAllCreatures:'Урон всем Существам: ',reanimate:'Вернуть Существо из своего сброса на поле: ',cleanse:'Снять отрицательные статусы: ',silence:'Подавить способности: ',bind:'Сковывание: '};
   return (descriptions[e.kind]||e.kind+' ')+e.amount;
 }
 function chooseCards(title,choices) {
@@ -91,6 +92,14 @@ function chooseCards(title,choices) {
 }
 $('choiceCancel').onclick=()=>$('choiceDialog').close();
 $('rulerDraw').onclick=()=>send({type:'rulerDraw'});
+function playCreature(card,index,enemy) {
+  const targets=card.onEntry?.kind==='stunEnemy'
+    ? [...enemy.main,...enemy.auxiliary].filter(p=>p.card.kind==='creature'&&!p.stunned&&!p.stasis):[];
+  if(targets.length)chooseCards('Выбери Существо противника для Ошеломления',targets.map(p=>({
+    card:p.card,label:cardLabel(p),choose:()=>send({type:'playCreature',handIndex:index,targetId:p.objectId})
+  })));
+  else send({type:'playCreature',handIndex:index});
+}
 function playTechnique(card,index,me,enemy) {
   const e=card.techniqueEffect;
   if(e?.kind==='reanimate') {
@@ -113,6 +122,7 @@ function detailsText(card,p) {
   if(card.cost)bits.push('Стоимость '+(card.cost.generic+Object.values(card.cost.colored||{}).reduce((a,b)=>a+b,0))+' энергии');
   if(card.produces)bits.push('Даёт энергию: '+card.produces);
   if(card.unique)bits.push('Уникальная карта');
+  if(card.cannotAttack)bits.push('Не может атаковать');
   return bits.join(' · ');
 }
 function traitDescriptions(card) {
@@ -129,6 +139,7 @@ function traitDescriptions(card) {
     ['majestic','Величественный: нельзя вытеснить из зоны']];
   const result=traits.filter(([k])=>card[k]).map(([,txt])=>txt);
   if(card.shield)result.push('Щит '+card.shield+': поглощает урон');
+  if(card.cannotAttack)result.push('Не может объявлять атаки (но может быть Стражем)');
   if(card.poisonHit)result.push('Отрава '+card.poisonHit.strength+' / '+card.poisonHit.ticks);
   if(card.extraAttacks)result.push('Ещё удар! ('+card.extraAttacks+'): столько дополнительных атак за ход');
   if(card.ritual)result.push('Ритуал: нужно Жертв '+card.ritual.threshold);
@@ -390,7 +401,7 @@ function renderGame(ready) {
       const allowed=mine&&legend.lastActivatedTurn!==game.turn&&!legend.stunned&&!legend.stasis&&!legend.silenced&&
         legend.loyalty+ability.delta>=0&&
         (ability.kind!=='recoverCreature'||me.discard?.some(c=>c.kind==='creature'))&&
-        (ability.kind!=='raiseSacrifice'||me.auxiliary.length<4);
+        (!['raiseSacrifice','summonSignature'].includes(ability.kind)||me.auxiliary.length<4);
       actions.append(button(abilityText(ability),()=>{
         if(ability.kind==='recoverCreature'){
           const picker=$('discardPicker');
@@ -412,8 +423,8 @@ function renderGame(ready) {
   for(const [id,zone] of [['myBoard',me.main],['myAux',me.auxiliary]]) {
     $(id).replaceChildren(...zone.map(p=>cardButton(p.card,cardLabel(p),()=>{
       if(defense){defenderChoice=p.objectId;renderGame(ready)}
-      else{selected=p.objectId;renderGame(ready)}
-    },p.card.kind!=='creature'||(!defense&&!mine)||!!p.stasis||(!defense&&!!p.stunned)||p.exhausted||
+      else{selected=p.card.cannotAttack?null:p.objectId;renderGame(ready)}
+    },p.card.kind!=='creature'||(!defense&&!mine)||!!p.stasis||(!defense&&!!p.stunned)||p.exhausted||(!defense&&!!p.card.cannotAttack)||
       (defense&&(p.interceptions>0||(attack?.target?.kind==='creature'&&(!p.card.guard||p.silenced))||
         (incoming?.card.flying&&!incoming.silenced&&(!p.card.flying||p.silenced)))),selected===p.objectId||defenderChoice===p.objectId,p)));
   }
@@ -472,6 +483,7 @@ function renderGame(ready) {
       else if(c.kind==='creature'&&c.unique&&[...me.main,...me.auxiliary].some(p=>p.card.name===c.name))
         chooseCards('Какое Уникальное Существо оставить?',[{card:c,label:'Оставить на поле',choose:()=>send({type:'playCreature',handIndex:i,keepExisting:true})},{card:c,label:'Оставить новое',choose:()=>send({type:'playCreature',handIndex:i,keepExisting:false})}]);
       else if(c.kind==='technique')playTechnique(c,i,me,enemy);
+      else if(c.kind==='creature'&&!c.createdToken&&c.onEntry?.kind==='stunEnemy')playCreature(c,i,enemy);
       else if((c.kind==='artifact'||c.kind==='creature'&&c.createdToken)&&me.auxiliary.length>=4){selectedArtifactIndex=i;renderGame(ready)}
       else send({type:c.kind==='domain'?'playDomain':c.kind==='technique'?'playTechnique':c.kind==='legend'?'playLegend':c.kind==='artifact'?'playArtifact':'playCreature',handIndex:i})},
     !(mine||game.phase==='discard'&&game.active===seat))));
