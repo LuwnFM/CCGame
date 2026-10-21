@@ -1,7 +1,7 @@
 /** Firewell CCG rules. No client or network state is trusted. */
-import { mulligan } from '../setup.ts';
-import { eligibleVictims, nextRandom, planRitual, type RitualEffect } from '../ritual.ts';
-import { damage, resolveCombat } from '../mechanics/combat.ts';
+import { mulligan } from './setup-v0.9.13.ts';
+import { eligibleVictims, nextRandom, planRitual, type RitualEffect } from './ritual-v0.9.13.ts';
+import { damage, resolveCombat } from './combat-v0.9.13.ts';
 export const RULES_VERSION = '0.9.13-alpha';
 export type PlayerId = 0 | 1;
 export type Aspect = 'red' | 'blue' | 'green' | 'gold' | 'violet';
