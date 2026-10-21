@@ -15,7 +15,7 @@ export type Energy = Aspect | 'neutral';
 export type Cost = { colored: Partial<Record<Aspect, number>>; generic: number };
 export type RitualSpec = { color: Aspect | 'neutral'; threshold: number; duration: number; rewardPool: [Card, Card, Card, Card, Card] };
 export type {DeathEffect,EntryEffect,LoyaltyEffect,TechniqueEffect} from './mechanics/effect-contracts.ts';
-export type Card = {
+export interface Card {
   id: string;
   name: string;
   nameEn?: string;
@@ -55,20 +55,20 @@ export type Card = {
   lore?: { state: string; organization: string; summary?: string; note?: string };
   // Abilities need a separately specified resolver, never arbitrary card scripts.
   abilities?: readonly string[];
-};
-export type Permanent = { objectId: number; card: Card; exhausted: boolean; damage: number; shield: number; enteredTurn: number; interceptions: number;
+}
+export interface Permanent { objectId: number; card: Card; exhausted: boolean; damage: number; shield: number; enteredTurn: number; interceptions: number;
   sacrifice?: boolean; stunned?: boolean; stasis?: number; ritualReward?: boolean; loyalty?: number; lastActivatedTurn?: number;
-  attacksMade?: number; silenced?: boolean; poison?: { strength: number; ticks: number } };
-export type Player = {
+  attacksMade?: number; silenced?: boolean; poison?: { strength: number; ticks: number } }
+export interface Player {
   hp: number; deck: Card[]; hand: Card[]; discard: Card[]; erased: Card[];
   domains: Permanent[]; main: Permanent[]; auxiliary: Permanent[]; legends: Permanent[];
   energy: Record<Energy, number>; domainsPlayed: number;
   rituals: (RitualEffect & { remainingStarts: number })[];
   lastRulerDrawTurn?: number;
-};
+}
 export type ReadyRitual = { effect: RitualEffect; eligibleIds: number[] };
 export type PendingReward = { owner: PlayerId; offeredIds: string[]; pool: [Card, Card, Card, Card, Card] };
-export type Game = {
+export interface Game {
   schemaVersion: 1; rulesVersion: typeof RULES_VERSION; revision: number;
   nextObjectId: number; turn: number; active: PlayerId;
   phase: 'mulligan' | 'main' | 'intercept' | 'discard' | 'ritual' | 'reward' | 'paused' | 'finished'; winner: PlayerId | 'draw' | null;
@@ -78,7 +78,7 @@ export type Game = {
   timeoutStreak?: [number, number];
   pendingAttack: null | { attackerId: number; target: { kind: 'player' } | { kind: 'creature' | 'legend'; objectId: number }; defender: PlayerId };
   players: [Player, Player]; processed: Record<string, { revision: number; command: string }>;
-};
+}
 export type {Command} from './mechanics/command-contracts.ts';
 
 export class RuleError extends Error {}
