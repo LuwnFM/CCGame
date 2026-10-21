@@ -1,40 +1,24 @@
 import { RuleError, type Card, type Game, type Player, type Permanent, type PlayerId } from '../core.ts';
 import { EffectLimitError, MAX_EFFECT_OPERATIONS } from './death-queue.ts';
+import { summon } from './zones.ts';
+import {SKELETON,BONE_BLADE,BONE_GUARD} from '../cards/tokens.ts';
 
 function requireRule(ok: unknown, message: string): asserts ok { if (!ok) throw new RuleError(message); }
-/** Deterministic created tokens always occupy auxiliary slots; never overflow. */
-function spawnSkeleton(game: Game, actor: PlayerId, count: number, source: Card): void {
-  requireRule(Number.isSafeInteger(count) && count >= 0 && count <= 4, 'Неверное число призываемых');
-  const owner=game.players[actor];
-  for(let i=0;i<count && owner.auxiliary.length<4;i++){
-    const card:Card={id:'violet-skeleton-token',name:'Призванный скелет',kind:'creature',
-      aspects:['violet'],attack:1,health:1,createdToken:true,sacrifice:true,
-      lore:{state:'Искажение',organization:'Некроманты',summary:'Поднятый скелет служит временной Жертвой ритуала.',note:'Токен 1/1; исчезает вместо попадания в Сброс.'}};
-    owner.auxiliary.push({objectId:game.nextObjectId++,card,damage:0,shield:0,exhausted:true,
-      interceptions:0,enteredTurn:game.turn,sacrifice:true,attacksMade:0});
-  }
-}
 /** Only entered-from-hand and revived-from-discard cards receive the corresponding trigger. */
 export function enterTrigger(game:Game,actor:PlayerId,card:Card,origin:'hand'|'discard',targetId?:number):void{
   const effect=origin==='hand'?card.onEntry:card.secondChance;
   if(!effect)return;
   if((game.operationsUsed=(game.operationsUsed??0)+1)>MAX_EFFECT_OPERATIONS)
     throw new EffectLimitError('Превышен бюджет Вступления/Второго шанса');
-  requireRule(Number.isSafeInteger(effect.amount) && effect.amount>=0&&effect.amount<=4,'Неверное Вступление');
-  if(effect.kind==='summonSkeleton')spawnSkeleton(game,actor,effect.amount,card);
-  else if(effect.kind==='summonBonePair'){
-    requireRule(effect.amount===2,'Костяная пара призывает ровно двух скелетов');
-    const owner=game.players[actor];
-    const variants=[{id:'violet-bone-blade',name:'Костяной клинок',attack:2,health:1},
-      {id:'violet-bone-guard',name:'Костяной заслон',attack:1,health:2}];
-    for(const variant of variants){
-      if(owner.auxiliary.length>=4)break;
-      const token:Card={...variant,kind:'creature',aspects:['violet'],createdToken:true,sacrifice:true,
-        lore:{state:'Искажение',organization:'Некроманты',summary:'Поднятая нежить с Жертвой; токен исчезает вместо Сброса.'}};
-      owner.auxiliary.push({objectId:game.nextObjectId++,card:token,damage:0,shield:0,exhausted:true,
-        interceptions:0,enteredTurn:game.turn,sacrifice:true,attacksMade:0});
+  if(effect.kind==='summon')summon(game,actor,effect.cards);
+  else {
+    requireRule(Number.isSafeInteger(effect.amount) && effect.amount>=0 && effect.amount<=4,'Неверное Вступление');
+    // Legacy saved-match adapters: map old effect names to the same generic operation.
+    if(effect.kind==='summonSkeleton')summon(game,actor,Array.from({length:effect.amount},()=>SKELETON));
+    else if(effect.kind==='summonBonePair'){
+      requireRule(effect.amount===2,'Костяная пара призывает двух скелетов');
+      summon(game,actor,[BONE_BLADE,BONE_GUARD]);
     }
-  }
   else if(effect.kind==='stunEnemy'||effect.kind==='stasisEnemy') {
     // Targeted blue Entry only affects enemy creatures; an empty enemy field is legal.
     // Stun prevents attacks during the next controller turn; Stasis also suspends abilities.
@@ -53,6 +37,7 @@ export function enterTrigger(game:Game,actor:PlayerId,card:Card,origin:'hand'|'d
   else if(effect.kind==='draw')for(let i=0;i<effect.amount&&game.players[actor].deck.length;i++)
       game.players[actor].hand.push(game.players[actor].deck.shift()!);
   else throw new RuleError('Неизвестный эффект при входе');
+  }
 }
 function getCreature(player:Player,id:number|undefined):Permanent|undefined{
  return [...player.main,...player.auxiliary].find(unit=>unit.objectId===id&&unit.card.kind==='creature');
