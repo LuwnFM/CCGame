@@ -5,7 +5,7 @@ test('red starter has explicit balanced Haste, Zeal and Extra Attacks profiles',
  const cards=STARTER.red.map(x=>x.card).filter(c=>c.kind==='creature');
  const haste=cards.filter(c=>c.haste); const zeal=cards.filter(c=>c.zeal); const double=cards.filter(c=>(c.extraAttacks??0)>0);
  assert.deepEqual(haste.map(c=>[c.id,c.attack]),[
-  ['red-разведчик-с-перевала',0],['red-пламенный-авангард',3]
+  ['red-разведчик-с-перевала',1],['red-пламенный-авангард',3]
  ]);
  assert.deepEqual(zeal.map(c=>[c.id,c.health]),[
   ['red-таранный-всадник',1],['red-молотобоец-королевства',2]
