@@ -189,8 +189,8 @@ try {
   assert.equal(afterCombat.phase,'main');
   assert.equal(afterCombat.players[0].main[0].damage,1);
   assert.equal(afterCombat.players[1].main.length,0);
-  assert.equal(afterCombat.players[0].hp,30);
-  assert.equal(afterCombat.players[1].hp,30);
+  assert.equal(afterCombat.players[0].hp,40);
+  assert.equal(afterCombat.players[1].hp,40);
   // Inspect an enemy card on mobile; unavailable actions must remain inspectable.
   checkpoint("battle resolved; inspecting enemy card");
   await b.locator('#enemyBoard .card .inspect-card').first().click();
