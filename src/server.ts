@@ -5,16 +5,11 @@ import { existsSync, statSync, mkdirSync, readdirSync, unlinkSync } from 'node:f
 import { dirname, join, basename } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { apply, openingGame, RULES_VERSION, RuleError, type Command, type Game, type PlayerId } from './core.ts';
-import { apply as applyLegacy, RuleError as LegacyRuleError } from './legacy/core-v0.9.13.ts';
-const LEGACY_RULES_VERSION = '0.9.13-alpha';
 export function applyForMatch(game: Game, command: Command): Game {
-  if (game.rulesVersion === LEGACY_RULES_VERSION) {
-    if (command.type === 'rulerDraw') throw new RuleError('Эта способность недоступна в версии старого матча');
-    return applyLegacy(game as any, command as any) as Game;
-  }
-  if (game.rulesVersion === RULES_VERSION) return apply(game, command);
-  throw new RuleError('Версия правил матча больше не поддерживается');
+  if (game.rulesVersion !== RULES_VERSION) throw new RuleError('Устаревший матч. Создайте новый матч по действующим правилам.');
+  return apply(game, command);
 }
+
 import { openingHand } from './setup.ts';
 import { ARCHETYPES, testDeck, type ArchetypeId } from './decks.ts';
 import { nextRandom } from './ritual.ts';
@@ -226,13 +221,6 @@ export function createApp(options: { databasePath: string; accessPassword: strin
       if (origin) { try { originHost = new URL(origin).host; } catch { return json(res,403,{error:'Недопустимый источник'}); } }
       if (origin && originHost !== req.headers.host && origin !== options.clientOrigin)
         return json(res,403,{error:'Недопустимый источник'});
-      if (req.method === 'GET' && /^\/versions\/0\.9\.13\/(?:index\.html|app\.js|i18n\.js|rules\.js|style\.css)$/.test(url.pathname)) {
-        const file = url.pathname.slice(1);
-        const contentType = file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : 'text/html';
-        res.writeHead(200, {'content-type':contentType+'; charset=utf-8','x-content-type-options':'nosniff'});
-        res.end(await readFile(new URL('../web/'+file, import.meta.url)));
-        return;
-      }
       if (req.method === 'GET' && ['/', '/style.css', '/app.js', '/i18n.js', '/rules.js'].includes(url.pathname)) {
         const file = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
         const contentType = file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : 'text/html';

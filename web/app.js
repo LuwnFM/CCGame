@@ -347,9 +347,7 @@ function cardLabel(p) {
   return stats+(p.shield?' · Щит '+p.shield:'')+(p.exhausted?' · истощено':'');
 }
 function renderGame(ready) {
-  if (game?.rulesVersion === '0.9.13-alpha' && !location.pathname.includes('/versions/0.9.13/')) {
-    location.replace('/versions/0.9.13/index.html'); return;
-  }
+
   $('roomLabel').textContent='Комната '+room;
   if (!ready || !game) {
     $('turnLabel').textContent='Ожидание соперника. Код комнаты: '+room;
