@@ -1,7 +1,7 @@
-import type {Game} from '../core.ts';
+import type {Game,Card} from '../core.ts';
 import {EffectLimitError,MAX_EFFECT_OPERATIONS} from './limits.ts';
 export type GameEventType='enter'|'revive'|'death'|'zoneMoved'|'turnStart'|'turnEnd'|'ritual'|'combatResolved';
-export type GameEvent={type:GameEventType;owner:0|1;cardId?:string;objectId?:number;from?:string;to?:string};
+export type GameEvent={type:GameEventType;owner:0|1;cardId?:string;objectId?:number;from?:string;to?:string;source?:Card;targetId?:number};
 export type GameEventHandler=(game:Game,event:GameEvent)=>void;
 const listeners=new Map<GameEventType,Set<GameEventHandler>>();
 const queues=new WeakMap<Game,{pending:GameEvent[];resolving:boolean}>();
