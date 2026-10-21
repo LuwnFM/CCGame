@@ -9,7 +9,7 @@ import {emptyEnergy,payForCard} from '../energy.ts';
 import {activateLegend} from '../legends.ts';
 import {enterTrigger,resolveTechnique} from '../techniques.ts';
 import {removePermanents,collectLethal,resolveDeaths,finishIfLethal} from '../death-queue.ts';
-import {drawCards,leaveCard,moveCard,takeCard,placePermanent,departPermanent,addCard} from '../zones.ts';
+import {drawCards,leaveCard,moveCard,takeCard,placePermanent,departPermanent,addCard,discardDetached} from '../zones.ts';
 import {emitGameEvent} from '../events.ts';
 import {advance} from '../turns.ts';
 registerCommand('playLegend',(next,command)=>{const p=next.players[command.actor];
@@ -19,9 +19,9 @@ registerCommand('playLegend',(next,command)=>{const p=next.players[command.actor
       const sameLegend = p.legends.find(legend => legend.card.name === card.name);
       requireRule(!sameLegend || typeof command.keepExisting === 'boolean', 'Выберите, какую одноимённую Легенду оставить');
       p.energy = payForCard(p, card.cost);
-      takeCard(p,'hand',command.handIndex);
+      takeCard(p,'hand',command.handIndex,next,command.actor);
       if (sameLegend) {
-        if (command.keepExisting) { sendToDiscard(p, card); return; }
+        if (command.keepExisting) { discardDetached(next,command.actor,card); return; }
         departPermanent(next,command.actor,sameLegend.objectId,['legends']);
       }
       placePermanent(next,command.actor,'legends',card,{loyalty:card.loyalty,exhausted:false});
