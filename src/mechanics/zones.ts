@@ -82,3 +82,11 @@ export function drawCards(owner:Game['players'][number],count:number):number{
   while(drawn<count&&owner.deck.length){moveCard(owner,'deck','hand',0);drawn++;}
   return drawn;
 }
+
+/** Extract from a linear card zone, leaving placement to a different destination. */
+export function takeCard(owner:Game['players'][number],from:CardZone,index:number):Card{
+  if(from==='erased')throw new RuleError('Стертые карты нельзя возвращать в игру');
+  if(!Number.isSafeInteger(index)||index<0||index>=owner[from].length)
+    throw new RuleError('Карта недоступна для перемещения');
+  return owner[from].splice(index,1)[0];
+}
