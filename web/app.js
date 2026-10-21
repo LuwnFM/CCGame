@@ -101,6 +101,7 @@ $('inspectorClose').onclick=()=>$('cardInspector').close();
 $('cardInspector').onclick=e=>{if(e.target===$('cardInspector'))$('cardInspector').close()};
 function cardButton(card, label, onClick, disabled = false, active = false, permanent = undefined) {
   const element = button('',onClick,disabled,'card '+(card.aspects?.[0] || 'neutral')+(active?' active':''));
+  if(permanent?.objectId!==undefined)element.dataset.objectId=permanent.objectId;
   element.disabled=false;
   element.classList.toggle('unavailable',disabled);
   element.onclick=()=>disabled?showCardDetails(card,permanent):onClick();
@@ -259,6 +260,20 @@ function renderGame(ready) {
   }
   const seat=game.seat, me=game.players[seat], enemy=game.players[1-seat];
   const mine=game.active===seat&&game.phase==='main', defense=game.phase==='intercept'&&game.pendingAttack?.defender===seat;
+  const attack=defense?game.pendingAttack:null;
+  const incoming=attack?[...enemy.main,...enemy.auxiliary].find(p=>p.objectId===attack.attackerId):null;
+  const attackKey=attack?game.turn+':'+attack.attackerId+':'+JSON.stringify(attack.target):null;
+  if(attackKey!==attackAlertKey){defenderChoice=null;attackAlertKey=attackKey}
+  const target=attack?.target?.kind==='player'?'твоего Владетеля':
+    attack?.target?.kind==='legend'?'Легенду '+(me.legends.find(p=>p.objectId===attack.target.objectId)?.card.name||''):
+    attack?.target?.kind==='creature'?'Существо '+([...me.main,...me.auxiliary].find(p=>p.objectId===attack.target.objectId)?.card.name||''):'';
+  $('attackAlert').classList.toggle('hidden',!defense);
+  $('myPlayarea').classList.toggle('under-attack',defense);
+  $('attackDetails').textContent=defense?(incoming?.card.name||'Противник')+' атакует '+target:'';
+  $('attackAlert').querySelector('span:last-child').textContent=defenderChoice!==null?
+    'Выбран защитник. Подтверди выбор или нажми на другое Существо.':
+    'Нажми на своего доступного защитника. Для отказа нажми «Не защищать».';
+  $('confirmDefense').classList.toggle('hidden',!defense||defenderChoice===null);
   $('turnLabel').textContent=game.winner!==null?'Матч окончен: '+(game.winner==='draw'?'ничья':'победил игрок '+(game.winner+1))
     :'Ход '+game.turn+' · игрок '+(game.active+1);
   $('mulligan').classList.toggle('hidden',game.phase!=='mulligan');
@@ -305,41 +320,83 @@ function renderGame(ready) {
   $('myInfo').textContent='Колода '+me.deckCount+' · Рука '+me.handCount+' · Сброс '+me.discardCount+
     ' · Энергия '+(Object.entries(me.energy).filter(([,n])=>n).map(([c,n])=>c+':'+n).join(', ')||'0');
   $('enemyInfo').textContent='Колода '+enemy.deckCount+' · Рука '+enemy.handCount+' · Сброс '+enemy.discardCount;
-  $('myLegends').replaceChildren(...me.legends.map(p=>cardButton(p.card,cardLabel(p)+' · '+(p.card.loyaltyAbility?.kind||''),
-    () => {
-      const ability=p.card.loyaltyAbility?.kind;
-      if(ability==='recoverCreature'){
-        const choices=(me.discard||[]).map((c,i)=>({card:c,index:i})).filter(x=>x.card.kind==='creature');
-        if(!choices.length){status('В сбросе нет Существ');return}
-        const numbered=choices.map((item,n)=>(n+1)+'. '+item.card.name).join('\n');
-        const pick=prompt('Колдрейк — выбери Существо для возвращения в руку:\n'+numbered);
-        if(pick===null)return;
-        const found=choices[Number(pick)-1];if(!found){status('Неверный номер Существа');return}
-        send({type:'activateLegend',objectId:p.objectId,discardIndex:found.index});
-      } else send({type:'activateLegend',objectId:p.objectId});
-    },!mine||p.lastActivatedTurn===game.turn||p.loyalty+p.card.loyaltyAbility.delta<0
-      ||p.card.loyaltyAbility.kind==='raiseSacrifice'&&me.auxiliary.length>=4
-      ||p.card.loyaltyAbility.kind==='recoverCreature'&&!me.discard?.some(c=>c.kind==='creature'))));
-  $('enemyLegends').replaceChildren(...enemy.legends.map(p=>cardButton(p.card,cardLabel(p),
-    ()=>send({type:'attack',attackerId:selected,target:{kind:'legend',objectId:p.objectId}}),!mine||selected===null)));
+  $('myLegends').replaceChildren(...me.legends.map(p=>cardButton(p.card,cardLabel(p),
+    ()=>{selectedLegendId=selectedLegendId===p.objectId?null:p.objectId;renderGame(ready)},
+    !mine,false,p)));
+  const legend=me.legends.find(p=>p.objectId===selectedLegendId);
+  const actions=$('legendActions');
+  actions.classList.toggle('hidden',!legend);
+  actions.replaceChildren();
+  $('discardPicker').replaceChildren();$('discardPicker').classList.add('hidden');
+  if(legend) {
+    actions.append(textElement('strong',legend.card.name+' · '+legend.loyalty+' лояльности'));
+    const choices=legend.card.loyaltyAbilities?.length?legend.card.loyaltyAbilities:
+      legend.card.loyaltyAbility?[legend.card.loyaltyAbility]:[];
+    for(const [index,ability] of choices.entries()){
+      const allowed=mine&&legend.lastActivatedTurn!==game.turn&&!legend.stunned&&!legend.stasis&&
+        legend.loyalty+ability.delta>=0&&
+        (ability.kind!=='recoverCreature'||me.discard?.some(c=>c.kind==='creature'))&&
+        (ability.kind!=='raiseSacrifice'||me.auxiliary.length<4);
+      actions.append(button(abilityText(ability),()=>{
+        if(ability.kind==='recoverCreature'){
+          const picker=$('discardPicker');
+          picker.classList.remove('hidden');
+          picker.replaceChildren(textElement('h3','Выбери Существо из сброса'));
+          const choices=(me.discard||[]).map((card,i)=>({card,index:i})).filter(x=>x.card.kind==='creature');
+          for(const item of choices)picker.append(cardButton(item.card,detailsText(item.card),()=>{
+            send({type:'activateLegend',objectId:legend.objectId,abilityIndex:index,discardIndex:item.index});
+            picker.classList.add('hidden');
+          }));
+        }else send({type:'activateLegend',objectId:legend.objectId,abilityIndex:index});
+      },!allowed,index===0?'secondary':''));
+    }
+  }
+  $('enemyLegends').replaceChildren(...enemy.legends.map(p=>{
+    const el=cardButton(p.card,cardLabel(p),()=>send({type:'attack',attackerId:selected,target:{kind:'legend',objectId:p.objectId}}),!mine||selected===null,false,p);
+    return el;
+  }));
   for(const [id,zone] of [['myBoard',me.main],['myAux',me.auxiliary]]) {
     $(id).replaceChildren(...zone.map(p=>cardButton(p.card,cardLabel(p),()=>{
-      if(defense)send({type:'intercept',interceptorId:p.objectId});
+      if(defense){defenderChoice=p.objectId;renderGame(ready)}
       else{selected=p.objectId;renderGame(ready)}
-    },p.card.kind!=='creature'||!defense&&!mine||!!p.stasis||(!defense&&!!p.stunned)||p.exhausted,selected===p.objectId)));
+    },p.card.kind!=='creature'||(!defense&&!mine)||!!p.stasis||(!defense&&!!p.stunned)||p.exhausted||
+      (defense&&(p.interceptions>0||(attack?.target?.kind==='creature'&&!p.card.guard)||
+        (incoming?.card.flying&&!p.card.flying))),selected===p.objectId||defenderChoice===p.objectId,p)));
   }
   for(const [id,zone] of [['enemyBoard',enemy.main],['enemyAux',enemy.auxiliary]])
-    $(id).replaceChildren(...zone.map(p=>cardButton(p.card,cardLabel(p),
-      ()=>send({type:'attack',attackerId:selected,target:{kind:'creature',objectId:p.objectId}}),
-      !mine||selected===null||p.card.kind!=='creature'||!!p.card.stealth)));
+    $(id).replaceChildren(...zone.map(p=>{
+      const el=cardButton(p.card,cardLabel(p),
+        ()=>send({type:'attack',attackerId:selected,target:{kind:'creature',objectId:p.objectId}}),
+        !mine||selected===null||p.card.kind!=='creature'||!!p.card.stealth,false,p);
+      if(defense&&p.objectId===attack?.attackerId){
+        el.classList.add('incoming-attacker');
+        el.setAttribute('aria-label','Атакует '+target+' · '+p.card.name);
+        el.append(textElement('small','⚔ Атакует '+target,'attack-target'));
+      }
+      return el;
+    }));
+  if(defense&&attack?.target?.objectId){
+    for(const id of ['myBoard','myAux','myLegends']){
+      const el=[...$(id).querySelectorAll('.card')].find(x=>x.dataset.objectId===String(attack.target.objectId));
+      if(el)el.classList.add('attack-target-highlight');
+    }
+  }
   // Show the real 8+4 capacity even when the field is empty.
   for(const [id,limit] of [['myBoard',8],['enemyBoard',8],['myAux',4],['enemyAux',4]]) {
     for(let i=$(id).children.length;i<limit;i++){
       const place=textElement('div','◇','slot-placeholder');place.setAttribute('aria-hidden','true');$(id).append(place);
     }
   }
-  $('myDomains').replaceChildren(...me.domains.map(p=>button(p.card.name+(p.exhausted?' · истощено':' · готово'),
-    ()=>send({type:'tapDomain',objectId:p.objectId}),!mine||p.exhausted,'secondary')));
+  const domainLabels={red:'К',blue:'С',green:'З',gold:'Ж',violet:'Ф',neutral:'Н'};
+  const readyDomains=me.domains.filter(p=>!p.exhausted);
+  $('domainSummary').textContent=me.domains.length+' всего · '+readyDomains.length+' готовы · '+(me.domains.length-readyDomains.length)+' истощены';
+  $('myDomains').replaceChildren(...me.domains.map(p=>{
+    const el=button(domainLabels[p.card.produces]||'◇',()=>send({type:'tapDomain',objectId:p.objectId}),
+      !mine||p.exhausted,'domain-chip '+(p.card.produces||'neutral')+(p.exhausted?' spent':''));
+    el.title=p.card.name+(p.exhausted?' · истощено':' · готово');
+    el.setAttribute('aria-label',el.title);
+    return el;
+  }));
   $('enemyDomains').textContent=enemy.domains.length+' Владений';
   $('hand').replaceChildren(...(me.hand||[]).map((c,i)=>cardButton(c,kindName(c.kind)+(c.cost?' · '+(c.cost.generic+Object.values(c.cost.colored).reduce((a,b)=>a+b,0))+' энергии':''),
     ()=>{if(game.phase==='discard')send({type:'discard',handIndex:i});
@@ -473,6 +530,7 @@ $('confirmMulligan').onclick=()=>send({type:'mulligan',indices:[...selectedMulli
 $('confirmRitual').onclick=()=>send({type:'chooseRitual',effectId:selectedRitual,objectIds:[...selectedVictims]});
 $('hero').onclick=()=>send({type:'attack',attackerId:selected,target:{kind:'player'}});
 $('skip').onclick=()=>send({type:'intercept',interceptorId:null});
+$('confirmDefense').onclick=()=>{if(defenderChoice!==null)send({type:'intercept',interceptorId:defenderChoice})};
 $('end').onclick=()=>send({type:'endTurn'});
 function tick(){if(!game?.deadlineAt){$('timer').textContent='';return}const left=Math.max(0,Math.ceil((game.deadlineAt-Date.now())/1000));$('timer').textContent='⏱ '+Math.floor(left/60)+':'+String(left%60).padStart(2,'0')}
 $('apiUrl').value=apiBase;
