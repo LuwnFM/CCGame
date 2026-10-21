@@ -12,7 +12,7 @@ export default {
     },
     "generic": 0
   },
-  "attack": 1,
+  "attack": 0,
   "health": 1,
   "haste": true,
   "lore": {
