@@ -173,6 +173,11 @@ async function send(command) {
   } catch(error){status(error.message);await refresh()}
   finally{busy=false}
 }
+function kindName(kind){
+  const ru={domain:'Владение',creature:'Существо',technique:'Техника',legend:'Легенда',artifact:'Артофакт'};
+  const en={domain:'Domain',creature:'Creature',technique:'Technique',legend:'Legend',artifact:'Artifice'};
+  return (locale()==='en'?en:ru)[kind]||kind;
+}
 function cardLabel(p) {
   if (p.card.kind==='legend') return 'Лояльность '+p.loyalty;
   if (p.card.kind==='artifact') return 'Предмет · +'+(p.card.auraAttack??0)+' атаки';
@@ -197,7 +202,7 @@ function renderGame(ready) {
   document.querySelectorAll('.playarea').forEach(x=>x.classList.toggle('hidden',['mulligan','ritual','reward'].includes(game.phase)));
   if(game.phase==='mulligan') {
     const done=game.mulliganReady[seat];$('mulliganHand').replaceChildren();
-    if(!done)(me.hand||[]).forEach((c,i)=>$('mulliganHand').append(cardButton(c,c.kind,()=>{selectedMulligan.has(i)?selectedMulligan.delete(i):selectedMulligan.add(i);renderGame(ready)},false,selectedMulligan.has(i))));
+    if(!done)(me.hand||[]).forEach((c,i)=>$('mulliganHand').append(cardButton(c,kindName(c.kind),()=>{selectedMulligan.has(i)?selectedMulligan.delete(i):selectedMulligan.add(i);renderGame(ready)},false,selectedMulligan.has(i))));
     $('confirmMulligan').disabled=done;$('mulliganWait').textContent=done?'Ответ принят. Ожидание соперника.':'Отмечено на замену: '+selectedMulligan.size;
     return;
   }
@@ -271,7 +276,7 @@ function renderGame(ready) {
   $('myDomains').replaceChildren(...me.domains.map(p=>button(p.card.name+(p.exhausted?' · истощено':' · готово'),
     ()=>send({type:'tapDomain',objectId:p.objectId}),!mine||p.exhausted,'secondary')));
   $('enemyDomains').textContent=enemy.domains.length+' Владений';
-  $('hand').replaceChildren(...(me.hand||[]).map((c,i)=>cardButton(c,c.kind+(c.cost?' · '+(c.cost.generic+Object.values(c.cost.colored).reduce((a,b)=>a+b,0))+' энергии':''),
+  $('hand').replaceChildren(...(me.hand||[]).map((c,i)=>cardButton(c,kindName(c.kind)+(c.cost?' · '+(c.cost.generic+Object.values(c.cost.colored).reduce((a,b)=>a+b,0))+' энергии':''),
     ()=>{if(game.phase==='discard')send({type:'discard',handIndex:i});
       else if(c.kind==='legend'&&me.legends.some(p=>p.card.name===c.name))
         send({type:'playLegend',handIndex:i,keepExisting:confirm('Оставить уже находящуюся на поле Легенду?')});
@@ -318,7 +323,7 @@ function entry(card,count,onClick,symbol) {
   const element=document.createElement('div');element.className='entry';
   element.append(textElement('span',initials(cardName(card)),'mini-glyph'));
   const desc=document.createElement('div');desc.className='mini';
-  desc.append(textElement('strong',cardName(card)),textElement('small',card.kind+(card.cost?' · '+card.cost.generic+'+'+Object.values(card.cost.colored).reduce((a,b)=>a+b,0):'')));
+  desc.append(textElement('strong',cardName(card)),textElement('small',kindName(card.kind)+(card.cost?' · '+card.cost.generic+'+'+Object.values(card.cost.colored).reduce((a,b)=>a+b,0):'')));
   element.append(desc,textElement('span',String(count),'count'),button(symbol,onClick,false,'secondary'));
   return element;
 }

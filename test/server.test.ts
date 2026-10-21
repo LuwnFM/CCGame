@@ -262,3 +262,20 @@ test('extra domains are in combined catalog but never modify preset ratios or ba
   assert.equal((await request('/api/my-decks',token,{name:'Illegal domains',cards:invalid})).status,409);
  }finally{app.close()}
 });
+
+test('basic thematic Domains preserve stable IDs, Energy and original deck ratios',async()=>{
+ const {app,request,register}=await fixture();
+ try{
+  const user=await register('ThematicLands');
+  const {cards,presets}=(await request('/api/catalog',user.token)).body;
+  const names:Record<string,string>={red:'Горные угодья Стального королевства',blue:'Воздушные причалы Талдрейка',green:'Лесные владения Кайров',gold:'Королевский двор Ивелтина',violet:'Родовая крипта Ван Троупов',neutral:'Опорный двор Ордена'};
+  for(const preset of presets){
+    const basic=preset.cards.map((id:string)=>cards.find((c:any)=>c.id===id)).filter((c:any)=>c.kind==='domain');
+    assert.equal(basic.length,26);
+    assert.ok(basic.some((c:any)=>c.name===names[preset.id]));
+    assert.ok(basic.every((c:any)=>c.nameEn&&c.basic));
+    if(preset.id!=='neutral')assert.ok(basic.every((c:any)=>c.produces===preset.id));
+    else assert.equal(basic.filter((c:any)=>c.produces==='gold').length,3);
+  }
+ }finally{app.close()}
+});

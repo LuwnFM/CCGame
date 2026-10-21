@@ -99,7 +99,7 @@ const names=Object.fromEntries([
 ['Колдрейк Шоу','Coldrake Shaw'],['Цера Ван Троуп','Cera Van Troupe'],['Драгнир и Иммельсторн','Dragnir and Immelstorn'],['Призыв забытой реликвии','Call of the Forgotten Relic'],
 ['Дворянский призрак Ван Троупов','Van Troupe Noble Ghost'],['Некроартофакт Ван Троупов','Van Troupe Necro-Artifice'],['Реликтовый страж Ван Троупов','Van Troupe Relic Sentinel'],['Умертвие родовой крипты','Ancestral Crypt Revenant'],['Искра фамильной сокровищницы','Family Vault Spark'],['Умертвие свиты Церы','Cera’s Undead Retainer'],
 ['Послушник Ордена','Order Novice'],['Дозорный Ордена','Order Watchman'],['Писарь утремера','Utremere Scribe'],['Странствующий хранитель','Wandering Keeper'],['Мастеровой Ордена','Order Artisan'],['Ветеран Хранителей','Veteran of the Keepers'],
-['Быстрый разведчик','Fast Scout'],['Страж утремера','Utremere Guard'],['Инквизитор дозора','Watch Inquisitor'],['Полевой лекарь','Field Healer'],['Рыцарь знамени','Banner Knight'],['Страж архивов','Archive Sentinel'],['Мастер перехвата','Interception Master'],['Ветеран новых хранителей','New Keepers Veteran'],['Свирус Жирникус','Svirus Zhirnikus'],
+['Быстрый разведчик','Fast Scout'],['Страж утремера','Utremere Guard'],['Инквизитор дозора','Watch Inquisitor'],['Полевой лекарь','Field Healer'],['Рыцарь знамени','Banner Knight'],['Страж архивов','Archive Sentinel'],['Мастер перехвата','Interception Master'],['Ветеран новых хранителей','New Keepers Veteran'],['Предмет','Item'],['Свирус Жирникус','Svirus Zhirnikus'],
 ['Верховный хранитель Данте','High Keeper Dante'],['Мейстер Глерторул','Maester Glertorul'],['Полевое знамя Ордена','Order Field Banner']
 ]);
 const archetypes={red:'Steel Kingdom · Mountain Guard',blue:'Taldraik · Air Fleet',

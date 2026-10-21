@@ -64,11 +64,26 @@ export function testDeck(id: ArchetypeId): Card[] {
   const archetype = ARCHETYPES.find(a => a.id === id);
   if (!archetype) throw new Error('Неизвестная колода');
   const theme = themes[id], lore = { state: archetype.state, organization: archetype.organization };
-  const domains: Card[] = Array.from({length:26},(_,i): Card => ({
-    id: `${id}-domain-${i < (id === 'neutral' ? 3 : 26) ? (id === 'neutral' ? 'gold' : id) : 'neutral'}`,
-    name: `${i < (id === 'neutral' ? 3 : 26) ? 'Базовое владение' : 'Нейтральное владение'} ${id}`,
-    kind:'domain', basic:true, produces: i < (id === 'neutral' ? 3 : 26) ? (id === 'neutral' ? 'gold' : id) : 'neutral', lore,
-  }));
+  const basicNames: Record<ArchetypeId,[string,string]> = {
+    red:['Горные угодья Стального королевства','Steel Kingdom Mountain Holdings'],
+    blue:['Воздушные причалы Талдрейка','Taldraik Sky Moorings'],
+    green:['Лесные владения Кайров','House Kair Woodland Domain'],
+    gold:['Королевский двор Ивелтина','Iveltin Royal Court'],
+    violet:['Родовая крипта Ван Троупов','Van Troupe Ancestral Crypt'],
+    neutral:['Опорный двор Ордена','Keepers Chapterhouse'],
+  };
+  const neutralNames: [string,string] = ['Страннический стан Ордена','Keepers Wayfarer Camp'];
+  const domains: Card[] = Array.from({length:26},(_,i):Card=>{
+    const colored = id!=='neutral' || i<3;
+    const label=colored?basicNames[id]:neutralNames;
+    return {
+      id: `${id}-domain-${colored?(id==='neutral'?'gold':id):'neutral'}`,
+      name:label[0],nameEn:label[1],
+      kind:'domain',basic:true,
+      produces:colored?(id==='neutral'?'gold':id):'neutral',
+      lore:{...lore,note:'Название базового Владения — игровая адаптация лорной недвижимости, не утверждение о конкретной карте мира.'},
+    };
+  });
   const creatures = (entries: Unit[], copies: number[]) => entries.flatMap((entry,i) => Array.from({length:copies[i]},(): Card => ({
     id:identifier(id,entry.name),name:entry.name,kind:'creature',aspects:id==='neutral'?[]:[id],
     cost:cost(id,entry.cost),attack:entry.attack,health:entry.health,...entry.traits,lore:
