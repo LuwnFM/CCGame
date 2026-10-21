@@ -85,19 +85,25 @@ export function placePermanent(game:Game,actor:PlayerId,zone:BoardZone,card:Card
   return permanent;
 }
 /** Draw uses the same queue transfer as other movements. */
-export function drawCards(owner:Game['players'][number],count:number):number{
+export function drawCards(owner:Game['players'][number],count:number,game?:Game,actor?:PlayerId):number{
   if(!Number.isSafeInteger(count)||count<0||count>100)throw new RuleError('Неверное количество добора');
   let drawn=0;
-  while(drawn<count&&owner.deck.length){moveCard(owner,'deck','hand',0);drawn++;}
+  while(drawn<count&&owner.deck.length){
+    if(game&&actor!==undefined)transferCard(game,actor,'deck','hand',0);
+    else moveCard(owner,'deck','hand',0);
+    drawn++;
+  }
   return drawn;
 }
 
 /** Extract from a linear card zone, leaving placement to a different destination. */
-export function takeCard(owner:Game['players'][number],from:CardZone,index:number):Card{
+export function takeCard(owner:Game['players'][number],from:CardZone,index:number,game?:Game,actor?:PlayerId):Card{
   if(from==='erased')throw new RuleError('Стертые карты нельзя возвращать в игру');
   if(!Number.isSafeInteger(index)||index<0||index>=owner[from].length)
     throw new RuleError('Карта недоступна для перемещения');
-  return owner[from].splice(index,1)[0];
+  const card=owner[from].splice(index,1)[0];
+  if(game&&actor!==undefined)emitGameEvent(game,{type:'zoneMoved',owner:actor,cardId:card.id,from,to:'detached'});
+  return card;
 }
 
 /** Emitting card-zone transfer for game-aware operations. */
@@ -118,4 +124,11 @@ export function departPermanent(game:Game,actor:PlayerId,objectId:number,zones:r
 export function addCard(game:Game,actor:PlayerId,to:CardZone,card:Card,from:string='generated'):void{
   game.players[actor][to].push(card);
   emitGameEvent(game,{type:'zoneMoved',owner:actor,cardId:card.id,from,to});
+}
+
+/** Place a detached card into its proper departure zone and notify the same event bus. */
+export function discardDetached(game:Game,actor:PlayerId,card:Card,ritualReward=false):CardZone{
+  const to=leaveCard(game.players[actor],card,ritualReward);
+  emitGameEvent(game,{type:'zoneMoved',owner:actor,cardId:card.id,from:'detached',to});
+  return to;
 }
