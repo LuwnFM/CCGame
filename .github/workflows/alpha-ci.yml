@@ -20,7 +20,10 @@ jobs:
       - name: Tests
         run: npm test
       - name: Client syntax
-        run: node --check web/app.js
+        run: |
+          node --check web/app.js
+          node --check web/i18n.js
+          node --check web/rules.js
       - name: Install browser test runner
         run: npm install --no-save playwright@1.57.0
       - name: Install Chromium only (avoid long Firefox/WebKit downloads)
