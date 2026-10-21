@@ -73,10 +73,10 @@ try {
   await a.locator('#languageToggle').click();
   await a.getByText('Open deck builder').waitFor({state:'visible'});
   await a.locator('#rulesOpen').click();
-  await a.locator('#rulesContent').getByText(/Cera Van Troupe/).first().waitFor();
+  await a.locator('#rulesContent').getByText(/Legends and Loyalty/).first().waitFor();
   await a.locator('#rulesContent').getByText(/exactly 70 cards/i).waitFor();
   await a.locator('#languageToggle').click();
-  await a.locator('#rulesContent').getByText(/Цера Ван Троуп/).first().waitFor();
+  await a.locator('#rulesContent').getByText(/Легенды и Лояльность/).first().waitFor();
   await a.locator('#rulesClose').click();
   await a.locator('#chatText').fill('Привет из браузерного теста');
   await a.locator('#chatForm button').click();
