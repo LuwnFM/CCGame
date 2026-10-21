@@ -15,27 +15,27 @@ type Theme = { plain: Unit[]; effects: Unit[]; legends: [string, string]; item: 
 const themes: Record<ArchetypeId, Theme> = {
   red: {
     plain: [['Горный ополченец',1,2,1],['Рудокоп стали',2,2,2],['Стрелок перевала',2,3,1],['Кузнец заставы',3,3,3],['Всадник хребта',4,4,2],['Тяжёлый пехотинец',5,5,5]].map(unit),
-    effects: [['Разведчик с перевала',1,1,1,{haste:true}],['Рыцарь горной стражи',2,2,3,{guard:true}],['Мастер первого удара',3,3,2,{firstStrike:true}],['Таранный всадник',3,3,2,{piercing:true,zeal:true}],['Пламенный авангард',4,4,2,{haste:true}],['Капитан дозора',4,3,4,{guard:true,firstStrike:true}],['Молотобоец королевства',5,5,3,{piercing:true,zeal:true}],['Двукратный натиск',6,5,4,{extraAttacks:1}]].map(unit),
+    effects: [['Разведчик с перевала',1,1,1,{haste:true}],['Рыцарь горной стражи',2,2,3,{guard:true}],['Мастер первого удара',3,3,2,{firstStrike:true}],['Таранный всадник',3,3,2,{piercing:true,zeal:true}],['Пламенный авангард',4,4,2,{haste:true}],['Капитан дозора',4,3,4,{firstStrike:true,shield:1}],['Молотобоец королевства',5,5,3,{piercing:true,zeal:true}],['Двукратный натиск',6,5,4,{extraAttacks:1}]].map(unit),
     legends: ['Командор стального рубежа','Хранитель горного прохода'], item:'Знамя горной стражи',
   },
   blue: {
     plain: [['Матрос Талдрейка',1,1,2],['Доковый плотник',2,2,2],['Курсант аэродрома',2,2,3],['Палубный дозорный',3,3,2],['Штурманская команда',4,3,4],['Бортовой ветеран',5,4,5]].map(unit),
-    effects: [['Быстрый курьер',1,1,2,{flying:true}],['Сторожевой дирижабль',2,2,3,{flying:true}],['Воздушный перехватчик',3,2,4,{flying:true,guard:true}],['Небесный дуэлянт',3,3,3,{onEntry:{kind:'stunEnemy',amount:1}}],['Штурмовой пилот',4,4,3,{flying:true,firstStrike:true}],['Капитан флотилии',4,3,5,{guard:true,onEntry:{kind:'stunEnemy',amount:1}}],['Палубный дуэлянт',5,4,5,{extraAttacks:1}],['Флагманский десант',6,5,6,{flying:true,extraAttacks:1}]].map(unit),
+    effects: [['Быстрый курьер',1,1,2,{flying:true}],['Сторожевой дирижабль',2,2,3,{flying:true}],['Воздушный перехватчик',3,2,4,{flying:true,guard:true}],['Небесный дуэлянт',3,3,3,{onEntry:{kind:'stunEnemy',amount:1}}],['Штурмовой пилот',4,4,3,{flying:true,firstStrike:true}],['Капитан флотилии',4,3,5,{guard:true,onEntry:{kind:'stasisEnemy',amount:1}}],['Палубный дуэлянт',5,4,5,{extraAttacks:1}],['Флагманский десант',6,5,6,{flying:true,extraAttacks:1}]].map(unit),
     legends: ['Адмирал талдрейкского неба','Мастер воздушных путей'], item:'Навигационный кристалл флотилии',
   },
   green: {
     plain: [['Суварский следопыт',1,1,2],['Лесной подмастерье',2,2,2],['Страж тропы',2,2,3],['Садовый зверь',3,3,3],['Суварский охотник',4,4,4],['Древесный исполин',5,5,5]].map(unit),
-    effects: [['Живучий зверёк',1,1,2,{lifesteal:true}],['Защитник чащи',2,2,3,{guard:true}],['Хищник Сувара',3,3,2,{poisonHit:{strength:1,ticks:2}}],['Целитель рощи',3,2,4,{lifesteal:true}],['Лесная дозорная',4,4,3,{stealth:true}],['Корневой бастион',4,3,5,{guard:true,shield:1}],['Дикий оплот',5,4,4,{lifesteal:true}],['Страж зелёного рубежа',6,6,5,{guard:true}]].map(unit),
+    effects: [['Живучий зверёк',1,1,2,{lifesteal:true}],['Защитник чащи',2,2,3,{guard:true}],['Хищник Сувара',3,3,2,{poisonHit:{strength:1,ticks:2}}],['Целитель рощи',3,2,4],['Лесная дозорная',4,4,3,{stealth:true}],['Корневой бастион',4,3,5,{guard:true,shield:1}],['Дикий оплот',5,4,4,{lifesteal:true}],['Страж зелёного рубежа',6,6,5,{guard:true}]].map(unit),
     legends: ['Старейшина рода Кайров','Защитница суварских рощ'], item:'Знамя дома Кайров',
   },
   gold: {
     plain: [['Ивелтинский рекрут',1,1,2],['Оруженосец короны',2,2,2],['Городской дозорный',2,2,3],['Пехотинец Ивелтина',3,3,3],['Конный рыцарь',4,4,4],['Королевский ветеран',5,5,5]].map(unit),
-    effects: [['Рыцарь авангарда',1,1,2,{shield:1}],['Дворцовый страж',2,2,3,{guard:true}],['Медик короны',3,2,4,{lifesteal:true}],['Рыцарь щита',3,3,3,{guard:true,shield:1}],['Знаменосец Ивелтина',4,3,5,{guard:true}],['Судья поединка',4,4,3,{firstStrike:true}],['Кавалер ордена',5,4,5,{shield:2,lifesteal:true}],['Королевская гвардия',6,5,6,{guard:true,shield:1}]].map(unit),
+    effects: [['Рыцарь авангарда',1,1,2,{shield:1}],['Дворцовый страж',2,2,3,{guard:true}],['Медик короны',3,2,4,{onEntry:{kind:'healRuler',amount:2}}],['Рыцарь щита',3,3,3,{guard:true,shield:1}],['Знаменосец Ивелтина',4,3,5,{guard:true}],['Судья поединка',4,4,3,{firstStrike:true}],['Кавалер ордена',5,4,5,{shield:2,lifesteal:true}],['Королевская гвардия',6,5,6,{guard:true,shield:1}]].map(unit),
     legends: ['Артур II вир Ивелтин','Андриан аур Медлир'], item:'Штандарт королевских рыцарей',
   },
   violet: {
     plain: [['Искатель сокровищницы',1,1,2],['Подручный Ван Троупов',2,2,2],['Сторож подвала',2,2,3],['Шифровальщик реликвий',3,3,2],['Сборщик механизмов',4,4,4],['Хранитель тайника',5,5,5]].map(unit),
-    effects: [['Зовущий забытых',1,2,2,{sacrifice:true}],['Призрачный агент',2,2,3,{sacrifice:true,stealth:true}],['Хранитель неисправностей',2,2,3,{sacrifice:true,onDeath:{kind:'damageOpponent',amount:1}}],['Разведчик искажения',3,3,2,{sacrifice:true,haste:true}],['Оператор механизмов',4,3,4,{sacrifice:true,onDeath:{kind:'damageAllCreatures',amount:1}}],['Вестник Шоу',4,4,3,{sacrifice:true,poisonHit:{strength:1,ticks:2}}],['Страж забытого архива',5,4,5,{guard:true,sacrifice:true}]].map(unit),
+    effects: [['Зовущий забытых',1,2,2,{sacrifice:true}],['Призрачный агент',2,2,3,{sacrifice:true,stealth:true}],['Хранитель неисправностей',2,2,3,{sacrifice:true,onDeath:{kind:'damageOpponent',amount:1}}],['Разведчик искажения',3,3,2,{sacrifice:true,haste:true}],['Оператор механизмов',4,3,4,{sacrifice:true,onDeath:{kind:'damageAllCreatures',amount:1}}],['Вестник Шоу',4,4,3,{sacrifice:true,poisonHit:{strength:1,ticks:2}}],['Страж забытого архива',5,4,5,{guard:true,sacrifice:true,lifesteal:true}]].map(unit),
     legends: ['Колдрейк Шоу','Цера Ван Троуп'], item:'Драгнир и Иммельсторн',
   },
   neutral: {
