@@ -12,6 +12,31 @@ let selectedReward = null, selectedRewardKeepExisting = undefined, selectedArtif
 let selectedLegendId = null, defenderChoice = null, attackAlertKey = null;
 let chatAvailableAt=0,olderMessages=[],chatMore=true;
 function status(value) { $('status').textContent = translate(value || ''); }
+let healthProbeInFlight = false;
+async function checkGameServer() {
+  if (healthProbeInFlight) return;
+  healthProbeInFlight = true;
+  let online = false;
+  try {
+    // The HTML may load while the API/backend is offline.
+    const response = await fetch(apiBase + '/api/health', {
+      method:'GET', cache:'no-store', headers:{accept:'application/json'},
+      signal:AbortSignal.timeout(6500)
+    });
+    if(response.ok && response.headers.get('content-type')?.includes('application/json')) {
+      const data = await response.json();
+      online = data?.ok === true && data?.service === 'firewell-ccg';
+    }
+  } catch {
+    // Network failure or timeout: API is unreachable.
+  } finally {
+    const indicator = $('connection');
+    indicator.dataset.state = online ? 'online' : 'offline';
+    indicator.textContent = translate(online ? 'Сервер игры онлайн' : 'Сервер игры недоступен');
+    healthProbeInFlight = false;
+  }
+}
+
 let lastPage='auth';
 function show(id) {
   if(id!=='rulesPage')lastPage=id;
@@ -159,7 +184,7 @@ function setAccount(value) {
   account = value;
   $('profileName').textContent = value.login;
   $('profileId').textContent = value.id;
-  $('connection').textContent = 'В сети · '+value.login;
+  // The header indicator reflects API health independent of authentication.
   show(room ? 'match' : 'home');
 }
 async function authenticate(register) {
@@ -572,6 +597,9 @@ if (hostedClient) {
   localStorage.removeItem(serverKey); // Ignore any obsolete manually entered tunnel URL.
 }
 show('auth');
+checkGameServer();
+setInterval(checkGameServer,20000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkGameServer()});
 if(token)api('/api/me').then(async data=>{setAccount(data.account);await loadData();await refresh()}).catch(()=>{token='';localStorage.removeItem(sessionKey);show('auth')});
 observeLocalization();
 setInterval(refresh,2500);setInterval(tick,1000);setInterval(updateChatCooldown,250);
