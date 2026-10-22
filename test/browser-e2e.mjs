@@ -29,7 +29,8 @@ async function register(page, name) {
   await page.locator('#password').fill('very-secure-test-password1');
   await page.locator('#accessPassword').fill('test-access-password-123');
   await page.locator('#register').click();
-  await page.locator('#home').waitFor({ state: 'visible', timeout: 15000 });
+  try { await page.locator('#home').waitFor({ state: 'visible', timeout: 15000 }); }
+  catch(error){console.error('[E2E] auth diagnostics',await page.evaluate(()=>({status:document.querySelector('#status')?.textContent,connection:document.querySelector('#connection')?.textContent,auth:document.querySelector('#auth')?.className,home:document.querySelector('#home')?.className,script:[...document.scripts].map(x=>x.src)})));throw error;}
   await page.locator('#profileName').waitFor({ state: 'visible' });
   assert.equal(await page.locator('#profileName').innerText(), name);
   assert.match(await page.locator('#profileId').innerText(), /^[a-f0-9-]{36}$/);
@@ -242,7 +243,7 @@ try {
   // Vercel-like static client on a separate origin: browser CORS and bearer auth.
   checkpoint("mobile reload, responsive match, screenshots passed");
   const staticSite=createServer(async (req,res)=>{
-    const file=req.url==='/'?'index.html':['/app.js','/style.css','/i18n.js','/rules.js'].includes(req.url)?req.url.slice(1):null;
+    const file=req.url==='/'?'index.html':(['/app.js','/style.css','/i18n.js','/rules.js'].includes(req.url)||/^\/ui\/[a-z][a-z0-9-]*\.js$/.test(req.url))?req.url.slice(1):null;
     if(!file){res.writeHead(404);res.end();return}
     res.writeHead(200,{'content-type':file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html'});
     res.end(await readFile(new URL('../web/'+file,import.meta.url)));

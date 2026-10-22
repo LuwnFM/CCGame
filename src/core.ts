@@ -1,7 +1,5 @@
 /** Firewell CCG transactional kernel. All mechanics and commands are registered modules. */
-import type {DeathEffect,EntryEffect,LoyaltyEffect,TechniqueEffect} from './mechanics/effect-contracts.ts';
 import type {Command} from './mechanics/command-contracts.ts';
-import type {RitualEffect} from './ritual.ts';
 import {executeCommand} from './mechanics/command-registry.ts';
 import {emptyEnergy} from './mechanics/energy.ts';
 import {leaveCard} from './mechanics/zones.ts';
@@ -9,80 +7,11 @@ import {emitGameEvent} from './mechanics/events.ts';
 import {EffectLimitError,MAX_EFFECT_OPERATIONS} from './mechanics/limits.ts';
 export {MAX_EFFECT_OPERATIONS} from './mechanics/limits.ts';
 export {validateDeck} from './mechanics/deck-rules.ts';
-export const RULES_VERSION = '0.9.15-alpha';
-/** Initial Ruler health, effective for newly created games. */
-export const STARTING_RULER_HP = 40;
-export type PlayerId = 0 | 1;
-export type Aspect = 'red' | 'blue' | 'green' | 'gold' | 'violet';
-export type Energy = Aspect | 'neutral';
-export type Cost = { colored: Partial<Record<Aspect, number>>; generic: number };
-export type RitualSpec = { color: Aspect | 'neutral'; threshold: number; duration: number; rewardPool: [Card, Card, Card, Card, Card] };
+export {RULES_VERSION,STARTING_RULER_HP} from './model/index.ts';
+import {RULES_VERSION,STARTING_RULER_HP} from './model/index.ts';
+import type {Card,Game,Player,PlayerId} from './model/index.ts';
+export type {PlayerId,Aspect,Energy,Cost,RitualSpec,Card,Permanent,Player,ReadyRitual,PendingReward,Game} from './model/index.ts';
 export type {DeathEffect,EntryEffect,LoyaltyEffect,TechniqueEffect} from './mechanics/effect-contracts.ts';
-export interface Card {
-  id: string;
-  name: string;
-  nameEn?: string;
-  kind: 'domain' | 'creature' | 'technique' | 'legend' | 'artifact';
-  aspects?: readonly Aspect[];
-  basic?: boolean;
-  unique?: boolean;
-  produces?: Energy;
-  cost?: Cost;
-  attack?: number;
-  health?: number;
-  guard?: boolean;
-  flying?: boolean;
-  firstStrike?: boolean;
-  piercing?: boolean;
-  lifesteal?: boolean;
-  haste?: boolean;
-  zeal?: boolean;
-  extraAttacks?: number;
-  untiring?: boolean;
-  stealth?: boolean;
-  poisonHit?: { strength: number; ticks: number };
-  shield?: number;
-  majestic?: boolean;
-  cannotAttack?: boolean;
-  ritualReward?: boolean;
-  createdToken?: boolean;
-  sacrifice?: boolean;
-  ritual?: RitualSpec;
-  onDeath?: DeathEffect;
-  onEntry?: EntryEffect;
-  secondChance?: EntryEffect;
-  techniqueEffect?: TechniqueEffect;
-  loyalty?: number;
-  loyaltyAbility?: LoyaltyEffect;
-  loyaltyAbilities?: readonly LoyaltyEffect[];
-  auraAttack?: number;
-  lore?: { state: string; organization: string; summary?: string; note?: string };
-  // Abilities need a separately specified resolver, never arbitrary card scripts.
-  abilities?: readonly string[];
-}
-export interface Permanent { objectId: number; card: Card; exhausted: boolean; damage: number; shield: number; enteredTurn: number; interceptions: number;
-  sacrifice?: boolean; stunned?: boolean; stasis?: number; ritualReward?: boolean; loyalty?: number; lastActivatedTurn?: number;
-  attacksMade?: number; silenced?: boolean; poison?: { strength: number; ticks: number } }
-export interface Player {
-  hp: number; deck: Card[]; hand: Card[]; discard: Card[]; erased: Card[];
-  domains: Permanent[]; main: Permanent[]; auxiliary: Permanent[]; legends: Permanent[];
-  energy: Record<Energy, number>; domainsPlayed: number;
-  rituals: (RitualEffect & { remainingStarts: number })[];
-  lastRulerDrawTurn?: number;
-}
-export type ReadyRitual = { effect: RitualEffect; eligibleIds: number[] };
-export type PendingReward = { owner: PlayerId; offeredIds: string[]; pool: [Card, Card, Card, Card, Card] };
-export interface Game {
-  schemaVersion: 1; rulesVersion: typeof RULES_VERSION; revision: number;
-  nextObjectId: number; turn: number; active: PlayerId;
-  phase: 'mulligan' | 'main' | 'intercept' | 'discard' | 'ritual' | 'reward' | 'paused' | 'finished'; winner: PlayerId | 'draw' | null;
-  mulliganReady?: [boolean, boolean]; mulliganSeeds?: [number, number]; seed?: number;
-  readyRituals?: ReadyRitual[]; pendingReward?: PendingReward | null; pauseReason?: string;
-  operationsUsed?: number;
-  timeoutStreak?: [number, number];
-  pendingAttack: null | { attackerId: number; target: { kind: 'player' } | { kind: 'creature' | 'legend'; objectId: number }; defender: PlayerId };
-  players: [Player, Player]; processed: Record<string, { revision: number; command: string }>;
-}
 export type {Command} from './mechanics/command-contracts.ts';
 
 export class RuleError extends Error {}

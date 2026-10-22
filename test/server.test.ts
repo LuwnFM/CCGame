@@ -399,3 +399,17 @@ test('test-bot strategy never relies on shuffled own deck order or hidden enemy 
  assert.equal(drawProbability(10,0,2),0);
  assert.equal(drawProbability(10,10,1),1);
 });
+
+test('server serves first-party UI ES modules and rejects traversal',async()=>{
+ const {app,request}=await fixture();
+ try{
+  for(const path of ['/ui/api.js','/ui/cards.js','/ui/chat.js']){
+   const response=await fetch('http://127.0.0.1:'+((app.server.address() as {port:number}).port)+path);
+   assert.equal(response.status,200,path);
+   assert.match(response.headers.get('content-type')||'',/javascript/);
+   assert.match(await response.text(),/export function/);
+  }
+  const bad=await fetch('http://127.0.0.1:'+((app.server.address() as {port:number}).port)+'/ui/secrets.json');
+  assert.notEqual(bad.status,200);
+ }finally{app.close()}
+});
