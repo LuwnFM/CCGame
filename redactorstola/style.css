@@ -130,12 +130,12 @@ button.domain-chip.spent{opacity:.4;text-decoration:line-through}
 .card b{position:relative;z-index:1;min-height:20px;margin:0;padding:4px 5px;border-radius:5px;background:#15130edb;color:#fff3d7;font-size:.8rem;line-height:1.15;text-shadow:0 1px 2px #000}
 .card .card-art{position:relative;display:grid;place-items:center;flex:none;height:70px;overflow:hidden;border:1px solid #d7bd806b;border-radius:8px;background:radial-gradient(ellipse at 50% 42%,#807252 0,#403b2d 50%,#221f1a 100%)}
 .card .card-art:before{content:"";display:block;width:54px;height:54px;background:#f5d9a0;opacity:.92;filter:drop-shadow(0 2px 4px #000b);mask:center/contain no-repeat; -webkit-mask:center/contain no-repeat}
-.card.red .card-art:before{mask-image:url('/assets/kenney-boardgame/fire.png');-webkit-mask-image:url('/assets/kenney-boardgame/fire.png')}
-.card.blue .card-art:before{mask-image:url('/assets/kenney-boardgame/book_closed.png');-webkit-mask-image:url('/assets/kenney-boardgame/book_closed.png')}
-.card.green .card-art:before{mask-image:url('/assets/kenney-boardgame/resource_wood.png');-webkit-mask-image:url('/assets/kenney-boardgame/resource_wood.png')}
-.card.gold .card-art:before{mask-image:url('/assets/kenney-boardgame/crown_a.png');-webkit-mask-image:url('/assets/kenney-boardgame/crown_a.png')}
-.card.violet .card-art:before{mask-image:url('/assets/kenney-boardgame/skull.png');-webkit-mask-image:url('/assets/kenney-boardgame/skull.png')}
-.card.neutral .card-art:before{mask-image:url('/assets/kenney-boardgame/character.png');-webkit-mask-image:url('/assets/kenney-boardgame/character.png')}
+.card.red .card-art:before{mask-image:url('./assets/kenney-boardgame/fire.png');-webkit-mask-image:url('./assets/kenney-boardgame/fire.png')}
+.card.blue .card-art:before{mask-image:url('./assets/kenney-boardgame/book_closed.png');-webkit-mask-image:url('./assets/kenney-boardgame/book_closed.png')}
+.card.green .card-art:before{mask-image:url('./assets/kenney-boardgame/resource_wood.png');-webkit-mask-image:url('./assets/kenney-boardgame/resource_wood.png')}
+.card.gold .card-art:before{mask-image:url('./assets/kenney-boardgame/crown_a.png');-webkit-mask-image:url('./assets/kenney-boardgame/crown_a.png')}
+.card.violet .card-art:before{mask-image:url('./assets/kenney-boardgame/skull.png');-webkit-mask-image:url('./assets/kenney-boardgame/skull.png')}
+.card.neutral .card-art:before{mask-image:url('./assets/kenney-boardgame/character.png');-webkit-mask-image:url('./assets/kenney-boardgame/character.png')}
 .card .card-summary{margin:0;padding-top:3px;border-top:1px solid #d0b57855;color:#f5d896;font-size:.7rem;line-height:1.2}
 .card>small:last-of-type{color:#d9d0bd;font-size:.66rem;line-height:1.15}
 .card .card-flags{color:#e7c875;font-size:.62rem}
