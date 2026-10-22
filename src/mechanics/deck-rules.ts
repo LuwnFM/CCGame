@@ -1,4 +1,4 @@
-import type { Card } from '../core.ts';
+import type { Card } from '../model/index.ts';
 
 export function validateDeck(deck: readonly Card[]): string[] {
   const issues: string[] = [];
