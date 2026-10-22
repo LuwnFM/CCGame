@@ -1,4 +1,5 @@
-import {RuleError,type Game,type PlayerId,type Card} from '../core.ts';
+import {RuleError} from '../errors.ts';
+import type {Game,PlayerId,Card} from '../model/index.ts';
 import {EffectLimitError,MAX_EFFECT_OPERATIONS} from './limits.ts';
 export type EffectChannel='entry'|'technique'|'loyalty'|'death';
 export type EffectContext={game:Game;actor:PlayerId;source:Card;amount?:number;cards?:readonly Card[];

@@ -6,7 +6,7 @@ import {interceptedOverflow} from './traits/piercing.ts';
 import {strikeOrder} from './traits/firstStrike.ts';
 import {alliedAuraBonus} from './traits/auraAttack.ts';
 import {absorbShield} from './traits/shield.ts';
-import type { Game, Permanent, Player, PlayerId } from '../core.ts';
+import type { Game, Permanent, Player, PlayerId } from '../model/index.ts';
 
 export function damage(target: Permanent, amount: number): number {
   const dealt = absorbShield(target,amount);

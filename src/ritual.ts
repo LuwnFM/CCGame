@@ -1,4 +1,5 @@
-import { RuleError, type Aspect, type Card, type Permanent, type Player } from './core.ts';
+import {RuleError} from './errors.ts';
+import type {Aspect,Card,Permanent,Player,RitualColor,RitualEffect,RitualPlan} from './model/index.ts';
 
 export type RitualColor = Aspect | 'neutral';
 export type RitualEffect = {

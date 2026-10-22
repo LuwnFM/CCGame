@@ -1,8 +1,6 @@
 import {registerCommand} from '../command-router.ts';
 import {requireRule} from './shared.ts';
-import {RuleError,sendToDiscard,type Game,type Command,type PendingReward,type ReadyRitual,type PlayerId} from '../../core.ts';
-import {mulligan} from '../../setup.ts';
-import {eligibleVictims,nextRandom,planRitual} from '../../ritual.ts';
+import type {PlayerId} from '../../model/index.ts';
 import {ability} from '../abilities.ts';
 import {canGuardIntercept} from '../traits/guard.ts';
 import {canInterceptFlyingAttack} from '../traits/flying.ts';
@@ -12,13 +10,10 @@ import {hasCreatureOnlyImmediateAttack} from '../traits/zeal.ts';
 import {canAttackAgain} from '../traits/extraAttacks.ts';
 import {isAttackProhibited} from '../traits/cannotAttack.ts';
 import {resolveCombat} from '../combat.ts';
-import {emptyEnergy,payForCard} from '../energy.ts';
-import {activateLegend} from '../legends.ts';
-import {enterTrigger,resolveTechnique} from '../techniques.ts';
-import {removePermanents,collectLethal,resolveDeaths,finishIfLethal} from '../death-queue.ts';
-import {drawCards,leaveCard,moveCard,takeCard,placePermanent,departPermanent,addCard,discardDetached} from '../zones.ts';
+import {collectLethal,resolveDeaths,finishIfLethal} from '../death-queue.ts';
+import {departPermanent} from '../zones.ts';
 import {emitGameEvent} from '../events.ts';
-import {advance} from '../turns.ts';
+
 registerCommand('attack',(next,command)=>{const p=next.players[command.actor];
       requireRule(next.turn > 0 && next.phase === 'main', 'Недоступная фаза');
       const attacker = [...p.main, ...p.auxiliary].find(c => c.objectId === command.attackerId && c.card.kind === 'creature');
@@ -65,3 +60,4 @@ registerCommand('intercept',(next,command)=>{const p=next.players[command.actor]
       emitGameEvent(next,{type:'combatResolved',owner:next.active,objectId:pending.attackerId});
       return;
 });
+

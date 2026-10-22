@@ -1,4 +1,6 @@
-import { RuleError, validateDeck, type Card } from './core.ts';
+import {RuleError} from './errors.ts';
+import {validateDeck} from './mechanics/deck-rules.ts';
+import type {Card} from './model/index.ts';
 import { nextRandom } from './ritual.ts';
 
 const basicColored = (card: Card) => card.kind === 'domain' && card.basic && card.produces !== 'neutral';

@@ -1,4 +1,6 @@
-import {RuleError,type Game,type Command} from '../core.ts';
+import {RuleError} from '../errors.ts';
+import type {Game} from '../model/index.ts';
+import type {Command} from './command-contracts.ts';
 type Handler<T extends Command['type']>=(game:Game,command:Extract<Command,{type:T}>)=>void;
 const commands=new Map<Command['type'],(game:Game,command:Command)=>void>();
 export function registerCommand<T extends Command['type']>(type:T,handler:Handler<T>):()=>void{

@@ -1,4 +1,4 @@
-import type { Player } from '../core.ts';
+import type { Player } from '../model/index.ts';
 import { damage } from './combat.ts';
 
 /** v0.9.13: Stasis pauses Poison; Poison resumes at the next owner turn. */

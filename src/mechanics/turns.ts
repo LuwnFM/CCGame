@@ -1,4 +1,4 @@
-import {type Game,type PlayerId,type ReadyRitual} from '../core.ts';
+import type {Game,PlayerId,ReadyRitual} from '../model/index.ts';
 import {emptyEnergy} from './energy.ts';
 import {drawCards} from './zones.ts';
 import {tickStatusesAtTurnStart} from './statuses.ts';

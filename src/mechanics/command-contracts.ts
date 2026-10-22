@@ -1,4 +1,4 @@
-import type {PlayerId} from '../core.ts';
+import type {PlayerId} from '../model/index.ts';
 /** Open map: mechanics modules can augment command payloads without changing core.ts.
  * All commands retain the same transactional revision/idempotency/security checks.
  */

@@ -1,5 +1,7 @@
 /** Firewell CCG transactional kernel. All mechanics and commands are registered modules. */
 import type {Command} from './mechanics/command-contracts.ts';
+import {RuleError} from './errors.ts';
+export {RuleError} from './errors.ts';
 import {executeCommand} from './mechanics/command-registry.ts';
 import {emptyEnergy} from './mechanics/energy.ts';
 import {leaveCard} from './mechanics/zones.ts';
@@ -11,10 +13,9 @@ export {RULES_VERSION,STARTING_RULER_HP} from './model/index.ts';
 import {RULES_VERSION,STARTING_RULER_HP} from './model/index.ts';
 import type {Card,Game,Player,PlayerId} from './model/index.ts';
 export type {PlayerId,Aspect,Energy,Cost,RitualSpec,Card,Permanent,Player,ReadyRitual,PendingReward,Game} from './model/index.ts';
-export type {DeathEffect,EntryEffect,LoyaltyEffect,TechniqueEffect} from './mechanics/effect-contracts.ts';
+export type {DeathEffect,EntryEffect,LoyaltyEffect,TechniqueEffect,RitualEffect,RitualPlan,RitualColor} from './model/index.ts';
 export type {Command} from './mechanics/command-contracts.ts';
 
-export class RuleError extends Error {}
 export function player(deck: Card[] = [], hand: Card[] = []): Player {
   return { hp: STARTING_RULER_HP, deck: [...deck], hand: [...hand], discard: [], erased: [], domains: [], main: [], auxiliary: [], legends: [], energy: emptyEnergy(), domainsPlayed: 0, rituals: [] };
 }

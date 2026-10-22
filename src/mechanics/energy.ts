@@ -1,4 +1,5 @@
-import { RuleError, type Aspect, type Cost, type Energy, type Player } from '../core.ts';
+import {RuleError} from '../errors.ts';
+import type {Aspect,Cost,Energy,Player} from '../model/index.ts';
 
 const energies: readonly Energy[] = ['red', 'blue', 'green', 'gold', 'violet', 'neutral'];
 export const emptyEnergy = (): Record<Energy, number> => ({ red: 0, blue: 0, green: 0, gold: 0, violet: 0, neutral: 0 });
