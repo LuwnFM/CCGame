@@ -1,3 +1,4 @@
+import {createChatUI} from './ui/chat.js';
 import {createApi} from './ui/api.js';
 import {createCardUI} from './ui/cards.js';
 import { locale, setLocale, cardName, archetypeName, translate, observeLocalization, localize } from './i18n.js';
@@ -115,22 +116,6 @@ function renderLeaderboard(board){
   }):[textElement('li',translate('Пока нет завершённых матчей'))]));
   $('leaderboardUpdated').textContent=translate('Данные на: ')+
     new Date(board.updatedAt).toLocaleString(locale()==='en'?'en-US':'ru-RU');
-}
-function renderSharedChat(data) {
-  for(const chat of [$('chat'),$('matchChat'),$('spectatorChat')]){
-   if(!chat)continue;
-   const pinned=chat.scrollTop+chat.clientHeight>=chat.scrollHeight-20;
-  const items=[...new Map([...olderMessages,...data.chat].map(message=>[message.id,message])).values()].sort((a,b)=>a.id-b.id);
-  chat.dataset.earliest=String(items[0]?.id||'');
-  chat.replaceChildren(...items.map(message=>{
-    const line=document.createElement('div');line.className='message';
-    line.append(textElement('strong',message.login+' '),textElement('small','ID '+message.accountId+' · '),
-      textElement('span',message.body));
-    line.title=message.accountId;return line;
-  }));
-  if (pinned) chat.scrollTop=chat.scrollHeight;
-   $('olderChat').disabled=!chatMore;
-  }
 }
 function renderLobby(data) {
   renderLeaderboard(data.leaderboard);
@@ -453,25 +438,7 @@ $('playBot').onclick=async()=>{try{const result=await api('/api/bot',{deckId:$('
 $('createRoom').onclick=async()=>{try{enterRoom((await api('/api/rooms',{deckId:$('deck').value})).code)}catch(e){status(e.message)}};
 $('joinRoom').onclick=async()=>{try{const code=$('code').value.trim().toUpperCase();await api('/api/rooms/'+code+'/join',{deckId:$('deck').value});enterRoom(code)}catch(e){status(e.message)}};
 $('leaveMatch').onclick=async()=>{try{await api('/api/queue/leave',{})}catch{}room='';game=null;localStorage.removeItem(roomKey);show('home');await refresh()};
-function updateChatCooldown(){
-  const left=Math.max(0,Math.ceil((chatAvailableAt-Date.now())/1000));
-  for(const id of ['chatSubmit','matchChatSubmit','spectatorChatSubmit'])if($(id))$(id).disabled=left>0;
-  for(const id of ['chatSubmit','matchChatSubmit','spectatorChatSubmit'])if($(id))$(id).textContent=left?'Отправить ('+left+'с)':'Отправить';
-  $('chatCooldown').textContent=left?'Повторная отправка через '+left+' сек.':'';
-}
-async function sendSharedChat(event){
-  event.preventDefault();if(Date.now()<chatAvailableAt)return;
-  try {
-    const field=event.currentTarget.querySelector('input');
-    const response=await api('/api/chat',{text:field.value});
-    field.value='';chatAvailableAt=response.nextAllowedAt||Date.now()+5000;
-    updateChatCooldown();await refresh();
-  } catch(e){
-    const match=/Подождите (\d+) сек/.exec(e.message);
-    if(match){chatAvailableAt=Date.now()+Number(match[1])*1000;updateChatCooldown()}
-    status(e.message);
-  }
-}
+const {renderSharedChat,updateChatCooldown,sendSharedChat}=createChatUI({$,textElement,api,refresh,status,getOlderMessages:()=>olderMessages,getChatMore:()=>chatMore,getAvailableAt:()=>chatAvailableAt,setAvailableAt:value=>{chatAvailableAt=value}});
 for(const id of ['chatForm','matchChatForm','spectatorChatForm'])$(id).onsubmit=sendSharedChat;
 $('spectatorClose').onclick=()=>{spectating=null;show('home');refresh()};
 $('olderChat').onclick=async()=>{
