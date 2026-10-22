@@ -10,7 +10,7 @@ registerCommand('playLegend',(next,command)=>{const p=next.players[command.actor
       requireRule(card?.kind === 'legend' && card.cost && Number.isSafeInteger(card.loyalty) && card.loyalty! > 0, 'Неверная Легенда');
       const sameLegend = p.legends.find(legend => legend.card.name === card.name);
       requireRule(!sameLegend || typeof command.keepExisting === 'boolean', 'Выберите, какую одноимённую Легенду оставить');
-      p.energy = payForCard(p, card.cost);
+      p.energy = payForCard(p, card.cost,command.domainIds);
       takeCard(p,'hand',command.handIndex,next,command.actor);
       if (sameLegend) {
         if (command.keepExisting) { discardDetached(next,command.actor,card); return; }

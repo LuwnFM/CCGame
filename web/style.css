@@ -344,3 +344,41 @@ button.domain-chip.spent{opacity:.4;text-decoration:line-through}
  #match .defense-actions button{min-height:25px;padding:2px 6px;font-size:.52rem}
  #match #status{bottom:38px;font-size:.55rem}
 }
+/* Alpha UX pass: open field, readable legend, focused chat/payment dialogs. */
+.player-area .zone{border:0!important;border-radius:0!important;background:transparent!important;padding:6px!important}
+.player-area .zone-main,.player-area .zone-aux{box-shadow:none}
+.player-area .domain-divider{height:1px;background:linear-gradient(90deg,transparent,#c7a367 12%,#c7a367 88%,transparent);margin:7px 0 0}
+.player-area .zone-aux .board{height:calc(100% - 30px)}
+.player-area .domain-details{border-top:1px solid #735e3c;border-radius:0;padding-top:7px}
+.player-area .player-status .legend-zone{padding:0;border:0;background:transparent}
+.player-area .legend-zone .card-wrapper{flex:1 1 auto;width:100%;min-width:0}
+.player-area .legend-zone .card{min-height:205px;padding:36px 10px 10px;gap:5px}
+.player-area .legend-zone .card-art{height:46px!important}
+.player-area .legend-zone .card-description{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:5;overflow:hidden;font-size:.66rem;line-height:1.25}
+.player-area .legend-zone .card .card-summary,.player-area .legend-zone .card>small:last-of-type{font-size:.66rem}
+.player-area .legend-zone .inspect-card{display:none}
+.legend-inspector{width:min(550px,94vw);max-height:min(88dvh,800px);overflow:auto}
+.legend-card-full{position:relative;border:2px solid #c7a367;border-radius:16px;padding:50px 22px 18px;background:linear-gradient(145deg,#2b2930,#171d1d);min-height:260px}
+.legend-card-full .glyph{position:absolute;top:12px;left:14px;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:#c7a367;color:#171717;font-weight:800}
+.legend-card-full h3{margin:0 0 8px;font-size:1.35rem}.legend-card-full .legend-loyalty{font-weight:700;color:#f0d598}
+.legend-card-full .legend-lore{line-height:1.5;white-space:pre-wrap}.legend-card-full ul{padding-left:20px;line-height:1.5}
+.legend-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+.match-chat-dialog{position:fixed;inset:50% auto auto 50%;transform:translate(-50%,-50%);margin:0;width:min(560px,92vw);height:min(650px,82dvh);max-width:none;max-height:none;border:1px solid #c7a367;border-radius:16px;padding:16px;background:#171c1c;color:#f5ecd8;box-shadow:0 24px 90px #000b}
+.match-chat-dialog::backdrop,.card-inspector::backdrop{background:#060a0ad9;backdrop-filter:blur(3px)}
+.match-chat-dialog .chat{height:calc(100% - 105px);overflow:auto;margin:8px 0}
+.match-chat-dialog form{display:flex;gap:8px}.match-chat-dialog input{flex:1;min-width:0}
+.domain-groups{display:grid;grid-template-columns:1fr 1fr;gap:8px}.domain-groups h4{margin:5px 0;color:#e6d2a5}
+.domain-grid{display:flex;flex-wrap:wrap;gap:5px}.domain-chip.special{max-width:100%;white-space:normal}
+.domain-payment-dialog{width:min(540px,92vw);max-height:85dvh;overflow:auto}
+#domainPaymentChoices{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.payment-group h3{font-size:.9rem;color:#e6d2a5}.payment-domain{display:flex;align-items:center;gap:8px;padding:7px;border:1px solid #544c3a;border-radius:8px;margin:4px 0}
+.payment-domain input{width:auto;min-height:0}
+@media(max-width:750px){.player-area .legend-zone .card{min-height:160px;padding:29px 6px 6px}.player-area .legend-zone .card-description{-webkit-line-clamp:4;font-size:.57rem}.player-area .legend-zone .card b{font-size:.7rem}.player-area .legend-zone .card .card-summary,.player-area .legend-zone .card>small:last-of-type{font-size:.57rem}}
+@media(orientation:landscape) and (max-height:520px){
+ .player-area .legend-zone .card{min-height:0;padding:24px 4px 4px;gap:2px}
+ .player-area .legend-zone .card .glyph{width:19px;height:19px;font-size:.5rem}
+ .player-area .legend-zone .card b{font-size:.52rem}.player-area .legend-zone .card-art{height:15px!important}
+ .player-area .legend-zone .card .card-description{-webkit-line-clamp:2;font-size:.46rem;line-height:1.12}
+ .player-area .legend-zone .card .card-summary,.player-area .legend-zone .card>small:last-of-type{font-size:.46rem}
+ .match-chat-dialog{height:min(88dvh,420px);width:min(500px,92vw)}
+}

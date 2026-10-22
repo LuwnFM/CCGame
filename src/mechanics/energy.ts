@@ -6,9 +6,16 @@ export const emptyEnergy = (): Record<Energy, number> => ({ red: 0, blue: 0, gre
 function requireEnergy(ok: unknown, message: string): asserts ok { if (!ok) throw new RuleError(message); }
 
 /** Reserve colored costs, then spend neutral before colored energy on generic costs. */
-export function payForCard(owner: Player, cost: Cost): Record<Energy, number> {
+export function payForCard(owner: Player, cost: Cost, domainIds?: number[]): Record<Energy, number> {
   const available = { ...owner.energy };
-  const ready = owner.domains.filter(d => !d.exhausted && d.card.produces);
+  let ready = owner.domains.filter(d => !d.exhausted && d.card.produces);
+  if (domainIds !== undefined) {
+    requireEnergy(Array.isArray(domainIds) && new Set(domainIds).size === domainIds.length, 'Неверный выбор Владений');
+    requireEnergy(domainIds.every(id => ready.some(d => d.objectId === id)), 'Выбранное Владение недоступно');
+    ready = domainIds.map(id => ready.find(d => d.objectId === id)!);
+  } else {
+    ready = [...ready].sort((a,b) => Number(!!b.card.basic)-Number(!!a.card.basic));
+  }
   const tap = (energy: Energy) => {
     const domain = ready.find(d => d.card.produces === energy && !d.exhausted);
     if (!domain) return false;

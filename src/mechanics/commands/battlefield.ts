@@ -34,7 +34,7 @@ registerCommand('playCreature',(next,command)=>{const p=next.players[command.act
       const duplicate = card.unique ? [...p.main,...p.auxiliary].find(u=>u.card.name===card.name) : undefined;
       if(duplicate){
         requireRule(typeof command.keepExisting==='boolean','Выберите, какую Уникальную оставить');
-        if(command.keepExisting){p.energy=payForCard(p,card.cost);takeCard(p,'hand',command.handIndex,next,command.actor);discardDetached(next,command.actor,card,!!card.ritualReward);return;}
+        if(command.keepExisting){p.energy=payForCard(p,card.cost,command.domainIds);takeCard(p,'hand',command.handIndex,next,command.actor);discardDetached(next,command.actor,card,!!card.ritualReward);return;}
         departPermanent(next,command.actor,duplicate.objectId);
       }
       const zone = card.createdToken ? p.auxiliary : p.main;
@@ -46,7 +46,7 @@ registerCommand('playCreature',(next,command)=>{const p=next.players[command.act
         // Displacement is a departure, not a death. Never trigger onDeath.
         departPermanent(next,command.actor,replaced.objectId);
       }
-      const energy = payForCard(p, card.cost);
+      const energy = payForCard(p, card.cost,command.domainIds);
       p.energy = energy; takeCard(p,'hand',command.handIndex,next,command.actor);
       placePermanent(next,command.actor,card.createdToken?'auxiliary':'main',card,
         {exhausted:!card.haste&&!card.zeal,ritualReward:!!card.ritualReward});
@@ -65,7 +65,7 @@ registerCommand('playArtifact',(next,command)=>{const p=next.players[command.act
         requireRule(replaced, 'Выберите допустимый предмет или токен для Вытеснения');
         departPermanent(next,command.actor,replaced.objectId,['auxiliary']);
       }
-      p.energy = payForCard(p, card.cost);
+      p.energy = payForCard(p, card.cost,command.domainIds);
       takeCard(p,'hand',command.handIndex,next,command.actor);
       if (sameItem) {
         if (command.keepExisting) { discardDetached(next,command.actor,card); return; }

@@ -42,7 +42,7 @@ export function createBattlefieldUI({$,button,textElement,cardButton,cardLabel,s
   const domainLabels={red:'К',blue:'С',green:'З',gold:'Ж',violet:'Ф',neutral:'Н'};
   const readyDomains=me.domains.filter(p=>!p.exhausted);
   $('domainSummary').textContent=me.domains.length+' всего · '+readyDomains.length+' готовы · '+(me.domains.length-readyDomains.length)+' истощены';
-  $('myDomains').replaceChildren(...me.domains.map(p=>{
+  $('myBasicDomains').replaceChildren(...me.domains.filter(p=>p.card.basic).map(p=>{
     const wrapper=document.createElement('span');wrapper.className='domain-item';
     const el=button(domainLabels[p.card.produces]||'◇',()=>send({type:'tapDomain',objectId:p.objectId}),
       !mine||p.exhausted,'domain-chip '+(p.card.produces||'neutral')+(p.exhausted?' spent':''));
@@ -53,13 +53,21 @@ export function createBattlefieldUI({$,button,textElement,cardButton,cardLabel,s
     wrapper.append(el,inspect);
     return wrapper;
   }));
+  $('mySpecialDomains').replaceChildren(...me.domains.filter(p=>!p.card.basic).map(p=>{
+    const wrapper=document.createElement('span');wrapper.className='domain-item';
+    const el=button((domainLabels[p.card.produces]||'◇')+' '+p.card.name,()=>send({type:'tapDomain',objectId:p.objectId}),!mine||p.exhausted,'domain-chip special '+(p.card.produces||'neutral')+(p.exhausted?' spent':''));
+    el.title=p.card.name+(p.exhausted?' · истощено':' · готово');
+    const inspect=button('ⓘ',()=>showCardDetails(p.card,p),false,'domain-inspect');wrapper.append(el,inspect);return wrapper;
+  }));
   $('enemyDomainCount').textContent=String(enemy.domains.length);
-  $('enemyDomains').replaceChildren(...enemy.domains.map(p=>{
-    const el=button(domainLabels[p.card.produces]||'◇',()=>showCardDetails(p.card,p),false,
+  const enemyDomain=(p,special)=>{
+    const el=button((domainLabels[p.card.produces]||'◇')+(special?' '+p.card.name:''),()=>showCardDetails(p.card,p),false,
       'domain-chip '+(p.card.produces||'neutral')+(p.exhausted?' spent':''));
     el.title=p.card.name+(p.exhausted?' · истощено':' · готово');
     el.setAttribute('aria-label','Подробнее о Владении соперника '+el.title);
     return el;
-  }));
+  };
+  $('enemyBasicDomains').replaceChildren(...enemy.domains.filter(p=>p.card.basic).map(p=>enemyDomain(p,false)));
+  $('enemySpecialDomains').replaceChildren(...enemy.domains.filter(p=>!p.card.basic).map(p=>enemyDomain(p,true)));
  };
 }

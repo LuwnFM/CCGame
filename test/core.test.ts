@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { apply, initialGame, player, sendToDiscard, validateDeck, type Card, type Game, type Command } from '../src/core.ts';
+import { payForCard } from '../src/mechanics/energy.ts';
 const land: Card = { id: 'l', name: 'Базовое красное Владение', kind: 'domain', basic: true, produces: 'red' };
 const creature: Card = { id: 'c', name: 'Ученик', kind: 'creature', cost: { colored: { red: 1 }, generic: 1 }, attack: 2, health: 2 };
 function step(g: Game, command: Omit<Command, 'expectedRevision' | 'key'>, key: string): Game {
@@ -37,6 +38,24 @@ test('colored cost cannot be paid with neutral; failed payment does not mutate g
   assert.throws(() => step(g, { type: 'playCreature', actor: 0, handIndex: 0 }, 'c'), /цветной/);
   assert.equal(g.players[0].hand.length, 1);
   assert.equal(g.players[0].energy.neutral, 1);
+});
+test('automatic payment exhausts basic domains first; manual payment honors selected ids',()=>{
+  const special={...land,id:'special',name:'Особое Владение',basic:false,produces:'red' as const};
+  const owner=player();
+  owner.domains.push(
+    {objectId:1,card:special,exhausted:false,shield:0},
+    {objectId:2,card:land,exhausted:false,shield:0}
+  );
+  const cost={colored:{red:1},generic:0};
+  payForCard(owner,cost);
+  assert.equal(owner.domains[0].exhausted,false);
+  assert.equal(owner.domains[1].exhausted,true);
+  const manual=player();
+  manual.domains.push({objectId:1,card:land,exhausted:false,shield:0},{objectId:2,card:special,exhausted:false,shield:0});
+  payForCard(manual,cost,[2]);
+  assert.equal(manual.domains[0].exhausted,false);
+  assert.equal(manual.domains[1].exhausted,true);
+  assert.throws(()=>payForCard(manual,cost,[3]),/недоступно/);
 });
 test('discard exactly down to 8 at end of turn', () => {
   let g = step(initialGame(player([], Array(10).fill(creature)), player()), { type: 'startTurn', actor: 0 }, 's');

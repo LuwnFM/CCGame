@@ -11,7 +11,7 @@ registerCommand('playTechnique',(next,command)=>{const p=next.players[command.ac
       requireRule(card?.kind === 'technique' && card.cost && (card.ritual||card.techniqueEffect), 'Неверная Техника');
       // Validate targets before committing costs; apply() works on a transactionally cloned game.
       if(card.ritual)requireRule(Number.isSafeInteger(card.ritual.duration) && card.ritual.duration > 0, 'Неверный срок Ритуала');
-      p.energy = payForCard(p, card.cost);
+      p.energy = payForCard(p, card.cost,command.domainIds);
       takeCard(p,'hand',command.handIndex,next,command.actor);
       if(card.ritual)p.rituals.push({ id: `ritual-${next.nextObjectId++}`, color: card.ritual.color, threshold: card.ritual.threshold,
         rewardPool: card.ritual.rewardPool, requiresSource: false, remainingStarts: card.ritual.duration });

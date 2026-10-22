@@ -16,6 +16,7 @@ let account = null, catalog = [], presets = [], savedDecks = [], deckIds = [], g
 let selected = null, selectedMulligan = new Set(), selectedVictims = new Set(), selectedRitual = null;
 let selectedReward = null, selectedRewardKeepExisting = undefined, selectedArtifactIndex = null, busy = false, loading = false;
 let selectedLegendId = null, defenderChoice = null, attackAlertKey = null;
+let autoDomainPayment=localStorage.getItem('firewell_auto_domain_payment')!=='false';
 let chatAvailableAt=0,olderMessages=[],chatMore=true,spectating=null;
 function status(value) { $('status').textContent = translate(value || ''); }
 let healthProbeInFlight = false;
@@ -171,6 +172,10 @@ function renderSpectator(g){
 function enterRoom(value) {spectating=null; room=value;localStorage.setItem(roomKey,room);game=null;show('match');refresh(); }
 async function send(command) {
   if (busy || !game) return;
+  if(['playCreature','playTechnique','playLegend','playArtifact'].includes(command.type)&&command.domainIds===undefined&&!autoDomainPayment){
+    const me=game.players[game.seat],card=me.hand?.[command.handIndex];
+    if(card?.cost){openDomainPayment(card,me,ids=>send({...command,domainIds:ids}));return;}
+  }
   busy=true;
   try {
     const payload={...command,expectedRevision:game.revision,key:crypto.randomUUID()};
@@ -188,6 +193,23 @@ async function send(command) {
     selected=null;selectedReward=null;selectedRewardKeepExisting=undefined;selectedArtifactIndex=null;await refresh();status('Действие принято');
   } catch(error){status(error.message);await refresh()}
   finally{busy=false}
+}
+function openDomainPayment(card,me,onConfirm){
+ const dlg=$('domainPaymentDialog'),ready=me.domains.filter(d=>!d.exhausted&&d.card.produces),selected=new Set();
+ const costs=card.cost.colored||{},costTotal=Object.values(costs).reduce((a,b)=>a+b,0)+card.cost.generic;
+ $('domainPaymentSummary').textContent=`${cardName(card)} · ${costTotal} энергии. В запасе: ${Object.entries(me.energy).filter(([,n])=>n).map(([c,n])=>`${c} ${n}`).join(', ')||'0'}.`;
+ const choices=$('domainPaymentChoices');
+ const update=()=>{
+   const energy={...me.energy};for(const d of ready)if(selected.has(d.objectId))energy[d.card.produces]++;
+   let payable=true;for(const [color,n] of Object.entries(costs))if((energy[color]||0)<n)payable=false;
+   let total=Object.values(energy).reduce((a,b)=>a+b,0);if(total<costTotal)payable=false;
+   $('domainPaymentStatus').textContent=payable?'Оплата возможна. Выбранные Владения истощатся при розыгрыше.':'Выбранной Энергии пока не хватает.';
+   $('domainPaymentConfirm').disabled=!payable;
+ };
+ const makeGroup=(title,items)=>{const group=document.createElement('section');group.className='payment-group';group.append(textElement('h3',title));for(const d of items){const label=document.createElement('label');label.className='payment-domain';const input=document.createElement('input');input.type='checkbox';input.value=d.objectId;input.onchange=()=>{input.checked?selected.add(d.objectId):selected.delete(d.objectId);update()};label.append(input,textElement('span',`${d.card.name} · ${d.card.produces}`));group.append(label)}choices.append(group)};
+ choices.replaceChildren();makeGroup('Базовые',ready.filter(d=>d.card.basic));makeGroup('Особые',ready.filter(d=>!d.card.basic));update();
+ $('domainPaymentConfirm').onclick=()=>{const ids=[...selected];dlg.close();onConfirm(ids)};
+ dlg.showModal();
 }
 function kindName(kind){
   const ru={domain:'Владение',creature:'Существо',technique:'Техника',legend:'Легенда',artifact:'Артофакт'};
@@ -290,9 +312,18 @@ function renderGame(ready) {
     ' · Энергия '+(Object.entries(me.energy).filter(([,n])=>n).map(([c,n])=>c+':'+n).join(', ')||'0');
   $('enemyInfo').textContent='Колода '+enemy.deckCount+' · Рука '+enemy.handCount+' · Сброс '+enemy.discardCount;
   $('myLegends').replaceChildren(...me.legends.map(p=>cardButton(p.card,cardLabel(p),
-    ()=>{selectedLegendId=selectedLegendId===p.objectId?null:p.objectId;renderGame(ready)},
+    ()=>{selectedLegendId=p.objectId;renderGame(ready);$('legendDialog').showModal()},
     !mine,false,p)));
   const legend=me.legends.find(p=>p.objectId===selectedLegendId);
+  $('legendDialogTitle').textContent=legend?cardName(legend.card):'Легенда';
+  const legendView=$('legendCardView');legendView.replaceChildren();
+  if(legend){const card=document.createElement('article');card.className='legend-card-full '+(legend.card.aspects?.[0]||'neutral');
+    card.append(textElement('span',initials(cardName(legend.card)),'glyph'),textElement('h3',cardName(legend.card)),textElement('div','Лояльность '+legend.loyalty,'legend-loyalty'));
+    const lore=legend.card.lore;card.append(textElement('p',[lore?.summary,lore?.state,lore?.organization,lore?.note].filter(Boolean).join(' · ')||'Легенда поля боя.','legend-lore'));
+    const abilities=legend.card.loyaltyAbilities?.length?legend.card.loyaltyAbilities:legend.card.loyaltyAbility?[legend.card.loyaltyAbility]:[];
+    card.append(textElement('ul',''));for(const ability of abilities)card.lastChild.append(textElement('li',abilityText(ability)));
+    legendView.append(card);
+  }
   const actions=$('legendActions');
   actions.classList.toggle('hidden',!legend);
   actions.replaceChildren();
@@ -370,6 +401,16 @@ $('joinRoom').onclick=async()=>{try{const code=$('code').value.trim().toUpperCas
 $('leaveMatch').onclick=async()=>{try{await api('/api/queue/leave',{})}catch{}room='';game=null;localStorage.removeItem(roomKey);show('home');await refresh()};
 const {renderSharedChat,updateChatCooldown,sendSharedChat}=createChatUI({$,textElement,api,refresh,status,getOlderMessages:()=>olderMessages,getChatMore:()=>chatMore,getAvailableAt:()=>chatAvailableAt,setAvailableAt:value=>{chatAvailableAt=value}});
 for(const id of ['chatForm','matchChatForm','spectatorChatForm'])$(id).onsubmit=sendSharedChat;
+$('chatOpen').onclick=()=>$('matchChatDialog').showModal();
+$('chatClose').onclick=()=>$('matchChatDialog').close();
+$('matchChatDialog').onclick=e=>{if(e.target===$('matchChatDialog'))$('matchChatDialog').close()};
+$('legendClose').onclick=()=>$('legendDialog').close();
+$('legendDialog').onclick=e=>{if(e.target===$('legendDialog'))$('legendDialog').close()};
+$('domainPaymentClose').onclick=()=>$('domainPaymentDialog').close();
+$('domainPaymentCancel').onclick=()=>$('domainPaymentDialog').close();
+$('domainPaymentDialog').onclick=e=>{if(e.target===$('domainPaymentDialog'))$('domainPaymentDialog').close()};
+$('autoDomainPayment').checked=autoDomainPayment;
+$('autoDomainPayment').onchange=()=>{autoDomainPayment=$('autoDomainPayment').checked;localStorage.setItem('firewell_auto_domain_payment',String(autoDomainPayment))};
 $('spectatorClose').onclick=()=>{spectating=null;show('home');refresh()};
 $('olderChat').onclick=async()=>{
   try{
