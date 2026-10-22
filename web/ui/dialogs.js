@@ -15,7 +15,7 @@ export function createMatchDialogs({$,button,cardButton,kindName,cardLabel,send}
   }
   if(game.phase==='ritual') {
     const sources=game.readyRituals||[];
-    if(!sources.some(r=>r.id===selectedRitual)){setSelectedRitual(sources[0]?.id);selectedVictims.clear()}
+    if(!sources.some(r=>r.id===selectedRitual)){selectedRitual=sources[0]?.id;setSelectedRitual(selectedRitual);selectedVictims.clear()}
     const active=sources.find(r=>r.id===selectedRitual);
     $('ritualSources').replaceChildren(...sources.map(r=>button(r.color+' · Жертва '+r.threshold,()=>{setSelectedRitual(r.id);selectedVictims.clear();rerender()},false,r.id===selectedRitual?'secondary':'')));
     $('ritualVictims').replaceChildren(...[...me.main,...me.auxiliary].filter(p=>active?.eligibleIds.includes(p.objectId))
