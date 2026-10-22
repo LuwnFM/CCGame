@@ -1,4 +1,5 @@
-import {RuleError,type PlayerId} from '../../core.ts';
+import {RuleError} from '../../errors.ts';
+import type {PlayerId} from '../../model/index.ts';
 import {registerEffect} from '../effects-registry.ts';
 import {summon,drawCards,placePermanent,takeCard,transferCard} from '../zones.ts';
 import {emitGameEvent} from '../events.ts';
