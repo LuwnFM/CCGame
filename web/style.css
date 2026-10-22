@@ -121,3 +121,92 @@ button.domain-chip.spent{opacity:.4;text-decoration:line-through}
 /* Text is the primary attack signal; color supports it without conveying unique information. */
 .card-wrapper.incoming-attacker{padding-top:28px}
 .card-wrapper .attack-target{position:absolute;top:0;left:0;right:0;bottom:auto;background:#602b3a;color:#fff!important;text-align:center;font-size:.72rem;font-weight:800;z-index:6;border:1px solid #ff8998;padding:3px;border-radius:6px}
+
+/* UI concept: reusable card frames and responsive table layout (Kenney CC0 icon art). */
+:root{--table:#18231f;--table-edge:#745839;--card-paper:#e9ddc4;--card-ink:#241e19;--card-gold:#d9b56f}
+.card{display:flex;flex-direction:column;gap:4px;position:relative;isolation:isolate;overflow:hidden;min-height:194px;padding:42px 9px 9px;border:2px solid #a88b5b;border-radius:14px;background:linear-gradient(145deg,#3c352b,#211f1c 65%);box-shadow:inset 0 0 0 2px #15130f,0 5px 14px #0006;color:#f8f0dd;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease}
+.card:hover:not(:disabled){transform:translateY(-3px);border-color:#f0ce83;box-shadow:inset 0 0 0 2px #15130f,0 9px 20px #0009}
+.card .glyph{position:absolute;z-index:2;top:7px;left:8px;width:29px;height:29px;margin:0;border:2px solid #f0d69b;border-radius:50%;background:#352a1d;color:#fff2cc;font-size:.7rem;box-shadow:0 2px 6px #0008}
+.card b{position:relative;z-index:1;min-height:20px;margin:0;padding:4px 5px;border-radius:5px;background:#15130edb;color:#fff3d7;font-size:.8rem;line-height:1.15;text-shadow:0 1px 2px #000}
+.card .card-art{position:relative;display:grid;place-items:center;flex:none;height:70px;overflow:hidden;border:1px solid #d7bd806b;border-radius:8px;background:radial-gradient(ellipse at 50% 42%,#807252 0,#403b2d 50%,#221f1a 100%)}
+.card .card-art:before{content:"";display:block;width:54px;height:54px;background:#f5d9a0;opacity:.92;filter:drop-shadow(0 2px 4px #000b);mask:center/contain no-repeat; -webkit-mask:center/contain no-repeat}
+.card.red .card-art:before{mask-image:url('/assets/kenney-boardgame/fire.png');-webkit-mask-image:url('/assets/kenney-boardgame/fire.png')}
+.card.blue .card-art:before{mask-image:url('/assets/kenney-boardgame/book_closed.png');-webkit-mask-image:url('/assets/kenney-boardgame/book_closed.png')}
+.card.green .card-art:before{mask-image:url('/assets/kenney-boardgame/resource_wood.png');-webkit-mask-image:url('/assets/kenney-boardgame/resource_wood.png')}
+.card.gold .card-art:before{mask-image:url('/assets/kenney-boardgame/crown_a.png');-webkit-mask-image:url('/assets/kenney-boardgame/crown_a.png')}
+.card.violet .card-art:before{mask-image:url('/assets/kenney-boardgame/skull.png');-webkit-mask-image:url('/assets/kenney-boardgame/skull.png')}
+.card.neutral .card-art:before{mask-image:url('/assets/kenney-boardgame/character.png');-webkit-mask-image:url('/assets/kenney-boardgame/character.png')}
+.card .card-summary{margin:0;padding-top:3px;border-top:1px solid #d0b57855;color:#f5d896;font-size:.7rem;line-height:1.2}
+.card>small:last-of-type{color:#d9d0bd;font-size:.66rem;line-height:1.15}
+.card .card-flags{color:#e7c875;font-size:.62rem}
+.card.red{border-color:#bd6657}.card.blue{border-color:#678daa}.card.green{border-color:#7d9d69}.card.gold{border-color:#c5a156}.card.violet{border-color:#a17bb1}
+.hand .card-wrapper{flex-basis:146px}.board .card{min-height:128px;padding:31px 6px 6px;border-radius:10px}.board .card .glyph{top:4px;left:5px;width:24px;height:24px;font-size:.6rem}.board .card b{font-size:.72rem}.board .card .card-art{height:38px}.board .card .card-art:before{width:31px;height:31px}.board .card .card-summary{font-size:.61rem}.board .card>small:last-of-type{font-size:.58rem}
+.playarea{background:linear-gradient(145deg,#252c2c,#1c2222);border-color:#786442}
+#enemyPlayarea{background:linear-gradient(150deg,#26303a,#1e2329);border-color:#5d7187}
+#myPlayarea{background:linear-gradient(150deg,#30291f,#22211d);border-color:#90754c}
+.board{min-height:74px;padding:5px;border-radius:11px;background:linear-gradient(180deg,#172321c9,#111a18c9);border:1px solid #a28a5b55}
+.domain-details{background:#1c2422;border-color:#826b45}
+
+/* Landscape phone table: opponent, shared center, player and hand remain in one viewport. */
+@media (orientation:landscape) and (max-height:520px){
+ body{background:radial-gradient(ellipse at 50% 48%,#34433a 0,#17201c 68%);overflow-x:hidden}
+ header{display:none}
+ main{width:100%;max-width:none;padding:5px 8px}
+ #match{display:flex;flex-direction:column;gap:4px;min-height:calc(100dvh - 10px)}
+ #match>.top{position:sticky;top:0;z-index:6;min-height:32px;margin:0;padding:4px 8px;border-radius:8px;background:#151b1aeF}
+ #match>.top h2,#match>.top strong{font-size:.8rem;margin:0}
+ #match>.top .actions{gap:4px}
+ #match>.top button{min-height:28px;padding:3px 8px;font-size:.72rem}
+ #match .shared-chat-panel{position:absolute;top:40px;right:8px;z-index:8;width:min(300px,46vw);margin:0;padding:4px 8px;background:#141a1af5}
+ #match .shared-chat-panel summary{font-size:.68rem}
+ #match .shared-chat-panel details[open]{max-height:240px;overflow:auto}
+ #match .shared-chat-panel .chat{height:90px}
+ #match .shared-chat-panel form input{min-height:32px}
+ #match .ruler-ability-bar{order:8;position:fixed;right:8px;bottom:7px;z-index:7;width:auto;max-width:31vw;margin:0;padding:4px 6px;gap:4px;border-radius:9px;background:#171d1cf2}
+ #match .ruler-ability-bar strong,#match .ruler-ability-bar .hint{display:none}
+ #match .ruler-ability-bar button{min-height:32px;padding:4px 8px;font-size:.7rem}
+ #match .attack-alert{order:1;margin:0;padding:5px 8px;border-width:1px;border-radius:8px;font-size:.72rem;gap:6px}
+ #match .attack-alert strong,#match .attack-alert span{font-size:.72rem}
+ #match .defense-actions button{min-height:30px;padding:3px 8px;font-size:.68rem}
+ #match .field{order:2;display:grid;grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) minmax(0,1fr);gap:4px;flex:1;min-height:0}
+ #match .playarea{display:grid;grid-template-columns:78px minmax(82px,.6fr) minmax(0,2fr);grid-template-rows:22px minmax(0,1fr) 18px minmax(0,1fr);align-items:center;gap:2px 6px;overflow:hidden;min-height:0;margin:0;padding:4px 6px;border-radius:9px}
+ #match .playarea h2{grid-column:1;grid-row:1;margin:0;font-size:.72rem;white-space:nowrap}
+ #match .playarea>p{grid-column:1;grid-row:2/5;align-self:start;margin:0;font-size:.58rem;line-height:1.2;overflow:hidden}
+ #match .playarea h3{margin:0;font-size:.56rem;line-height:1;white-space:nowrap}
+ #match .playarea h3:nth-of-type(1){grid-column:2;grid-row:1}
+ #match .playarea .row{grid-column:2;grid-row:2;gap:3px;overflow:hidden}
+ #match .playarea h3:nth-of-type(2){grid-column:3;grid-row:1}
+ #match .playarea #enemyBoard,#match .playarea #myBoard{grid-column:3;grid-row:2;display:flex;gap:3px;min-height:0;height:100%;padding:2px;overflow:auto}
+ #match .playarea h3:nth-of-type(3){grid-column:3;grid-row:3}
+ #match .playarea #enemyAux,#match .playarea #myAux{grid-column:3;grid-row:4;display:flex;gap:3px;min-height:0;height:100%;padding:2px;overflow:auto}
+ #match .playarea .row .card-wrapper{flex:0 0 48px}
+ #match .playarea .row .card{min-height:0;height:42px;padding:20px 3px 3px;font-size:.55rem}
+ #match .playarea .row .card-art,#match .playarea .row .card-summary,#match .playarea .row .card>small{display:none}
+ #match .playarea .row .card b{font-size:.54rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ #match .playarea .board .card-wrapper{flex:0 0 64px;min-width:0}
+ #match .playarea .board .card{height:100%;min-height:0;padding:20px 3px 2px;gap:1px}
+ #match .playarea .board .card-art{height:17px;min-height:17px}
+ #match .playarea .board .card-art:before{width:15px;height:15px}
+ #match .playarea .board .card .card-summary,#match .playarea .board .card>small:last-of-type{display:none}
+ #match .playarea .board .card b{font-size:.53rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:2px}
+ #match .playarea .domain-details{display:block;grid-column:2;grid-row:3/5;max-height:100%;overflow:auto;margin:0;padding:3px;font-size:.58rem}
+ #match .playarea .domain-details summary{font-size:.57rem;line-height:1.2}
+ #match .playarea .domain-grid{gap:2px;margin-top:2px}
+ #match .playarea .domain-grid button.domain-chip{min-height:24px;min-width:24px;padding:2px;font-size:.55rem}
+ #match .playarea .legend-actions,#match .playarea .discard-picker{position:fixed;left:8px;right:8px;bottom:48px;z-index:12;max-height:45dvh;overflow:auto}
+ #match>.playarea:last-child{order:3;min-height:92px;max-height:108px;display:block;padding:4px 6px 34px;overflow:hidden}
+ #match>.playarea:last-child h2{display:none}
+ #hand{gap:4px;padding:1px 0 3px;overflow-x:auto;scrollbar-width:thin}
+ #hand .card-wrapper{flex:0 0 78px}
+ #hand .card{height:73px;min-height:73px;padding:24px 4px 3px;gap:2px;border-radius:8px}
+ #hand .card .glyph{top:3px;left:4px;width:19px;height:19px;font-size:.5rem}
+ #hand .card b{font-size:.55rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ #hand .card .card-art{height:18px;min-height:18px}
+ #hand .card .card-art:before{width:15px;height:15px}
+ #hand .card .card-summary{font-size:.47rem;white-space:nowrap;overflow:hidden}
+ #hand .card>small:last-of-type,#hand .card .card-flags,#artifactReplacements{display:none}
+ #match>.playarea:last-child>.actions{position:absolute;right:8px;bottom:7px;display:flex;width:auto;z-index:9}
+ #match>.playarea:last-child>.actions button{min-height:32px;padding:4px 8px;font-size:.68rem}
+ #status{position:fixed;left:50%;bottom:48px;z-index:10;transform:translateX(-50%);margin:0;padding:3px 7px;border-radius:6px;background:#111a;color:#fff;font-size:.68rem}
+ .card-inspector{max-height:88dvh}
+}

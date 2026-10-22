@@ -108,7 +108,7 @@ function cardButton(card, label, onClick, disabled = false, active = false, perm
   element.disabled=false;
   element.classList.toggle('unavailable',disabled);
   element.onclick=()=>disabled?showCardDetails(card,permanent):onClick();
-  element.append(textElement('span',initials(cardName(card)),'glyph'),textElement('b',cardName(card)));
+  element.append(textElement('span',initials(cardName(card)),'glyph'),textElement('b',cardName(card)),textElement('span','','card-art'));
   // Card is a button itself. A nested interactive element is invalid HTML and
   // mobile browsers may swallow taps; use a sibling info button instead.
   const inspect=button('ⓘ',()=>showCardDetails(card,permanent),false,'inspect-card');

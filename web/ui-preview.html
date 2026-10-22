@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#17201c">
+  <title>Firewell CCG · игровой интерфейс — прототип</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    body:before{content:"ПРЕДПРОСМОТР · ВЕТКА UI";position:fixed;z-index:20;top:7px;right:10px;padding:3px 8px;border:1px solid #bd9c5d;border-radius:20px;background:#171a16;color:#e9d49e;font-size:10px;letter-spacing:.08em}
+    .demo-name{color:#f4d28e}.demo-status{display:flex;gap:8px;align-items:center}.demo-board{min-height:0!important}
+    @media(min-width:1000px) and (orientation:landscape){header{display:flex}main{max-width:1440px}#match .field{grid-template-columns:1fr 1fr}#match .playarea{display:block;min-height:245px;padding:14px}#match .playarea h2{font-size:1rem}#match .playarea h3{font-size:.8rem;margin:8px 0 5px}#match .playarea>p{font-size:.75rem}#match .playarea .board{display:grid;height:auto;min-height:60px}#match .playarea .board .card-wrapper{flex:1 1 0}#match .playarea .board .card{height:auto;min-height:112px;padding:27px 5px 4px}#match .playarea .board .card-art{height:30px}#match .playarea .board .card b{font-size:.65rem}#match .playarea .board .card .card-summary{display:block}.hand .card-wrapper{flex-basis:146px}#match>.playarea:last-child{min-height:auto;max-height:none;display:block;padding:12px}#match>.playarea:last-child h2{display:block}#hand .card{height:auto;min-height:194px;padding:42px 9px 9px}#hand .card-art{height:70px}#hand .card .glyph{width:29px;height:29px;font-size:.7rem}#hand .card b{font-size:.8rem}#hand .card .card-summary{font-size:.7rem}#hand .card>small:last-of-type{display:block}#hand .card .card-flags{display:block}#match .ruler-ability-bar{position:static;max-width:none;width:auto;order:initial;display:flex;margin:0;padding:12px}}
+  </style>
+</head>
+<body>
+  <header><div class="brand"><span class="sigil">FW</span><div><strong>Firewell CCG</strong><small>Альфа · дуэль 1×1</small></div></div><div class="header-actions"><button class="secondary">Правила игры</button><span class="pill connection-status" data-state="online">Сервер подключён</span></div></header>
+  <main><section id="match">
+    <div class="panel top"><div><strong class="demo-name">КОМНАТА F7A2</strong><span id="turnLabel" class="muted">Ход 5 · твой ход</span></div><div class="actions"><span class="pill">01:42</span><button class="ghost">В лобби</button></div></div>
+    <section class="panel ruler-ability-bar"><strong>Способность Владетеля</strong><button>−2 HP → взять 2 карты</button><span class="hint">Один раз за ход</span></section>
+    <div class="field">
+      <section id="enemyPlayarea" class="panel playarea">
+        <h2>Соперник <span class="pill">24 HP</span></h2><p class="muted">Синяя колода · 31 карта</p>
+        <h3>Легенды</h3><div class="row"><span class="card-wrapper"><button class="card blue"><span class="glyph">АВ</span><b>Астрид Вельт</b><span class="card-art"></span><small class="card-summary">Лояльность 4</small></button><button class="inspect-card">ⓘ</button></span></div>
+        <h3>Основное поле · 8</h3><div id="enemyBoard" class="board demo-board">
+          <span class="card-wrapper"><button class="card blue"><span class="glyph">ЛД</span><b>Ледяной дозорный</b><span class="card-art"></span><small class="card-summary">3/4 · Страж</small></button><button class="inspect-card">ⓘ</button></span>
+          <span class="card-wrapper"><button class="card neutral"><span class="glyph">КП</span><b>Крылатый посланник</b><span class="card-art"></span><small class="card-summary">2/2 · Полёт</small></button><button class="inspect-card">ⓘ</button></span>
+        </div>
+        <h3>Вспомогательное поле · 4</h3><div id="enemyAux" class="board demo-board"><span class="slot-placeholder">◇</span><span class="slot-placeholder">◇</span><span class="slot-placeholder">◇</span><span class="slot-placeholder">◇</span></div>
+        <details class="domain-details"><summary>Владения соперника · 5</summary></details>
+      </section>
+      <section id="myPlayarea" class="panel playarea">
+        <h2>Ты <span class="pill">19 HP</span></h2><p class="muted">Красная колода · 28 карт</p>
+        <h3>Легенды</h3><div class="row"><span class="card-wrapper"><button class="card red"><span class="glyph">МВ</span><b>Марк Вельт</b><span class="card-art"></span><small class="card-summary">Лояльность 3</small></button><button class="inspect-card">ⓘ</button></span></div>
+        <h3>Основное поле · 8</h3><div id="myBoard" class="board demo-board">
+          <span class="card-wrapper"><button class="card red"><span class="glyph">ГМ</span><b>Горный ополченец</b><span class="card-art"></span><small class="card-summary">2/1</small></button><button class="inspect-card">ⓘ</button></span>
+          <span class="card-wrapper"><button class="card gold"><span class="glyph">КЗ</span><b>Кузнец заставы</b><span class="card-art"></span><small class="card-summary">3/3 · Жертва</small></button><button class="inspect-card">ⓘ</button></span>
+          <span class="card-wrapper"><button class="card red"><span class="glyph">СТ</span><b>Стрелок перевала</b><span class="card-art"></span><small class="card-summary">3/1 · Первый удар</small></button><button class="inspect-card">ⓘ</button></span>
+        </div>
+        <h3>Вспомогательное поле · 4</h3><div id="myAux" class="board demo-board"><span class="slot-placeholder">◇</span><span class="slot-placeholder">◇</span><span class="slot-placeholder">◇</span><span class="slot-placeholder">◇</span></div>
+        <details id="domainDetails" class="domain-details"><summary>Владения · 6 · 2 готовы</summary></details>
+      </section>
+    </div>
+    <section class="panel playarea"><h2>Рука · 5</h2><div id="hand" class="hand">
+      <span class="card-wrapper"><button class="card red"><span class="glyph">1</span><b>Рудокоп стали</b><span class="card-art"></span><small class="card-summary">Энергия 1R · 2/2</small><small>Существо</small></button><button class="inspect-card">ⓘ</button></span>
+      <span class="card-wrapper"><button class="card red"><span class="glyph">3</span><b>Всадник хребта</b><span class="card-art"></span><small class="card-summary">Энергия 3R · 4/2</small><small>Существо · Рвение</small></button><button class="inspect-card">ⓘ</button></span>
+      <span class="card-wrapper"><button class="card gold"><span class="glyph">2</span><b>Щит заставы</b><span class="card-art"></span><small class="card-summary">Энергия 2 · Защита</small><small>Техника</small></button><button class="inspect-card">ⓘ</button></span>
+      <span class="card-wrapper"><button class="card violet"><span class="glyph">4</span><b>Дух перевала</b><span class="card-art"></span><small class="card-summary">Энергия 4V · 3/5</small><small>Существо · Жертва</small></button><button class="inspect-card">ⓘ</button></span>
+      <span class="card-wrapper"><button class="card blue"><span class="glyph">2</span><b>Ледяная стена</b><span class="card-art"></span><small class="card-summary">Энергия 2U</small><small>Техника</small></button><button class="inspect-card">ⓘ</button></span>
+    </div><div class="actions"><button>Атаковать Владетеля</button><button class="secondary">Завершить ход</button></div></section>
+  </section></main>
+</body>
+</html>
