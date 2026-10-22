@@ -13,17 +13,36 @@ export const layoutProperties = {
   maxWidth:{label:'Максимальная ширина',min:0,max:1800,css:'max-width',unit:'px'},
   maxHeight:{label:'Максимальная высота',min:0,max:1200,css:'max-height',unit:'px'},
   fontSize:{label:'Размер текста',min:6,max:64,css:'font-size',unit:'px'},
+  fontWeight:{label:'Толщина шрифта',min:100,max:900,css:'font-weight',unit:''},
   lineHeight:{label:'Высота строки',min:6,max:110,css:'line-height',unit:'px'},
   letterSpacing:{label:'Расстояние между буквами',min:0,max:20,css:'letter-spacing',unit:'px'},
   borderWidth:{label:'Толщина рамки',min:0,max:20,css:'border-width',unit:'px'},
+  borderTopWidth:{label:'Рамка сверху',min:0,max:20,css:'border-top-width',unit:'px'},
+  borderRightWidth:{label:'Рамка справа',min:0,max:20,css:'border-right-width',unit:'px'},
+  borderBottomWidth:{label:'Рамка снизу',min:0,max:20,css:'border-bottom-width',unit:'px'},
+  borderLeftWidth:{label:'Рамка слева',min:0,max:20,css:'border-left-width',unit:'px'},
   padding:{label:'Внутренний отступ',min:0,max:120,css:'padding',unit:'px'},
   margin:{label:'Внешний отступ',min:0,max:120,css:'margin',unit:'px'},
   gap:{label:'Промежуток',min:0,max:100,css:'gap',unit:'px'},
   borderRadius:{label:'Скругление',min:0,max:80,css:'border-radius',unit:'px'},
+  offsetX:{label:'Сдвиг вправо / влево',min:-1600,max:1600,css:'',unit:'px'},
+  offsetY:{label:'Сдвиг вниз / вверх',min:-1200,max:1200,css:'',unit:'px'},
+  order:{label:'Порядок в ряду',min:-20,max:20,css:'order',unit:''},
+  zIndex:{label:'Поверх других',min:0,max:100,css:'z-index',unit:''},
+  opacity:{label:'Непрозрачность, %',min:0,max:100,css:'',unit:'%'},
   flexBasis:{label:'Ширина карты в руке',min:30,max:360,css:'flex-basis',unit:'px'},
   slotHeight:{label:'Высота ячейки поля',min:32,max:240,css:'--slot-height',unit:'px',board:true},
   gridColumns:{label:'Колонок в поле',min:1,max:8,css:'grid-template-columns',unit:'',board:true}
 };
+export const layoutChoices={
+  fontFamily:{label:'Шрифт',css:'font-family',values:{system:'system-ui, sans-serif',arial:'Arial, sans-serif',georgia:'Georgia, serif',trebuchet:'"Trebuchet MS", sans-serif',mono:'ui-monospace, monospace'}},
+  fontStyle:{label:'Начертание',css:'font-style',values:{normal:'normal',italic:'italic'}},
+  textAlign:{label:'Выравнивание текста',css:'text-align',values:{left:'left',center:'center',right:'right'}},
+  borderStyle:{label:'Стиль рамки',css:'border-style',values:{solid:'solid',dashed:'dashed',dotted:'dotted',double:'double',none:'none'}},
+  alignSelf:{label:'Положение в ячейке',css:'align-self',values:{auto:'auto',start:'start',center:'center',end:'end',stretch:'stretch'}}
+};
+export const layoutColors={color:'Цвет текста',backgroundColor:'Цвет фона',borderColor:'Цвет рамки'};
+const safeColor=/^#[0-9a-fA-F]{6}$/;
 const safeSelector = /^#[A-Za-z][\w-]*(?:\s*>\s*:nth-child\([1-9][0-9]*\))*$/;
 const empty = () => ({version:1,profiles:{desktop:{},phoneLandscape:{},phonePortrait:{}},viewports:{}});
 export function normalizeLayoutConfig(source) {
@@ -39,6 +58,8 @@ export function normalizeLayoutConfig(source) {
           const definition=layoutProperties[name];
           if(definition && typeof value==='number' && Number.isFinite(value) && value>=definition.min && value<=definition.max && (name!=='gridColumns'||Number.isInteger(value)))
             clean[name]=Math.round(value*10)/10;
+          else if(layoutChoices[name] && typeof value==='string' && Object.hasOwn(layoutChoices[name].values,value))clean[name]=value;
+          else if(Object.hasOwn(layoutColors,name) && typeof value==='string' && safeColor.test(value))clean[name]=value.toLowerCase();
         }
         if(Object.keys(clean).length)result.profiles[profile][selector]=clean;
       }
@@ -53,10 +74,17 @@ export function buildLayoutCss(config) {
   const normalized=normalizeLayoutConfig(config);
   return Object.entries(layoutProfiles).map(([profile,{media}])=>{
     const rules=Object.entries(normalized.profiles[profile]).map(([selector,values])=>{
-      const declarations=Object.entries(values).map(([name,value])=>{
+      const declarations=Object.entries(values).flatMap(([name,value])=>{
         if(name==='gridColumns')return `grid-template-columns:repeat(${value},minmax(0,1fr))!important`;
-        const {css,unit}=layoutProperties[name];return name==='borderWidth'?`border-style:solid!important;border-width:${value}px!important`:`${css}:${value}${unit}!important`;
+        if(name==='offsetX'||name==='offsetY')return [];
+        if(name==='opacity')return `opacity:${value/100}!important`;
+        if(name==='zIndex')return `position:relative!important;z-index:${value}!important`;
+        if(name==='borderWidth'||name.startsWith('border')&&name.endsWith('Width'))return `border-style:${layoutChoices.borderStyle.values[values.borderStyle]||'solid'}!important;${layoutProperties[name].css}:${value}px!important`;
+        if(layoutChoices[name])return `${layoutChoices[name].css}:${layoutChoices[name].values[value]}!important`;
+        if(Object.hasOwn(layoutColors,name))return `${name.replace(/[A-Z]/g,c=>'-'+c.toLowerCase())}:${value}!important`;
+        const {css,unit}=layoutProperties[name];return `${css}:${value}${unit}!important`;
       });
+      if(values.offsetX!==undefined||values.offsetY!==undefined)declarations.push(`translate:${values.offsetX||0}px ${values.offsetY||0}px!important`);
       return `${selector}{${declarations.join(';')}}`;
     });
     return rules.length?`@media ${media}{${rules.join('\n')}}`:'';

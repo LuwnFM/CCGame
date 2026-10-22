@@ -38,3 +38,18 @@ test('text and border controls produce scoped CSS',()=>{
  const css=buildLayoutCss({version:1,profiles:{desktop:{'#signIn':{width:180,height:44,fontSize:18,lineHeight:24,letterSpacing:1,borderWidth:3,borderRadius:12}}}});
  assert.match(css,/#signIn\{width:180px!important;height:44px!important;font-size:18px!important;line-height:24px!important;letter-spacing:1px!important;border-style:solid!important;border-width:3px!important;border-radius:12px!important\}/);
 });
+
+test('import retains device positions, colors, fonts and individual borders safely',()=>{
+ const config=normalizeLayoutConfig({version:1,profiles:{phoneLandscape:{'#chatOpen':{
+  offsetX:-320,offsetY:42,zIndex:9,opacity:85,fontFamily:'georgia',fontStyle:'italic',
+  borderLeftWidth:4,borderStyle:'dashed',backgroundColor:'#AABBCC',color:'#fff000',
+  borderColor:'red',fontWeight:700
+ }}}});
+ assert.equal(config.profiles.phoneLandscape['#chatOpen'].borderColor,undefined);
+ const css=buildLayoutCss(config);
+ assert.match(css,/translate:-320px 42px!important/);
+ assert.match(css,/border-left-width:4px!important/);
+ assert.match(css,/font-family:Georgia, serif!important/);
+ assert.match(css,/background-color:#aabbcc!important/);
+ assert.doesNotMatch(css,/border-color:red/);
+});

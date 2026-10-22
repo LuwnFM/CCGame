@@ -36,7 +36,11 @@ $('profileName').textContent='Игрок';$('profileId').textContent='FW-1042';
 $('presence').textContent='Онлайн: 8 · в поиске: 2';$('deckCount').textContent='70/70';
 $('roomLabel').textContent='Матч · пример';$('turnLabel').textContent=' · Твой ход';$('timer').textContent='01:24';
 for(const id of ['deck','starter'])for(const name of ['Лесной дозор','Стальной клинок','Астральный круг'])$(id).add(new Option(name,name));
-$('savedDecks').textContent='Лесной дозор · 70 карт';$('activeMatches').textContent='Дружеский матч · A1B2C3D4';
+for(const [id,label,actions] of [['savedDecks','Лесной дозор · 70 карт',['Выбрать','Удалить']],['activeMatches','Дружеский матч · A1B2C3D4',['Продолжить','Наблюдать']]]){
+ const row=document.createElement('div');row.className='preview-list-row';row.append(document.createTextNode(label+' '));
+ for(const title of actions){const button=document.createElement('button');button.type='button';button.textContent=title;row.append(button)}
+ $(id).append(row);
+}
 $('chat').textContent='Добро пожаловать в общий чат!';$('matchChat').textContent='Добро пожаловать в общий чат!';
 $('leaderboard').append(...['Лиора · 12 побед','Астрид · 8 побед'].map(value=>{const item=document.createElement('li');item.textContent=value;return item}));
 for(const id of ['builtCards','catalog'])$(id).append(card('Лесной страж','green','3/4 · Страж','Может перехватить атаку.'),card('Клинок разведчика','red','2/2 · Существо','Удар при выходе.'));

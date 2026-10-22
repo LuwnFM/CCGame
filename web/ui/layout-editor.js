@@ -1,7 +1,7 @@
-import {layoutProfiles,layoutProperties,loadLayoutConfig,saveLayoutConfig,applyLayoutConfig,normalizeLayoutConfig,selectorForElement} from './layout-preferences.js';
+import {layoutProfiles,layoutProperties,layoutChoices,layoutColors,loadLayoutConfig,saveLayoutConfig,applyLayoutConfig,normalizeLayoutConfig,selectorForElement} from './layout-preferences.js';
 const $=id=>document.getElementById(id);
 const frame=$('previewFrame'),area=$('previewArea'),box=$('viewportBox');
-let config=loadLayoutConfig(),profile='desktop',selected=null,selector=null,interaction=false,oldOutline='';
+let config=loadLayoutConfig(),profile='desktop',selected=null,selector=null,interaction=false,moving=false,oldOutline='';
 const status=message=>{$('editorStatus').textContent=message};
 function viewport(){return config.viewports[profile]||layoutProfiles[profile]}
 function fitPreview(){
@@ -33,6 +33,8 @@ function controlValue(name){
  if(override!==undefined)return override;
  const definition=layoutProperties[name];
  const computed=selected?.ownerDocument.defaultView.getComputedStyle(selected);
+ if(name==='offsetX'||name==='offsetY'||name==='order'||name==='zIndex')return 0;
+ if(name==='opacity')return Math.round(Number(computed?.opacity??1)*100);
  if(name==='gridColumns')return 4;
  if(name==='slotHeight'){
    const raw=computed?.getPropertyValue('--slot-height');
@@ -41,6 +43,16 @@ function controlValue(name){
  const raw=computed?.getPropertyValue(definition.css);
  const value=Number.parseFloat(raw);
  return Number.isFinite(value)?Math.min(definition.max,Math.max(definition.min,Math.round(value*10)/10)):definition.min;
+}
+function setRule(name,value,save=true){
+ if(!selector)return;
+ config.profiles[profile][selector]={...config.profiles[profile][selector],[name]:value};
+ if(save)persist();else applyLayoutConfig(config,frame.contentDocument);
+ $('clearElement').disabled=false;
+}
+function resetRule(name){
+ const rule=config.profiles[profile][selector];if(rule){delete rule[name];if(!Object.keys(rule).length)delete config.profiles[profile][selector]}
+ persist();renderControls();$('clearElement').disabled=!config.profiles[profile][selector];
 }
 function renderControls(){
  const root=$('propertyControls');root.replaceChildren();
@@ -59,18 +71,36 @@ function renderControls(){
    const mark=()=>row.classList.toggle('is-default',config.profiles[profile][selector]?.[name]===undefined);mark();
    const update=value=>{
      const n=Number(value);if(!Number.isFinite(n)||n<definition.min||n>definition.max||name==='gridColumns'&&!Number.isInteger(n))return;
-     const rule={...config.profiles[profile][selector],[name]:n};config.profiles[profile][selector]=rule;
-     range.value=n;number.value=n;persist();mark();$('clearElement').disabled=false;
+     range.value=n;number.value=n;setRule(name,n);mark();
    };
    range.oninput=()=>update(range.value);number.onchange=()=>update(number.value);
-   reset.onclick=()=>{
-     const rule=config.profiles[profile][selector];if(rule){delete rule[name];if(!Object.keys(rule).length)delete config.profiles[profile][selector]}
-     persist();renderControls();$('clearElement').disabled=!config.profiles[profile][selector];
-   };
+   reset.onclick=()=>resetRule(name);
+ }
+ for(const [name,definition] of Object.entries(layoutChoices)){
+  const row=document.createElement('div');row.className='property-row';
+  const label=document.createElement('label');label.textContent=definition.label;label.htmlFor='choice-'+name;
+  const select=document.createElement('select');select.id='choice-'+name;
+  select.append(new Option('Исходное значение',''));
+  for(const choice of Object.keys(definition.values))select.append(new Option(choice==='system'?'Системный':choice==='mono'?'Моноширинный':choice,choice));
+  select.value=config.profiles[profile][selector]?.[name]||'';
+  select.onchange=()=>select.value?setRule(name,select.value):resetRule(name);
+  row.append(label,select);root.append(row);
+ }
+ for(const [name,labelText] of Object.entries(layoutColors)){
+  const row=document.createElement('div');row.className='property-row';
+  const label=document.createElement('label');label.textContent=labelText;label.htmlFor='color-'+name;
+  const input=document.createElement('input');input.type='color';input.id='color-'+name;
+  const computed=selected.ownerDocument.defaultView.getComputedStyle(selected).getPropertyValue(name.replace(/[A-Z]/g,c=>'-'+c.toLowerCase()));
+  const parts=computed.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  input.value=config.profiles[profile][selector]?.[name]||(parts?'#'+parts.slice(1).map(part=>Number(part).toString(16).padStart(2,'0')).join(''):'#ffffff');
+  const reset=document.createElement('button');reset.type='button';reset.textContent='↺';reset.title='Исходный цвет';reset.onclick=()=>resetRule(name);
+  input.oninput=()=>setRule(name,input.value);
+  row.append(label,input,reset);root.append(row);
  }
 }
 function bindFrame(){
  const doc=frame.contentDocument;if(!doc)return;
+ doc.body.style.touchAction=moving?'none':'';
  applyLayoutConfig(config,doc);
  frame.contentWindow?.FirewellLayout?.setScreen($('previewScreen').value);
  frame.contentWindow?.FirewellLayout?.showDialog($('previewDialog').value);
@@ -80,6 +110,25 @@ function bindFrame(){
    const target=event.target.nodeType===1?event.target:event.target.parentElement;
    choose(target);
  },true);
+ let drag=null;
+ doc.addEventListener('pointerdown',event=>{
+  if(!moving||event.button!==0)return;
+  event.preventDefault();event.stopImmediatePropagation();
+  const target=event.target.nodeType===1?event.target:event.target.parentElement;
+  choose(target);
+  if(!selector)return;
+  drag={pointerId:event.pointerId,x:event.clientX,y:event.clientY,startX:config.profiles[profile][selector]?.offsetX||0,startY:config.profiles[profile][selector]?.offsetY||0};
+  if(target.setPointerCapture)target.setPointerCapture(event.pointerId);
+ },true);
+ doc.addEventListener('pointermove',event=>{
+  if(!drag||event.pointerId!==drag.pointerId||!selected)return;
+  event.preventDefault();
+  const x=Math.max(-1600,Math.min(1600,Math.round(drag.startX+event.clientX-drag.x)));
+  const y=Math.max(-1200,Math.min(1200,Math.round(drag.startY+event.clientY-drag.y)));
+  setRule('offsetX',x,false);setRule('offsetY',y,false);
+ },true);
+ const finish=event=>{if(drag&&event.pointerId===drag.pointerId){drag=null;persist();renderControls()}};
+ doc.addEventListener('pointerup',finish,true);doc.addEventListener('pointercancel',finish,true);
  doc.addEventListener('keydown',event=>{
    if(!interaction&&['Enter',' '].includes(event.key)){event.preventDefault();event.stopImmediatePropagation()}
  },true);
@@ -98,7 +147,15 @@ for(const [id,key] of [['viewportWidth','width'],['viewportHeight','height']])$(
 $('interactionMode').onclick=()=>{
  interaction=!interaction;$('interactionMode').setAttribute('aria-pressed',String(interaction));
  $('interactionMode').textContent='Режим просмотра: '+(interaction?'включён':'выключен');
+ if(interaction&&moving)$('moveMode').click();
  if(interaction&&selected)choose(null);
+};
+$('moveMode').onclick=()=>{
+ moving=!moving;$('moveMode').setAttribute('aria-pressed',String(moving));
+ $('moveMode').textContent='Перемещение: '+(moving?'включено':'выключено');
+ if(moving&&interaction)$('interactionMode').click();
+ frame.classList.toggle('move-active',moving);
+ if(frame.contentDocument)frame.contentDocument.body.style.touchAction=moving?'none':'';
 };
 $('selectParent').onclick=()=>{if(selected?.parentElement)choose(selected.parentElement)};
 $('clearElement').onclick=()=>{
