@@ -65,7 +65,7 @@ function textElement(tag, value, className = '') {
   const element = document.createElement(tag); element.textContent = value; element.className = className; return element;
 }
 function initials(name) { return [...name.replace(/[^\p{L}\p{N}]/gu,'')].slice(0,2).join('').toUpperCase() || 'FW'; }
-const {abilityText,effectText,chooseCards,playCreature,playTechnique,detailsText,traitDescriptions,showCardDetails,cardSummary,cardButton}=createCardUI({$,button,textElement,cardName,kindName,send,cardLabel});
+const {abilityText,effectText,chooseCards,playCreature,playTechnique,detailsText,traitDescriptions,showCardDetails,cardSummary,cardButton}=createCardUI({$,button,textElement,cardName,kindName,send,cardLabel,initials});
 function setAccount(value) {
   account = value;
   $('profileName').textContent = value.login;
