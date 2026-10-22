@@ -1,4 +1,4 @@
-import type {Card,Permanent} from '../core.ts';
+import type {Card,Permanent} from '../model/index.ts';
 import './traits/index.ts';
 import {readTrait} from './trait-registry.ts';
 /** Active game traits are only those registered in src/mechanics/traits/.
