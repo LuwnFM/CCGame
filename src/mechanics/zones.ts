@@ -1,4 +1,5 @@
-import { RuleError, type Card, type Game, type Permanent, type PlayerId } from '../core.ts';
+import {RuleError} from '../errors.ts';
+import type {Card,Game,Permanent,PlayerId} from '../model/index.ts';
 import {emitGameEvent} from './events.ts';
 
 /** Shared core zone operation. Card effects supply data, never executable card-specific functions.
