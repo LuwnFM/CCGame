@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import {strict as assert} from 'node:assert';
-import {buildLayoutCss,normalizeLayoutConfig,selectorForElement,saveLayoutConfig,loadLayoutConfig} from '../web/ui/layout-preferences.js';
+import {buildLayoutCss,normalizeLayoutConfig,selectorForElement,saveLayoutConfig,loadLayoutConfig,applyLayoutConfig} from '../web/ui/layout-preferences.js';
 
 test('layout editor keeps separate device rules and stable slot selectors',()=>{
  const config=normalizeLayoutConfig({version:1,profiles:{
@@ -54,11 +54,23 @@ test('import retains device positions, colors, fonts and individual borders safe
  assert.doesNotMatch(css,/border-color:red/);
 });
 
-test('design variant survives JSON export and rejects unknown designs',()=>{
+test('device designs survive JSON export and reject unknown designs',()=>{
  const entries=new Map<string,string>();
  const storage={getItem:(key:string)=>entries.get(key)||null,setItem:(key:string,value:string)=>{entries.set(key,value)}};
- const config=normalizeLayoutConfig({version:1,design:'arena',profiles:{phoneLandscape:{'#hero':{width:110}}}});
+ const config=normalizeLayoutConfig({version:1,designs:{desktop:'atlas',phoneLandscape:'arena',phonePortrait:'citadel'},profiles:{phoneLandscape:{'#hero':{width:110}}}});
  saveLayoutConfig(config,storage);
- assert.equal(loadLayoutConfig(storage).design,'arena');
- assert.equal(normalizeLayoutConfig({version:1,design:'unknown'}).design,'atlas');
+ assert.deepEqual(loadLayoutConfig(storage).designs,{desktop:'atlas',phoneLandscape:'arena',phonePortrait:'citadel'});
+ assert.deepEqual(normalizeLayoutConfig({version:1,design:'citadel',designs:{desktop:'unknown'}}).designs,{desktop:'atlas',phoneLandscape:'arena',phonePortrait:'arena'});
+});
+
+test('editor profile selects its own design without affecting other devices',()=>{
+ const config=normalizeLayoutConfig({version:1});
+ const doc={body:{dataset:{} as Record<string,string>},getElementById:()=>({textContent:''}),defaultView:{matchMedia:()=>({matches:false})}};
+ applyLayoutConfig(config,doc,'phoneLandscape');
+ assert.equal(doc.body.dataset.design,'arena');
+ // Resizes retain an explicitly selected editor profile.
+ applyLayoutConfig(config,doc);
+ assert.equal(doc.body.dataset.design,'arena');
+ applyLayoutConfig(config,doc,'desktop');
+ assert.equal(doc.body.dataset.design,'atlas');
 });

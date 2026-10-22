@@ -1,4 +1,4 @@
-import {layoutProfiles,layoutProperties,layoutChoices,layoutColors,loadLayoutConfig,saveLayoutConfig,applyLayoutConfig,normalizeLayoutConfig,selectorForElement} from './layout-preferences.js?v=designs3';
+import {layoutProfiles,layoutProperties,layoutChoices,layoutColors,loadLayoutConfig,saveLayoutConfig,applyLayoutConfig,normalizeLayoutConfig,selectorForElement} from './layout-preferences.js?v=devices1';
 const $=id=>document.getElementById(id);
 const frame=$('previewFrame'),area=$('previewArea'),box=$('viewportBox');
 let config=loadLayoutConfig(),profile='desktop',selected=null,selector=null,interaction=false,moving=false,oldOutline='',zoomFactor=1,currentScale=1,pinchActive=false;
@@ -39,11 +39,12 @@ function pinchHandlers(target,coords){
  const end=event=>{if(event.touches.length<2){start=null;pinchActive=false}};
  target.addEventListener('touchend',end,true);target.addEventListener('touchcancel',end,true);
 }
-function persist(){config=saveLayoutConfig(config);if(frame.contentDocument)applyLayoutConfig(config,frame.contentDocument);status('Сохранено в этом браузере')}
+function persist(){config=saveLayoutConfig(config);if(frame.contentDocument)applyLayoutConfig(config,frame.contentDocument,profile);status('Сохранено в этом браузере')}
 function setProfile(next){
  profile=next;for(const button of document.querySelectorAll('[data-profile]'))button.setAttribute('aria-pressed',String(button.dataset.profile===profile));
  const size=viewport();$('viewportWidth').value=size.width;$('viewportHeight').value=size.height;
- fitPreview();renderControls();
+ $('previewDesign').value=config.designs[profile];
+ fitPreview();if(frame.contentDocument?.body)applyLayoutConfig(config,frame.contentDocument,profile);renderControls();
 }
 function choose(element){
  if(selected)selected.style.outline=oldOutline;
@@ -75,7 +76,7 @@ function controlValue(name){
 function setRule(name,value,save=true){
  if(!selector)return;
  config.profiles[profile][selector]={...config.profiles[profile][selector],[name]:value};
- if(save)persist();else applyLayoutConfig(config,frame.contentDocument);
+ if(save)persist();else applyLayoutConfig(config,frame.contentDocument,profile);
  $('clearElement').disabled=false;
 }
 function resetRule(name){
@@ -134,7 +135,7 @@ function bindFrame(){
   const rect=frame.getBoundingClientRect();wheelZoom(event,rect.left+event.clientX*currentScale,rect.top+event.clientY*currentScale);
  },{passive:false,capture:true});
  pinchHandlers(doc,touch=>{const rect=frame.getBoundingClientRect();return {x:rect.left+touch.clientX*currentScale,y:rect.top+touch.clientY*currentScale}});
- applyLayoutConfig(config,doc);
+ applyLayoutConfig(config,doc,profile);
  frame.contentWindow?.FirewellLayout?.setScreen($('previewScreen').value);
  frame.contentWindow?.FirewellLayout?.showDialog($('previewDialog').value);
  doc.addEventListener('click',event=>{
@@ -197,8 +198,8 @@ document.addEventListener('fullscreenchange',()=>{
 function switchPreview(){choose(null);frame.contentWindow?.FirewellLayout?.setScreen($('previewScreen').value);frame.contentWindow?.FirewellLayout?.showDialog($('previewDialog').value)}
 $('previewScreen').onchange=switchPreview;
 $('previewDialog').onchange=switchPreview;
-$('previewDesign').value=config.design;
-$('previewDesign').onchange=()=>{config.design=$('previewDesign').value;persist();choose(null);status('Вариант сохранён; он включён в экспорт JSON')};
+$('previewDesign').value=config.designs[profile];
+$('previewDesign').onchange=()=>{config.designs[profile]=$('previewDesign').value;persist();choose(null);status('Дизайн этого устройства сохранён и включён в экспорт JSON')};
 for(const button of document.querySelectorAll('[data-profile]'))button.onclick=()=>setProfile(button.dataset.profile);
 for(const [id,key] of [['viewportWidth','width'],['viewportHeight','height']])$(id).onchange=()=>{
  const value=Number($(id).value),limits=key==='width'?[320,2560]:[300,1600];
@@ -236,9 +237,9 @@ $('importLayout').onchange=async event=>{
    if(file.size>1024*1024)throw Error('Файл слишком большой');
    const parsed=JSON.parse(await file.text());if(parsed.version!==1)throw Error('Нужен файл редактора версии 1');
    config=saveLayoutConfig(normalizeLayoutConfig(parsed));
-   $('previewDesign').value=config.design;
+   $('previewDesign').value=config.designs[profile];
    if(selected){selected.style.outline=oldOutline;selected=null;selector=null}
-   if(frame.contentDocument)applyLayoutConfig(config,frame.contentDocument);
+   if(frame.contentDocument)applyLayoutConfig(config,frame.contentDocument,profile);
    setProfile(profile);choose(null);status('Настройки загружены');
  }catch(error){status('Не удалось загрузить: '+error.message)}
  finally{event.target.value=''}

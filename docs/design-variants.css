@@ -49,7 +49,6 @@ body[data-design] #match .domain-settings input[type=checkbox]{display:inline-bl
 body[data-design] #match .player-status .legend-zone{display:flex;flex-direction:column;gap:0;flex:1;min-height:0;max-height:220px;margin-top:3px}
 body[data-design] #match .legend-zone .row{display:flex;align-items:stretch;flex-wrap:nowrap;flex:1;min-height:0}
 body[data-design] #match .legend-zone .card-wrapper{width:100%;height:100%;max-width:180px;flex:1;min-height:0}
-body[data-design] #match .table-phase{position:absolute;top:-7px;left:50%;transform:translateX(-50%);z-index:3;padding:2px 12px;border:1px solid #8b81534a;border-radius:20px;background:#26382b;color:#cfd4b5;font-size:8px;letter-spacing:.14em;white-space:nowrap}
 /* Card face: title, art, large stats and ability text keep a stable order. */
 body[data-design] #match .card{display:flex;flex-direction:column;justify-content:flex-start;gap:3px;position:relative;min-width:0;min-height:0;height:100%;padding:24px 6px 5px;border:1px solid #a28d64;border-radius:10px;background:linear-gradient(155deg,#4b4b3d,#202923 70%);color:#f5f0de;overflow:hidden;box-shadow:inset 0 0 0 2px #0b12156b,0 3px 9px #0005;transition:transform .15s,border-color .15s,box-shadow .15s}
 body[data-design] #match .card.red{--hue:#ba704b;border-color:#ae7758}
@@ -106,7 +105,6 @@ body[data-design=citadel] #match .card{border-radius:3px;background:linear-gradi
 body[data-design=citadel] #match .card .card-art{border-radius:1px;background:radial-gradient(ellipse at 50% 30%,color-mix(in srgb,var(--hue) 30%,transparent),transparent 70%),linear-gradient(160deg,#4b5147,#17221e)}
 body[data-design=citadel] #match .card b{font-family:Georgia,serif;font-size:12px}
 body[data-design=citadel] #match .slot-placeholder{border:0;border-bottom:1px solid #c2b89122;border-radius:0;background:#0000000a}
-body[data-design=citadel] #match .table-phase{background:#42412c;border-color:#aca16b66}
 body[data-design=citadel] #match>.playarea:last-child{border-radius:4px;background:#171f19}
 /* HEARTH: Hearthstone-inspired open arena, copper frames, curved hand and blue glow. */
 body[data-design=arena]{--gold:#dfbc78;background:radial-gradient(ellipse at center,#54412c,#18191b 80%)}
@@ -117,7 +115,6 @@ body[data-design=arena] #match .card{border-radius:20px 20px 9px 9px;background:
 body[data-design=arena] #match .card .card-art{border-radius:20px 20px 5px 5px}
 body[data-design=arena] #match .card .card-summary{font-size:14px;color:#ffdf8c}
 body[data-design=arena] #match .player-status>h2 span{border:1px solid #cdaf7766;border-radius:50%;padding:7px;font-size:19px;background:radial-gradient(#4b392d,#211f1a)}
-body[data-design=arena] #match .table-phase{color:#c5e5dc;background:#24443d;border-color:#86bdac66}
 body[data-design=arena] #match #hand{padding:5px 8px 2px;gap:4px}
 body[data-design=arena] #match #hand>.card-wrapper:nth-child(odd){transform:rotate(-1deg)}
 body[data-design=arena] #match #hand>.card-wrapper:nth-child(even){transform:rotate(1deg)}
@@ -174,7 +171,6 @@ body[data-design=arena] #match>.playarea:last-child{background:linear-gradient(#
  body[data-design] #match .domain-settings .hint{font-size:6px;line-height:1.15}
  body[data-design] #match .domain-settings .auto-payment{font-size:6px;gap:3px}
  body[data-design] #match .domain-settings input[type=checkbox]{width:10px;height:10px}
- body[data-design] #match .table-phase{font-size:5px;top:-4px;left:48%;padding:0 6px;border-radius:8px}
  body[data-design] #match>.playarea:last-child,body[data-design=atlas] #match>.playarea:last-child{grid-column:1;grid-row:3;grid-template-columns:minmax(0,1fr) 106px;grid-template-rows:10px minmax(0,1fr);gap:1px 6px;padding:4px 6px;min-height:0;max-height:none;border-radius:7px}
  body[data-design] #match>.playarea:last-child>h2{grid-column:1;grid-row:1;font-size:6px;letter-spacing:.08em}
  body[data-design] #match #hand,body[data-design=atlas] #match #hand{grid-column:1;grid-row:2;display:flex;flex-direction:row;align-self:stretch;align-items:stretch;min-height:0;height:100%;max-height:100%;gap:5px;padding:0 0 1px;overflow-x:auto;overflow-y:hidden}
@@ -219,7 +215,6 @@ body[data-design=arena] #match>.playarea:last-child{background:linear-gradient(#
  body[data-design] #match .ruler-ability-bar button{font-size:6px;min-height:25px}
  body[data-design] #match .domain-cards .card-wrapper{min-width:44px}
  body[data-design] #match .domain-settings summary{font-size:6px}
- body[data-design] #match .table-phase{display:none}
  body[data-design] #match>.playarea:last-child,body[data-design=atlas] #match>.playarea:last-child{grid-column:1;grid-row:3;grid-template-columns:minmax(0,1fr);grid-template-rows:12px minmax(0,1fr) 28px;padding:4px;gap:2px}
  body[data-design] #match #hand,body[data-design=atlas] #match #hand{grid-column:1;grid-row:2;flex-direction:row;overflow-x:auto;overflow-y:hidden}
  body[data-design] #match #hand>.card-wrapper,body[data-design=atlas] #match #hand>.card-wrapper{flex:0 0 92px;height:100%;width:92px}
@@ -241,3 +236,8 @@ body[data-design] #match .ruler-ability-bar{order:0}
  body[data-design=arena] #match .player-area :is(#myBoard,#enemyBoard)>.slot-placeholder{display:none}
 }
 @media(orientation:portrait) and (max-width:750px){body[data-design]:has(#match:not(.hidden)) header{height:32px}}
+
+/* One turn indicator, in the match toolbar rather than clipped across two fields. */
+body[data-design] #match>.top #turnLabel{display:inline-flex;align-items:center;min-height:24px;margin-left:10px;padding:3px 10px;border:1px solid #b8cf8a66;border-radius:20px;background:#304b35;color:#e6f1c9;font-size:11px;font-weight:750;white-space:nowrap;letter-spacing:.02em}
+@media(orientation:landscape) and (max-height:600px){body[data-design] #match>.top #turnLabel{min-height:20px;margin-left:5px;padding:2px 7px;font-size:9px}}
+@media(orientation:portrait) and (max-width:750px){body[data-design] #match>.top #turnLabel{min-height:20px;margin-left:5px;padding:2px 7px;font-size:9px}}

@@ -1,4 +1,4 @@
-import {applySavedLayout,applyLayoutConfig} from './layout-preferences.js?v=designs3';
+import {applySavedLayout,applyLayoutConfig} from './layout-preferences.js?v=devices1';
 const $=id=>document.getElementById(id);
 const card=(name,color,summary,description)=>{
  const wrapper=document.createElement('span');wrapper.className='card-wrapper';
@@ -34,7 +34,7 @@ for(const [id,labels] of [['myBasicDomains',['К','К','С','Ж']],['mySpecialDo
 }
 $('profileName').textContent='Игрок';$('profileId').textContent='FW-1042';
 $('presence').textContent='Онлайн: 8 · в поиске: 2';$('deckCount').textContent='70/70';
-$('roomLabel').textContent='Матч · пример';$('turnLabel').textContent=' · Твой ход';$('timer').textContent='01:24';
+$('roomLabel').textContent='Матч · пример';$('turnLabel').textContent='Твой ход';$('timer').textContent='01:24';
 for(const id of ['deck','starter'])for(const name of ['Лесной дозор','Стальной клинок','Астральный круг'])$(id).add(new Option(name,name));
 for(const [id,label,actions] of [['savedDecks','Лесной дозор · 70 карт',['Выбрать','Удалить']],['activeMatches','Дружеский матч · A1B2C3D4',['Продолжить','Наблюдать']]]){
  const row=document.createElement('div');row.className='preview-list-row';row.append(document.createTextNode(label+' '));
@@ -94,7 +94,6 @@ for(const [areaId,settingsId,basicId,specialId,own] of [
  aux.append(settings);
 }
 $('hand').append(card('Крылатый посланник','blue','2 синих · 2/2','Полёт. Может атаковать над защитой.'));
-const designNote=document.createElement('span');designNote.className='table-phase';designNote.textContent='ТВОЙ ХОД · ОСНОВНАЯ ФАЗА';$('myPlayarea').prepend(designNote);
 const screens=['auth','home','builder','match','spectator','rulesPage'];
 const phases=['mulligan','ritual','reward','attackAlert'];
 const dialogs=['choiceDialog','cardInspector','legendDialog','domainPaymentDialog','matchChatDialog'];

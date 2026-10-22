@@ -45,12 +45,14 @@ export const layoutColors={color:'Цвет текста',backgroundColor:'Цве
 const safeColor=/^#[0-9a-fA-F]{6}$/;
 const safeSelector = /^#[A-Za-z][\w-]*(?:\s*>\s*:nth-child\([1-9][0-9]*\))*$/;
 export const layoutDesigns={atlas:'Атлас · тактический стол',citadel:'Цитадель · боевые ряды',arena:'Очаг · открытая арена'};
-const empty = () => ({version:1,design:'atlas',profiles:{desktop:{},phoneLandscape:{},phonePortrait:{}},viewports:{}});
+export const defaultLayoutDesigns={desktop:'atlas',phoneLandscape:'arena',phonePortrait:'arena'};
+const empty = () => ({version:1,design:'atlas',designs:{...defaultLayoutDesigns},profiles:{desktop:{},phoneLandscape:{},phonePortrait:{}},viewports:{}});
 export function normalizeLayoutConfig(source) {
   const result=empty();
   if(!source || typeof source!=='object' || Array.isArray(source) || source.version!==1) return result;
   if(Object.hasOwn(layoutDesigns,source.design))result.design=source.design;
   for(const profile of Object.keys(layoutProfiles)){
+    if(Object.hasOwn(layoutDesigns,source.designs?.[profile]))result.designs[profile]=source.designs[profile];
     const rules=source.profiles?.[profile];
     if(rules && typeof rules==='object' && !Array.isArray(rules)){
       for(const [selector,values] of Object.entries(rules)){
@@ -101,13 +103,19 @@ export function saveLayoutConfig(config,storage=globalThis.localStorage) {
   storage.setItem(layoutStorageKey,JSON.stringify(normalized));
   return normalized;
 }
-export function applyLayoutConfig(config,documentRef=globalThis.document){
-  if(documentRef.body)documentRef.body.dataset.design=normalizeLayoutConfig(config).design;
+export function applyLayoutConfig(config,documentRef=globalThis.document,profile=null){
+  const normalized=normalizeLayoutConfig(config);
+  if(profile&&documentRef.body)documentRef.body.dataset.layoutProfile=profile;
+  const device=profile||documentRef.body?.dataset.layoutProfile||['phoneLandscape','phonePortrait'].find(key=>documentRef.defaultView?.matchMedia(layoutProfiles[key].media).matches)||'desktop';
+  if(documentRef.body)documentRef.body.dataset.design=normalized.designs[device]||defaultLayoutDesigns.desktop;
   let style=documentRef.getElementById('firewell-layout-overrides');
   if(!style){style=documentRef.createElement('style');style.id='firewell-layout-overrides';documentRef.head.append(style)}
   style.textContent=buildLayoutCss(config);
 }
-export function applySavedLayout(documentRef=globalThis.document){applyLayoutConfig(loadLayoutConfig(),documentRef)}
+export function applySavedLayout(documentRef=globalThis.document){
+  applyLayoutConfig(loadLayoutConfig(),documentRef);
+  documentRef.defaultView?.addEventListener('resize',()=>applyLayoutConfig(loadLayoutConfig(),documentRef));
+}
 /** Anchor at the nearest stable ID; child positions survive replacing an empty slot by a card. */
 export function selectorForElement(element){
   const steps=[];
