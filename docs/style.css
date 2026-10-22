@@ -345,7 +345,7 @@ button.domain-chip.spent{opacity:.4;text-decoration:line-through}
  #match #status{bottom:38px;font-size:.55rem}
 }
 /* Alpha UX pass: open field, readable legend, focused chat/payment dialogs. */
-.player-area .zone{border:0!important;border-radius:0!important;background:transparent!important;padding:6px!important}
+.player-area .zone{border:0;border-radius:0;background:transparent;padding:6px}
 .player-area .zone-main,.player-area .zone-aux{box-shadow:none}
 .player-area .domain-divider{height:1px;background:linear-gradient(90deg,transparent,#c7a367 12%,#c7a367 88%,transparent);margin:7px 0 0}
 .player-area .zone-aux .board{height:calc(100% - 30px)}

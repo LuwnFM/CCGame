@@ -53,3 +53,12 @@ test('import retains device positions, colors, fonts and individual borders safe
  assert.match(css,/background-color:#aabbcc!important/);
  assert.doesNotMatch(css,/border-color:red/);
 });
+
+test('design variant survives JSON export and rejects unknown designs',()=>{
+ const entries=new Map<string,string>();
+ const storage={getItem:(key:string)=>entries.get(key)||null,setItem:(key:string,value:string)=>{entries.set(key,value)}};
+ const config=normalizeLayoutConfig({version:1,design:'arena',profiles:{phoneLandscape:{'#hero':{width:110}}}});
+ saveLayoutConfig(config,storage);
+ assert.equal(loadLayoutConfig(storage).design,'arena');
+ assert.equal(normalizeLayoutConfig({version:1,design:'unknown'}).design,'atlas');
+});

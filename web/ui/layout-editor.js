@@ -1,4 +1,4 @@
-import {layoutProfiles,layoutProperties,layoutChoices,layoutColors,loadLayoutConfig,saveLayoutConfig,applyLayoutConfig,normalizeLayoutConfig,selectorForElement} from './layout-preferences.js?v=20261022b';
+import {layoutProfiles,layoutProperties,layoutChoices,layoutColors,loadLayoutConfig,saveLayoutConfig,applyLayoutConfig,normalizeLayoutConfig,selectorForElement} from './layout-preferences.js?v=designs1';
 const $=id=>document.getElementById(id);
 const frame=$('previewFrame'),area=$('previewArea'),box=$('viewportBox');
 let config=loadLayoutConfig(),profile='desktop',selected=null,selector=null,interaction=false,moving=false,oldOutline='',zoomFactor=1,currentScale=1,pinchActive=false;
@@ -197,6 +197,8 @@ document.addEventListener('fullscreenchange',()=>{
 function switchPreview(){choose(null);frame.contentWindow?.FirewellLayout?.setScreen($('previewScreen').value);frame.contentWindow?.FirewellLayout?.showDialog($('previewDialog').value)}
 $('previewScreen').onchange=switchPreview;
 $('previewDialog').onchange=switchPreview;
+$('previewDesign').value=config.design;
+$('previewDesign').onchange=()=>{config.design=$('previewDesign').value;persist();choose(null);status('Вариант сохранён; он включён в экспорт JSON')};
 for(const button of document.querySelectorAll('[data-profile]'))button.onclick=()=>setProfile(button.dataset.profile);
 for(const [id,key] of [['viewportWidth','width'],['viewportHeight','height']])$(id).onchange=()=>{
  const value=Number($(id).value),limits=key==='width'?[320,2560]:[300,1600];
@@ -234,6 +236,7 @@ $('importLayout').onchange=async event=>{
    if(file.size>1024*1024)throw Error('Файл слишком большой');
    const parsed=JSON.parse(await file.text());if(parsed.version!==1)throw Error('Нужен файл редактора версии 1');
    config=saveLayoutConfig(normalizeLayoutConfig(parsed));
+   $('previewDesign').value=config.design;
    if(selected){selected.style.outline=oldOutline;selected=null;selector=null}
    if(frame.contentDocument)applyLayoutConfig(config,frame.contentDocument);
    setProfile(profile);choose(null);status('Настройки загружены');

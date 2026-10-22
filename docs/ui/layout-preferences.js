@@ -44,10 +44,12 @@ export const layoutChoices={
 export const layoutColors={color:'Цвет текста',backgroundColor:'Цвет фона',borderColor:'Цвет рамки'};
 const safeColor=/^#[0-9a-fA-F]{6}$/;
 const safeSelector = /^#[A-Za-z][\w-]*(?:\s*>\s*:nth-child\([1-9][0-9]*\))*$/;
-const empty = () => ({version:1,profiles:{desktop:{},phoneLandscape:{},phonePortrait:{}},viewports:{}});
+export const layoutDesigns={atlas:'Атлас · тактический стол',citadel:'Цитадель · боевые ряды',arena:'Очаг · открытая арена'};
+const empty = () => ({version:1,design:'atlas',profiles:{desktop:{},phoneLandscape:{},phonePortrait:{}},viewports:{}});
 export function normalizeLayoutConfig(source) {
   const result=empty();
   if(!source || typeof source!=='object' || Array.isArray(source) || source.version!==1) return result;
+  if(Object.hasOwn(layoutDesigns,source.design))result.design=source.design;
   for(const profile of Object.keys(layoutProfiles)){
     const rules=source.profiles?.[profile];
     if(rules && typeof rules==='object' && !Array.isArray(rules)){
@@ -100,6 +102,7 @@ export function saveLayoutConfig(config,storage=globalThis.localStorage) {
   return normalized;
 }
 export function applyLayoutConfig(config,documentRef=globalThis.document){
+  if(documentRef.body)documentRef.body.dataset.design=normalizeLayoutConfig(config).design;
   let style=documentRef.getElementById('firewell-layout-overrides');
   if(!style){style=documentRef.createElement('style');style.id='firewell-layout-overrides';documentRef.head.append(style)}
   style.textContent=buildLayoutCss(config);
