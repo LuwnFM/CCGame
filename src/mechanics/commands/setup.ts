@@ -1,17 +1,11 @@
 import {registerCommand} from '../command-router.ts';
 import {requireRule} from './shared.ts';
-import {RuleError,sendToDiscard,type Game,type Command,type PendingReward,type ReadyRitual,type PlayerId} from '../../core.ts';
 import {mulligan} from '../../setup.ts';
-import {eligibleVictims,nextRandom,planRitual} from '../../ritual.ts';
-import {ability} from '../abilities.ts';
-import {resolveCombat} from '../combat.ts';
-import {emptyEnergy,payForCard} from '../energy.ts';
-import {activateLegend} from '../legends.ts';
-import {enterTrigger,resolveTechnique} from '../techniques.ts';
-import {removePermanents,collectLethal,resolveDeaths,finishIfLethal} from '../death-queue.ts';
-import {drawCards,leaveCard,moveCard,takeCard,placePermanent,departPermanent,addCard,discardDetached} from '../zones.ts';
+import {emptyEnergy} from '../energy.ts';
+import {drawCards,takeCard,discardDetached} from '../zones.ts';
 import {emitGameEvent} from '../events.ts';
 import {advance} from '../turns.ts';
+
 registerCommand('mulligan',(next,command)=>{const p=next.players[command.actor];
       requireRule(next.phase === 'mulligan' && next.mulliganReady && !next.mulliganReady[command.actor], 'Муллиган недоступен');
       // Validation and the replacement happen on a private copy of the game.
@@ -62,3 +56,4 @@ registerCommand('discard',(next,command)=>{const p=next.players[command.actor];
       if (p.hand.length <= 8) advance(next);
       return;
 });
+
