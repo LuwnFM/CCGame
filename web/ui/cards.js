@@ -1,5 +1,5 @@
 /** Card views, choice modal, info popup and detailed trait descriptions. */
-export function createCardUI({$,button,textElement,cardName,kindName,send,cardLabel}) {
+export function createCardUI({$,button,textElement,cardName,kindName,send,cardLabel,initials}) {
 function abilityText(ability) {
   if(!ability)return 'Пока нет активной способности';
   if(ability.kind==='summon')return (ability.delta>0?'+':'')+ability.delta+' лояльности · Призвать: '+ability.cards.map(c=>c.name+' '+c.attack+'/'+c.health).join(', ');
