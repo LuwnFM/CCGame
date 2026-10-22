@@ -1,7 +1,7 @@
 /** Local, per-device layout overrides shared by the game and the visual editor. */
 export const layoutStorageKey = 'firewell_layout_v1';
 export const layoutProfiles = {
-  desktop: {name:'Компьютер',width:2560,height:1440,media:'(min-width: 751px) and (min-height: 521px)'},
+  desktop: {name:'Компьютер',width:1920,height:1080,media:'(min-width: 751px) and (min-height: 521px)'},
   phoneLandscape: {name:'Телефон горизонтально',width:844,height:390,media:'(orientation: landscape) and (max-height: 520px)'},
   phonePortrait: {name:'Телефон вертикально',width:390,height:844,media:'(orientation: portrait) and (max-width: 750px)'}
 };
