@@ -72,6 +72,8 @@ function renderControls(){
 function bindFrame(){
  const doc=frame.contentDocument;if(!doc)return;
  applyLayoutConfig(config,doc);
+ frame.contentWindow?.FirewellLayout?.setScreen($('previewScreen').value);
+ frame.contentWindow?.FirewellLayout?.showDialog($('previewDialog').value);
  doc.addEventListener('click',event=>{
    if(interaction)return;
    event.preventDefault();event.stopImmediatePropagation();
@@ -84,6 +86,9 @@ function bindFrame(){
  fitPreview();
 }
 frame.addEventListener('load',bindFrame);
+function switchPreview(){choose(null);frame.contentWindow?.FirewellLayout?.setScreen($('previewScreen').value);frame.contentWindow?.FirewellLayout?.showDialog($('previewDialog').value)}
+$('previewScreen').onchange=switchPreview;
+$('previewDialog').onchange=switchPreview;
 for(const button of document.querySelectorAll('[data-profile]'))button.onclick=()=>setProfile(button.dataset.profile);
 for(const [id,key] of [['viewportWidth','width'],['viewportHeight','height']])$(id).onchange=()=>{
  const value=Number($(id).value),limits=key==='width'?[320,2560]:[300,1600];

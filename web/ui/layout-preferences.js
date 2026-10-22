@@ -13,6 +13,9 @@ export const layoutProperties = {
   maxWidth:{label:'Максимальная ширина',min:0,max:1800,css:'max-width',unit:'px'},
   maxHeight:{label:'Максимальная высота',min:0,max:1200,css:'max-height',unit:'px'},
   fontSize:{label:'Размер текста',min:6,max:64,css:'font-size',unit:'px'},
+  lineHeight:{label:'Высота строки',min:6,max:110,css:'line-height',unit:'px'},
+  letterSpacing:{label:'Расстояние между буквами',min:0,max:20,css:'letter-spacing',unit:'px'},
+  borderWidth:{label:'Толщина рамки',min:0,max:20,css:'border-width',unit:'px'},
   padding:{label:'Внутренний отступ',min:0,max:120,css:'padding',unit:'px'},
   margin:{label:'Внешний отступ',min:0,max:120,css:'margin',unit:'px'},
   gap:{label:'Промежуток',min:0,max:100,css:'gap',unit:'px'},
@@ -52,7 +55,7 @@ export function buildLayoutCss(config) {
     const rules=Object.entries(normalized.profiles[profile]).map(([selector,values])=>{
       const declarations=Object.entries(values).map(([name,value])=>{
         if(name==='gridColumns')return `grid-template-columns:repeat(${value},minmax(0,1fr))!important`;
-        const {css,unit}=layoutProperties[name];return `${css}:${value}${unit}!important`;
+        const {css,unit}=layoutProperties[name];return name==='borderWidth'?`border-style:solid!important;border-width:${value}px!important`:`${css}:${value}${unit}!important`;
       });
       return `${selector}{${declarations.join(';')}}`;
     });

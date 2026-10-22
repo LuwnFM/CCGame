@@ -33,3 +33,8 @@ test('layout import discards unsafe selectors and values before CSS injection',(
  saveLayoutConfig(config,storage);
  assert.deepEqual(loadLayoutConfig(storage),config);
 });
+
+test('text and border controls produce scoped CSS',()=>{
+ const css=buildLayoutCss({version:1,profiles:{desktop:{'#signIn':{width:180,height:44,fontSize:18,lineHeight:24,letterSpacing:1,borderWidth:3,borderRadius:12}}}});
+ assert.match(css,/#signIn\{width:180px!important;height:44px!important;font-size:18px!important;line-height:24px!important;letter-spacing:1px!important;border-style:solid!important;border-width:3px!important;border-radius:12px!important\}/);
+});
