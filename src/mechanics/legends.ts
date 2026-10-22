@@ -1,4 +1,5 @@
-import {RuleError,sendToDiscard,type Command,type Game,type PlayerId} from '../core.ts';
+import {RuleError} from '../errors.ts';
+import type {sendToDiscard,Command,Game,PlayerId} from '../model/index.ts';
 import {eligibleVictims} from '../ritual.ts';
 import {finishIfLethal} from './death-queue.ts';
 import {invokeEffect,registerEffect} from './effects-registry.ts';
