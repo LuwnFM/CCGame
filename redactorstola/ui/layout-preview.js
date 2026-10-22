@@ -31,7 +31,6 @@ $('hand').append(card('Клинок разведчика','red','1 красна�
 for(const [id,labels] of [['myBasicDomains',['К','К','С','Ж']],['mySpecialDomains',['Каменный исток ⓘ']],['enemyBasicDomains',['С','С','Ж']],['enemySpecialDomains',['Особое ⓘ']]]){
  const root=$(id);for(const value of labels){const chip=document.createElement('button');chip.type='button';chip.className='domain-chip '+(value.length>2?'special':'red');chip.textContent=value;root.append(chip)}
 }
-$('domainDetails').open=true;
 $('profileName').textContent='Игрок';$('profileId').textContent='FW-1042';
 $('presence').textContent='Онлайн: 8 · в поиске: 2';$('deckCount').textContent='70/70';
 $('roomLabel').textContent='Матч · пример';$('turnLabel').textContent=' · Твой ход';$('timer').textContent='01:24';
