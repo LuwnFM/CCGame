@@ -1,4 +1,5 @@
-import { RuleError, type Game, type Player, type Permanent, type PlayerId } from '../core.ts';
+import {RuleError} from '../errors.ts';
+import type {Game,Player,Permanent,PlayerId} from '../model/index.ts';
 import {leaveCard,takePlayerPermanent} from './zones.ts';
 import {registerEffect,invokeEffect} from './effects-registry.ts';
 import {emitGameEvent,onGameEvent} from './events.ts';
