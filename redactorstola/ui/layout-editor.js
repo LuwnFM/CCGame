@@ -1,15 +1,42 @@
 import {layoutProfiles,layoutProperties,layoutChoices,layoutColors,loadLayoutConfig,saveLayoutConfig,applyLayoutConfig,normalizeLayoutConfig,selectorForElement} from './layout-preferences.js';
 const $=id=>document.getElementById(id);
 const frame=$('previewFrame'),area=$('previewArea'),box=$('viewportBox');
-let config=loadLayoutConfig(),profile='desktop',selected=null,selector=null,interaction=false,moving=false,oldOutline='';
+let config=loadLayoutConfig(),profile='desktop',selected=null,selector=null,interaction=false,moving=false,oldOutline='',zoomFactor=1,currentScale=1,pinchActive=false;
 const status=message=>{$('editorStatus').textContent=message};
 function viewport(){return config.viewports[profile]||layoutProfiles[profile]}
+function baseScale(){const {width,height}=viewport();return Math.min(1,Math.max(.1,(area.clientWidth-36)/width),Math.max(.1,(area.clientHeight-36)/height))}
 function fitPreview(){
  const {width,height}=viewport();
- const scale=Math.min(1,Math.max(.1,(area.clientWidth-36)/width),Math.max(.1,(area.clientHeight-36)/height));
+ const scale=Math.max(.15,Math.min(4,baseScale()*zoomFactor));currentScale=scale;
  frame.style.width=width+'px';frame.style.height=height+'px';frame.style.transform=`scale(${scale})`;
  box.style.width=Math.ceil(width*scale)+'px';box.style.height=Math.ceil(height*scale)+'px';
  $('previewScale').textContent=`${width} × ${height} · ${Math.round(scale*100)}%`;
+}
+function setZoom(scale,x=area.getBoundingClientRect().left+area.clientWidth/2,y=area.getBoundingClientRect().top+area.clientHeight/2){
+ const before=box.getBoundingClientRect();const anchorX=(x-before.left)/currentScale,anchorY=(y-before.top)/currentScale;
+ zoomFactor=Math.max(.15,Math.min(4,scale))/baseScale();fitPreview();
+ const after=box.getBoundingClientRect();
+ area.scrollLeft+=(after.left+anchorX*currentScale)-x;
+ area.scrollTop+=(after.top+anchorY*currentScale)-y;
+}
+function wheelZoom(event,x=event.clientX,y=event.clientY){
+ event.preventDefault();setZoom(currentScale*Math.exp(-event.deltaY*.0015),x,y);
+}
+function pinchHandlers(target,coords){
+ let start=null;
+ target.addEventListener('touchstart',event=>{
+  if(event.touches.length!==2)return;
+  pinchActive=true;const [a,b]=[...event.touches].map(coords);
+  start={distance:Math.hypot(a.x-b.x,a.y-b.y),scale:currentScale};event.preventDefault();
+ },{passive:false,capture:true});
+ target.addEventListener('touchmove',event=>{
+  if(!start||event.touches.length!==2)return;
+  event.preventDefault();const [a,b]=[...event.touches].map(coords);
+  const distance=Math.hypot(a.x-b.x,a.y-b.y);
+  if(start.distance>0)setZoom(start.scale*distance/start.distance,(a.x+b.x)/2,(a.y+b.y)/2);
+ },{passive:false,capture:true});
+ const end=event=>{if(event.touches.length<2){start=null;pinchActive=false}};
+ target.addEventListener('touchend',end,true);target.addEventListener('touchcancel',end,true);
 }
 function persist(){config=saveLayoutConfig(config);if(frame.contentDocument)applyLayoutConfig(config,frame.contentDocument);status('Сохранено в этом браузере')}
 function setProfile(next){
@@ -101,6 +128,11 @@ function renderControls(){
 function bindFrame(){
  const doc=frame.contentDocument;if(!doc)return;
  doc.body.style.touchAction=moving?'none':'';
+ doc.documentElement.style.touchAction='pan-x pan-y';
+ doc.addEventListener('wheel',event=>{
+  const rect=frame.getBoundingClientRect();wheelZoom(event,rect.left+event.clientX*currentScale,rect.top+event.clientY*currentScale);
+ },{passive:false,capture:true});
+ pinchHandlers(doc,touch=>{const rect=frame.getBoundingClientRect();return {x:rect.left+touch.clientX*currentScale,y:rect.top+touch.clientY*currentScale}});
  applyLayoutConfig(config,doc);
  frame.contentWindow?.FirewellLayout?.setScreen($('previewScreen').value);
  frame.contentWindow?.FirewellLayout?.showDialog($('previewDialog').value);
@@ -112,7 +144,7 @@ function bindFrame(){
  },true);
  let drag=null;
  doc.addEventListener('pointerdown',event=>{
-  if(!moving||event.button!==0)return;
+  if(!moving||pinchActive||event.button!==0)return;
   event.preventDefault();event.stopImmediatePropagation();
   const target=event.target.nodeType===1?event.target:event.target.parentElement;
   choose(target);
@@ -121,7 +153,7 @@ function bindFrame(){
   if(target.setPointerCapture)target.setPointerCapture(event.pointerId);
  },true);
  doc.addEventListener('pointermove',event=>{
-  if(!drag||event.pointerId!==drag.pointerId||!selected)return;
+  if(!drag||pinchActive||event.pointerId!==drag.pointerId||!selected)return;
   event.preventDefault();
   const x=Math.max(-1600,Math.min(1600,Math.round(drag.startX+event.clientX-drag.x)));
   const y=Math.max(-1200,Math.min(1200,Math.round(drag.startY+event.clientY-drag.y)));
@@ -135,6 +167,11 @@ function bindFrame(){
  fitPreview();
 }
 frame.addEventListener('load',bindFrame);
+area.addEventListener('wheel',wheelZoom,{passive:false});
+pinchHandlers(area,touch=>({x:touch.clientX,y:touch.clientY}));
+$('zoomIn').onclick=()=>setZoom(currentScale*1.25);
+$('zoomOut').onclick=()=>setZoom(currentScale/1.25);
+$('zoomFit').onclick=()=>{zoomFactor=1;fitPreview();area.scrollTo(0,0)};
 function switchPreview(){choose(null);frame.contentWindow?.FirewellLayout?.setScreen($('previewScreen').value);frame.contentWindow?.FirewellLayout?.showDialog($('previewDialog').value)}
 $('previewScreen').onchange=switchPreview;
 $('previewDialog').onchange=switchPreview;
