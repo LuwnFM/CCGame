@@ -1,4 +1,4 @@
-import type {Card,Permanent} from '../core.ts';
+import type {Card,Permanent} from '../model/index.ts';
 export type TraitResolver<K extends keyof Card>=(unit:Permanent)=>Card[K]|undefined;
 const traits=new Map<keyof Card,(unit:Permanent)=>unknown>();
 /** One trait module = one resolver. Printed card data is immutable and all
