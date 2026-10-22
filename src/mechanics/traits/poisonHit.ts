@@ -2,7 +2,7 @@ import {registerTrait,printedTrait} from '../trait-registry.ts';
 /** poisonHit: independently registered, suppressible and attachable to any card data. */
 registerTrait('poisonHit',printedTrait('poisonHit'));
 
-import {type Permanent} from '../../core.ts';
+import {type Permanent} from '../../model/index.ts';
 import {ability} from '../abilities.ts';
 /** Poison updates a target with the stronger/longer printed poison payload. */
 export function applyPoisonFromHit(target:Permanent,source:Permanent):void{
