@@ -1,4 +1,4 @@
-import {applySavedLayout,applyLayoutConfig} from './layout-preferences.js';
+import {applySavedLayout,applyLayoutConfig} from './layout-preferences.js?v=20261022b';
 const $=id=>document.getElementById(id);
 const card=(name,color,summary,description)=>{
  const wrapper=document.createElement('span');wrapper.className='card-wrapper';
