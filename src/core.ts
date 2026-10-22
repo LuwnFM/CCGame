@@ -11,6 +11,7 @@ export {RULES_VERSION,STARTING_RULER_HP} from './model/index.ts';
 import {RULES_VERSION,STARTING_RULER_HP} from './model/index.ts';
 import type {Card,Game,Player,PlayerId} from './model/index.ts';
 export type {PlayerId,Aspect,Energy,Cost,RitualSpec,Card,Permanent,Player,ReadyRitual,PendingReward,Game} from './model/index.ts';
+export type {DeathEffect,EntryEffect,LoyaltyEffect,TechniqueEffect} from './mechanics/effect-contracts.ts';
 export type {Command} from './mechanics/command-contracts.ts';
 
 export class RuleError extends Error {}
