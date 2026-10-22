@@ -18,6 +18,7 @@ export interface CommandPayloads {
   attack:{attackerId:number;target:{kind:'player'}|{kind:'creature'|'legend';objectId:number}};
   intercept:{interceptorId:number|null};
   endTurn:{};
+  surrender:{};
   discard:{handIndex:number};
 }
 export type Command={ [K in keyof CommandPayloads & string]:

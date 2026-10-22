@@ -36,6 +36,7 @@ const labels=[
 ['Все аспекты','All aspects'],['Красный','Red'],['Синий','Blue'],['Зелёный','Green'],
 ['Золотой','Gold'],['Фиолетовый','Violet'],['Нейтральный','Neutral'],
 ['В лобби','Back to lobby'],['Выборочный муллиган','Selective mulligan'],
+['Свернуть матч','Leave match open'],['Сдаться','Concede'],['Продолжить','Resume'],
 ['Отметь карты для замены или оставь руку.','Choose cards to replace or keep your opening hand.'],
 ['Подтвердить руку','Confirm hand'],['Ритуал Жертвы','Sacrifice Ritual'],
 ['Выбери источник и ровно N Жертв из обеих зон.','Choose a source and exactly N Sacrifices from both zones.'],

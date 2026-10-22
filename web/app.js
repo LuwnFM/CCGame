@@ -10,11 +10,12 @@ import {applySavedLayout,layoutStorageKey} from './ui/layout-preferences.js';
 applySavedLayout();
 window.addEventListener('storage',event=>{if(event.key===layoutStorageKey)applySavedLayout()});
 const $ = id => document.getElementById(id);
-const sessionKey = 'firewell_session', serverKey = 'firewell_server', roomKey = 'firewell_room';
+const sessionKey = 'firewell_session', serverKey = 'firewell_server', roomKey = 'firewell_room', minimizedKey='firewell_minimized_room';
 const hostedClient = location.hostname.endsWith('.vercel.app');
 let token = localStorage.getItem(sessionKey) || '';
 let apiBase = hostedClient ? '' : (localStorage.getItem(serverKey) || '');
 let room = localStorage.getItem(roomKey) || '';
+let minimizedRoom=localStorage.getItem(minimizedKey)||'';
 let account = null, catalog = [], presets = [], savedDecks = [], deckIds = [], game = null;
 let selected = null, selectedMulligan = new Set(), selectedVictims = new Set(), selectedRitual = null;
 let selectedReward = null, selectedRewardKeepExisting = undefined, selectedArtifactIndex = null, busy = false, loading = false;
@@ -132,14 +133,14 @@ function renderLobby(data) {
   $('activeMatches').replaceChildren(...(data.activeMatches?.length?data.activeMatches.map(m=>{
     const row=document.createElement('div');row.className='spectator-entry';
     row.append(textElement('span',m.players.join(' против ')+' · ход '+m.turn),
-      button('Смотреть',()=>openSpectator(m.code),false,'secondary'));
+      m.mine?button('Продолжить',()=>enterRoom(m.code),false,'secondary'):button('Смотреть',()=>openSpectator(m.code),false,'secondary'));
     return row;
   }):[textElement('p','Сейчас нет активных матчей','hint')]));
   renderSharedChat(data);
   $('queueStatus').textContent=data.searchingSelf?'Поиск идёт. Подбираем другого игрока…':'';
   $('search').disabled=data.searchingSelf;
   $('cancelSearch').classList.toggle('hidden',!data.searchingSelf);
-  if (data.room && !room) enterRoom(data.room);
+  if(data.room && !room && data.room!==minimizedRoom)enterRoom(data.room);
 }
 async function refresh() {
   if (!token || loading || !$('rulesPage').classList.contains('hidden')) return;
@@ -172,7 +173,7 @@ function renderSpectator(g){
   ...[...g.players[i].main,...g.players[i].auxiliary,...g.players[i].legends].map(p=>cardButton(p.card,cardSummary(p.card),()=>showCardDetails(p.card,p),false,false,p)));
  }
 }
-function enterRoom(value) {spectating=null; room=value;localStorage.setItem(roomKey,room);game=null;show('match');refresh(); }
+function enterRoom(value) {spectating=null;room=value;minimizedRoom='';localStorage.removeItem(minimizedKey);localStorage.setItem(roomKey,room);game=null;show('match');refresh(); }
 async function send(command) {
   if (busy || !game) return;
   if(['playCreature','playTechnique','playLegend','playArtifact'].includes(command.type)&&command.domainIds===undefined&&!autoDomainPayment){
@@ -276,6 +277,7 @@ function enableHandDrag(canPlay) {
 function renderGame(ready) {
 
   $('roomLabel').textContent='Комната '+room;
+  $('surrenderMatch').disabled=!ready||!game||game.phase==='finished'||game.phase==='paused';
   if (!ready || !game) {
     $('turnLabel').textContent='Ожидание соперника. Код комнаты: '+room;
     for(const id of ['mulligan','ritual','reward'])$(id).classList.add('hidden');
@@ -401,7 +403,12 @@ $('cancelSearch').onclick=async()=>{try{await api('/api/queue',undefined,'DELETE
 $('playBot').onclick=async()=>{try{const result=await api('/api/bot',{deckId:$('deck').value});enterRoom(result.code)}catch(e){status(e.message)}};
 $('createRoom').onclick=async()=>{try{enterRoom((await api('/api/rooms',{deckId:$('deck').value})).code)}catch(e){status(e.message)}};
 $('joinRoom').onclick=async()=>{try{const code=$('code').value.trim().toUpperCase();await api('/api/rooms/'+code+'/join',{deckId:$('deck').value});enterRoom(code)}catch(e){status(e.message)}};
-$('leaveMatch').onclick=async()=>{try{await api('/api/queue/leave',{})}catch{}room='';game=null;localStorage.removeItem(roomKey);show('home');await refresh()};
+$('leaveMatch').onclick=async()=>{minimizedRoom=room;localStorage.setItem(minimizedKey,room);room='';game=null;localStorage.removeItem(roomKey);show('home');await refresh();status('Матч продолжается. Вернитесь через «Продолжить» в лобби.')};
+$('surrenderMatch').onclick=async()=>{
+ if(!room||!game||game.phase==='finished'||game.phase==='paused')return;
+ if(!confirm('Сдаться? Сопернику будет засчитана победа. Это действие нельзя отменить.'))return;
+ await send({type:'surrender'});
+};
 const {renderSharedChat,updateChatCooldown,sendSharedChat}=createChatUI({$,textElement,api,refresh,status,getOlderMessages:()=>olderMessages,getChatMore:()=>chatMore,getAvailableAt:()=>chatAvailableAt,setAvailableAt:value=>{chatAvailableAt=value}});
 for(const id of ['chatForm','matchChatForm','spectatorChatForm'])$(id).onsubmit=sendSharedChat;
 $('chatOpen').onclick=()=>$('matchChatDialog').showModal();

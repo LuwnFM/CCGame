@@ -6,6 +6,8 @@ import {drawCards,takeCard,discardDetached} from '../zones.ts';
 import {emitGameEvent} from '../events.ts';
 import {advance} from '../turns.ts';
 
+registerCommand('surrender',(next,command)=>{next.winner=(1-command.actor) as 0|1;next.phase='finished';next.pendingAttack=null});
+
 registerCommand('mulligan',(next,command)=>{const p=next.players[command.actor];
       requireRule(next.phase === 'mulligan' && next.mulliganReady && !next.mulliganReady[command.actor], 'Муллиган недоступен');
       // Validation and the replacement happen on a private copy of the game.

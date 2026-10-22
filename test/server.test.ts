@@ -211,6 +211,29 @@ test('matchmaking pairs distinct accounts, honors persistent identity, rejects s
  }finally{app.close()}
 });
 
+test('minimized match is resumable and surrender records an irreversible loss from either turn',async()=>{
+ const {app,request,register}=await fixture();
+ try{
+  const first=await register('Resume_A'),second=await register('Resume_B'),stranger=await register('Resume_C');
+  const created=await request('/api/rooms',first.token,{deckId:'red'});
+  const code=created.body.code;
+  assert.equal((await request('/api/rooms/'+code+'/join',second.token,{deckId:'blue'})).status,200);
+  const lobby=(await request('/api/lobby',second.token)).body;
+  assert.equal(lobby.activeMatches.find((m:any)=>m.code===code).mine,true);
+  assert.equal((await request('/api/lobby',stranger.token)).body.activeMatches.find((m:any)=>m.code===code).mine,false);
+  assert.equal((await request('/api/rooms/'+code+'/commands',stranger.token,{type:'surrender',expectedRevision:0,key:'stranger'})).status,404);
+  const current=(await request('/api/rooms/'+code,second.token)).body.game;
+  const conceded=await request('/api/rooms/'+code+'/commands',second.token,{type:'surrender',expectedRevision:current.revision,key:'concede'});
+  assert.equal(conceded.status,200,JSON.stringify(conceded.body));
+  assert.equal(conceded.body.game.winner,0);
+  assert.equal(conceded.body.game.phase,'finished');
+  assert.equal((await request('/api/rooms/'+code+'/commands',second.token,{type:'surrender',expectedRevision:conceded.body.game.revision,key:'again'})).status,409);
+  assert.equal((await request('/api/lobby',second.token)).body.activeMatches.some((m:any)=>m.code===code),false);
+  assert.equal((app.db.prepare('SELECT winner FROM match_history WHERE room=?').get(code) as any).winner,'0');
+  assert.equal((await request('/api/queue',second.token,{deckId:'blue'})).body.searching,true);
+ }finally{app.close()}
+});
+
 test('10-minute leaderboard counts completed non-draw wins, uses current account name and stable ID',async()=>{
  const {app,request,register}=await fixture();
  try{
