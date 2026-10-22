@@ -474,7 +474,7 @@ a.editor-link:hover,a.editor-link:focus-visible{background:#4b5c4d;border-color:
  #match .ruler-ability-bar{position:static;width:auto;max-width:none;padding:2px}
  #match>.playarea:last-child{grid-column:2;grid-row:2;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;gap:2px;min-height:0;max-height:none;padding:3px;overflow:hidden}
  #match>.playarea:last-child h2{display:block;grid-column:1;grid-row:1;margin:0;font-size:.58rem}
- #match #hand{display:flex;grid-column:1;grid-row:2;flex-direction:column;min-height:0;overflow-y:auto;overflow-x:hidden;gap:4px}
+ #match #hand{display:flex;grid-column:1;grid-row:2;align-self:stretch;height:100%;max-height:100%;flex-direction:column;min-height:0;overflow-y:auto;overflow-x:hidden;gap:4px}
  #match #hand .card-wrapper{flex:0 0 94px;width:100%}
  #match #hand .card{height:94px;min-height:94px}
  #match #hand .card-art{display:grid;height:17px}
