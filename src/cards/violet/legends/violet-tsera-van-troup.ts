@@ -1,3 +1,5 @@
+import SACRIFICE from '../../tokens/violet-sacrifice.ts';
+import CERA_SERVANT from '../../tokens/violet-cera-servant.ts';
 /** Immutable card identity: violet-цера-ван-троуп. Edit stats and effect data here. */
 export default {
   "id": "violet-цера-ван-троуп",
@@ -20,75 +22,19 @@ export default {
     {
       "delta": 1,
       "kind": "summon",
-      "cards": [
-        {
-          "id": "violet-sacrifice-token",
-          "name": "Слуга некроманта",
-          "kind": "creature",
-          "aspects": [
-            "violet"
-          ],
-          "attack": 1,
-          "health": 1,
-          "createdToken": true,
-          "sacrifice": true,
-          "lore": {
-            "state": "Игровой призыв",
-            "organization": "Призванные существа",
-            "summary": "Призванное существо создаётся общим эффектом Призыв и стирается вместо Сброса."
-          }
-        }
-      ]
+      "cards": [SACRIFICE]
     },
     {
       "delta": -2,
       "kind": "summon",
-      "cards": [
-        {
-          "id": "vt-cera-ritual-servant",
-          "name": "Умертвие свиты Церы",
-          "kind": "creature",
-          "aspects": [
-            "violet"
-          ],
-          "attack": 2,
-          "health": 2,
-          "createdToken": true,
-          "sacrifice": true,
-          "nameEn": "Cera’s Undead Retainer",
-          "lore": {
-            "state": "Игровой призыв",
-            "organization": "Призванные существа",
-            "summary": "Призванное существо создаётся общим эффектом Призыв и стирается вместо Сброса."
-          }
-        }
-      ],
+      "cards": [CERA_SERVANT],
       "completeRitual": true
     }
   ],
   "loyaltyAbility": {
     "delta": -2,
     "kind": "summon",
-    "cards": [
-      {
-        "id": "vt-cera-ritual-servant",
-        "name": "Умертвие свиты Церы",
-        "kind": "creature",
-        "aspects": [
-          "violet"
-        ],
-        "attack": 2,
-        "health": 2,
-        "createdToken": true,
-        "sacrifice": true,
-        "nameEn": "Cera’s Undead Retainer",
-        "lore": {
-          "state": "Игровой призыв",
-          "organization": "Призванные существа",
-          "summary": "Призванное существо создаётся общим эффектом Призыв и стирается вместо Сброса."
-        }
-      }
-    ],
+    "cards": [CERA_SERVANT],
     "completeRitual": true
   },
   "lore": {
