@@ -435,3 +435,7 @@ button.domain-chip.spent{opacity:.4;text-decoration:line-through}
  #match .player-area .zone .board>.card-wrapper>.inspect-card{width:18px;height:18px;min-width:18px;min-height:18px;font-size:.56rem;top:2px;right:2px}
  #match .player-area .zone .board .card-description{display:none}
 }
+/* Editor link behaves like the other match actions. */
+a.editor-link{display:inline-flex;align-items:center;min-height:38px;padding:8px 12px;border:1px solid #aa936a;border-radius:9px;background:#35413a;color:#f7ebd3;text-decoration:none;font-weight:700;white-space:nowrap}
+a.editor-link:hover,a.editor-link:focus-visible{background:#4b5c4d;border-color:#f0ce83}
+@media(orientation:landscape) and (max-height:520px){#match>.top a.editor-link{min-height:25px;padding:2px 7px;font-size:.62rem}}
