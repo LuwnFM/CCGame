@@ -257,7 +257,7 @@ button.domain-chip.spent{opacity:.4;text-decoration:line-through}
 .zone .board .card .card-art:before{width:18px;height:18px}
 .legend-zone{padding:7px;background:#1b2421}.legend-zone h3{margin-bottom:5px}
 .legend-zone .card-wrapper{flex:0 0 100px;min-width:0}.legend-zone .card{min-height:126px;padding-top:32px}
-.legend-zone .card-art{height:34px!important}.legend-zone .card-art:before{width:26px!important;height:26px!important}
+.legend-zone .card-art{height:34px}.legend-zone .card-art:before{width:26px;height:26px}
 .legend-zone .card-summary{display:block;font-size:.58rem}.legend-zone .card>small:last-of-type{display:block;font-size:.56rem}
 .legend-zone .card-description{display:none}
 .player-status .ruler-ability-bar{display:grid;grid-template-columns:1fr;gap:4px;margin:0;padding:7px;border:1px solid #c7a367;border-radius:9px;background:#30291f}
@@ -290,7 +290,7 @@ button.domain-chip.spent{opacity:.4;text-decoration:line-through}
  .zone .board .card>small:last-of-type{font-size:.49rem}.zone .board .card .card-art{height:14px;min-height:14px}
  .zone .board .card .card-art:before{width:12px;height:12px}
  .legend-zone{padding:4px}.legend-zone .card-wrapper{flex-basis:82px}.legend-zone .card{min-height:94px;padding-top:26px}
- .legend-zone .card .glyph{width:20px;height:20px;font-size:.5rem}.legend-zone .card b{font-size:.57rem}.legend-zone .card-art{height:22px!important}
+ .legend-zone .card .glyph{width:20px;height:20px;font-size:.5rem}.legend-zone .card b{font-size:.57rem}.legend-zone .card-art{height:22px}
  .player-status .ruler-ability-bar{padding:4px;gap:3px}.player-status .ruler-ability-bar strong{font-size:.57rem}
  .player-status .ruler-ability-bar button{min-height:34px;font-size:.56rem}.player-status .ruler-ability-bar .hint{font-size:.52rem}
  .player-area>.domain-details{font-size:.62rem;padding:4px 6px}
@@ -353,7 +353,7 @@ button.domain-chip.spent{opacity:.4;text-decoration:line-through}
 .player-area .player-status .legend-zone{padding:0;border:0;background:transparent}
 .player-area .legend-zone .card-wrapper{flex:1 1 auto;width:100%;min-width:0}
 .player-area .legend-zone .card{min-height:205px;padding:36px 10px 10px;gap:5px}
-.player-area .legend-zone .card-art{height:46px!important}
+.player-area .legend-zone .card-art{height:46px}
 .player-area .legend-zone .card-description{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:5;overflow:hidden;font-size:.66rem;line-height:1.25}
 .player-area .legend-zone .card .card-summary,.player-area .legend-zone .card>small:last-of-type{font-size:.66rem}
 .player-area .legend-zone .inspect-card{display:none}
@@ -377,7 +377,7 @@ button.domain-chip.spent{opacity:.4;text-decoration:line-through}
 @media(orientation:landscape) and (max-height:520px){
  .player-area .legend-zone .card{min-height:0;padding:24px 4px 4px;gap:2px}
  .player-area .legend-zone .card .glyph{width:19px;height:19px;font-size:.5rem}
- .player-area .legend-zone .card b{font-size:.52rem}.player-area .legend-zone .card-art{height:15px!important}
+ .player-area .legend-zone .card b{font-size:.52rem}.player-area .legend-zone .card-art{height:15px}
  .player-area .legend-zone .card .card-description{-webkit-line-clamp:2;font-size:.46rem;line-height:1.12}
  .player-area .legend-zone .card .card-summary,.player-area .legend-zone .card>small:last-of-type{font-size:.46rem}
  .match-chat-dialog{height:min(88dvh,420px);width:min(500px,92vw)}
