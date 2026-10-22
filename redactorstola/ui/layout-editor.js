@@ -2,6 +2,7 @@ import {layoutProfiles,layoutProperties,layoutChoices,layoutColors,loadLayoutCon
 const $=id=>document.getElementById(id);
 const frame=$('previewFrame'),area=$('previewArea'),box=$('viewportBox');
 let config=loadLayoutConfig(),profile='desktop',selected=null,selector=null,interaction=false,moving=false,oldOutline='',zoomFactor=1,currentScale=1,pinchActive=false;
+let fullscreenHistory=false;
 const status=message=>{$('editorStatus').textContent=message};
 function viewport(){return config.viewports[profile]||layoutProfiles[profile]}
 function baseScale(){const {width,height}=viewport();return Math.min(1,Math.max(.1,(area.clientWidth-36)/width),Math.max(.1,(area.clientHeight-36)/height))}
@@ -172,6 +173,27 @@ pinchHandlers(area,touch=>({x:touch.clientX,y:touch.clientY}));
 $('zoomIn').onclick=()=>setZoom(currentScale*1.25);
 $('zoomOut').onclick=()=>setZoom(currentScale/1.25);
 $('zoomFit').onclick=()=>{zoomFactor=1;fitPreview();area.scrollTo(0,0)};
+function closeFullscreen(fromHistory=false){
+ if(!document.body.classList.contains('preview-fullscreen'))return;
+ document.body.classList.remove('preview-fullscreen');
+ if(document.fullscreenElement===area)document.exitFullscreen().catch(()=>{});
+ if(fullscreenHistory&&!fromHistory)history.back();
+ fullscreenHistory=false;
+ requestAnimationFrame(fitPreview);
+}
+$('previewFullscreen').onclick=async()=>{
+ if(document.body.classList.contains('preview-fullscreen'))return;
+ document.body.classList.add('preview-fullscreen');
+ history.pushState({firewellPreviewFullscreen:true},'');fullscreenHistory=true;
+ try{if(area.requestFullscreen)await area.requestFullscreen()}catch{/* CSS overlay remains available on mobile browsers. */}
+ requestAnimationFrame(fitPreview);
+};
+$('exitFullscreen').onclick=()=>closeFullscreen();
+document.addEventListener('keydown',event=>{if(event.key==='Escape')closeFullscreen()});
+window.addEventListener('popstate',()=>closeFullscreen(true));
+document.addEventListener('fullscreenchange',()=>{
+ if(!document.fullscreenElement&&document.body.classList.contains('preview-fullscreen'))closeFullscreen();
+});
 function switchPreview(){choose(null);frame.contentWindow?.FirewellLayout?.setScreen($('previewScreen').value);frame.contentWindow?.FirewellLayout?.showDialog($('previewDialog').value)}
 $('previewScreen').onchange=switchPreview;
 $('previewDialog').onchange=switchPreview;
