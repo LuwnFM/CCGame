@@ -200,6 +200,54 @@ function cardLabel(p) {
   const stats=(p.card.attack??0)+'/'+Math.max(0,(p.card.health??0)-p.damage);
   return stats+(p.shield?' · Щит '+p.shield:'')+(p.exhausted?' · истощено':'');
 }
+function enableHandDrag(canPlay) {
+  const cards=[...$('hand').querySelectorAll('.card-wrapper>.card')];
+  const zones=[...document.querySelectorAll('#myPlayarea .zone-main,#myPlayarea .zone-aux')];
+  const playCard=card=>{if(card&&!card.classList.contains('unavailable'))card.onclick?.()};
+  for(const [index,card] of cards.entries()){
+    card.dataset.handIndex=String(index);
+    card.draggable=canPlay&&!card.classList.contains('unavailable');
+    let suppressedClickUntil=0,pointer=null;
+    card.addEventListener('click',event=>{
+      if(Date.now()<suppressedClickUntil){event.preventDefault();event.stopImmediatePropagation()}
+    },true);
+    card.addEventListener('dragstart',event=>{
+      if(!card.draggable){event.preventDefault();return}
+      event.dataTransfer?.setData('text/plain',String(index));
+      event.dataTransfer?.setData('application/x-firewell-hand-index',String(index));
+      card.classList.add('dragging');
+      zones.forEach(zone=>zone.classList.add('drop-ready'));
+    });
+    card.addEventListener('dragend',()=>{card.classList.remove('dragging');zones.forEach(zone=>zone.classList.remove('drop-ready'))});
+    card.addEventListener('pointerdown',event=>{
+      if(!canPlay||event.pointerType==='mouse'||!card.draggable)return;
+      pointer={id:event.pointerId,x:event.clientX,y:event.clientY,at:Date.now(),dragging:false};
+      const move=e=>{
+        if(!pointer||e.pointerId!==pointer.id)return;
+        const distance=Math.hypot(e.clientX-pointer.x,e.clientY-pointer.y);
+        if(distance>16&&(Date.now()-pointer.at>170||distance>48)){pointer.dragging=true;card.classList.add('dragging');zones.forEach(zone=>zone.classList.add('drop-ready'));e.preventDefault()}
+      };
+      const finish=e=>{
+        if(!pointer||e.pointerId!==pointer.id)return;
+        if(pointer.dragging){const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('#myPlayarea .zone-main,#myPlayarea .zone-aux');suppressedClickUntil=Date.now()+650;if(target)playCard(card);e.preventDefault()}
+        pointer=null;card.classList.remove('dragging');zones.forEach(zone=>zone.classList.remove('drop-ready'));
+        document.removeEventListener('pointermove',move,true);document.removeEventListener('pointerup',finish,true);document.removeEventListener('pointercancel',finish,true);
+      };
+      document.addEventListener('pointermove',move,true);document.addEventListener('pointerup',finish,true);document.addEventListener('pointercancel',finish,true);
+    });
+  }
+  for(const zone of zones){
+    if(zone.dataset.dragTargetBound)continue;
+    zone.dataset.dragTargetBound='true';
+    zone.addEventListener('dragover',event=>{event.preventDefault();zone.classList.add('drop-hover')});
+    zone.addEventListener('dragleave',()=>zone.classList.remove('drop-hover'));
+    zone.addEventListener('drop',event=>{
+      event.preventDefault();const index=Number(event.dataTransfer?.getData('application/x-firewell-hand-index')||event.dataTransfer?.getData('text/plain'));
+      zone.classList.remove('drop-hover');zones.forEach(x=>x.classList.remove('drop-ready'));
+      if(Number.isInteger(index)&&index>=0)playCard($('hand').querySelector(`.card[data-hand-index="${index}"]`));
+    });
+  }
+}
 function renderGame(ready) {
 
   $('roomLabel').textContent='Комната '+room;
@@ -289,6 +337,7 @@ function renderGame(ready) {
       else if((c.kind==='artifact'||c.kind==='creature'&&c.createdToken)&&me.auxiliary.length>=4){selectedArtifactIndex=i;renderGame(ready)}
       else send({type:c.kind==='domain'?'playDomain':c.kind==='technique'?'playTechnique':c.kind==='legend'?'playLegend':c.kind==='artifact'?'playArtifact':'playCreature',handIndex:i})},
     !(mine||game.phase==='discard'&&game.active===seat))));
+  enableHandDrag(mine);
   $('artifactReplacements').replaceChildren(...(selectedArtifactIndex===null?[]:me.auxiliary.filter(p=>!p.card.majestic)
     .map(p=>cardButton(p.card,'Вытеснить',()=>send({type:me.hand[selectedArtifactIndex]?.kind==='creature'?'playCreature':'playArtifact',handIndex:selectedArtifactIndex,replaceId:p.objectId})))));
   $('hero').disabled=!mine||selected===null;$('skip').disabled=!defense;$('end').disabled=!mine;

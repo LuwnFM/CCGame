@@ -116,6 +116,8 @@ function cardButton(card, label, onClick, disabled = false, active = false, perm
   const wrapper=document.createElement('span');wrapper.className='card-wrapper';
   wrapper.append(element,inspect);
   element.append(textElement('small',cardSummary(card),'card-summary'),textElement('small',label));
+  const description=traitDescriptions(card).join(' · ')||card.lore?.summary||'';
+  if(description)element.append(textElement('small',description,'card-description'));
   const flags = [['unique','Уникальная'],['guard','Страж'],['flying','Полёт'],['firstStrike','Первый удар'],
     ['piercing','Пробивание'],['lifesteal','Похищение жизни'],['stealth','Скрытность'],['majestic','Величественный'],
     ['sacrifice','Жертва'],['haste','Мгновенная атака'],['zeal','Рвение'],['untiring','Неутомимость']]
