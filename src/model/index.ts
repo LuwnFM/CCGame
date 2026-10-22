@@ -8,7 +8,7 @@ export type Aspect = 'red' | 'blue' | 'green' | 'gold' | 'violet';
 export type Energy = Aspect | 'neutral';
 export type Cost = { colored: Partial<Record<Aspect, number>>; generic: number };
 export type RitualSpec = { color: Aspect | 'neutral'; threshold: number; duration: number; rewardPool: [Card, Card, Card, Card, Card] };
-export type {DeathEffect,EntryEffect,LoyaltyEffect,TechniqueEffect} from './mechanics/effect-contracts.ts';
+export type {DeathEffect,EntryEffect,LoyaltyEffect,TechniqueEffect} from '../mechanics/effect-contracts.ts';
 export interface Card {
   id: string;
   name: string;
