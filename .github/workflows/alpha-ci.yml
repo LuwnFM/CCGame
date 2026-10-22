@@ -24,6 +24,9 @@ jobs:
           node --check web/app.js
           node --check web/i18n.js
           node --check web/rules.js
+          node --check web/ui/api.js
+          node --check web/ui/cards.js
+          node --check web/ui/chat.js
       - name: Install browser test runner
         run: npm install --no-save playwright@1.57.0
       - name: Install Chromium only (avoid long Firefox/WebKit downloads)
