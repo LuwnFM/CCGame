@@ -1,22 +1,13 @@
 import {registerCommand} from '../command-router.ts';
 import {requireRule} from './shared.ts';
-import {RuleError,sendToDiscard,type Game,type Command,type PendingReward,type ReadyRitual,type PlayerId} from '../../core.ts';
-import {mulligan} from '../../setup.ts';
-import {eligibleVictims,nextRandom,planRitual} from '../../ritual.ts';
-import {ability} from '../abilities.ts';
-import {resolveCombat} from '../combat.ts';
-import {emptyEnergy,payForCard} from '../energy.ts';
-import {activateLegend} from '../legends.ts';
-import {enterTrigger,resolveTechnique} from '../techniques.ts';
-import {removePermanents,collectLethal,resolveDeaths,finishIfLethal} from '../death-queue.ts';
-import {drawCards,leaveCard,moveCard,takeCard,placePermanent,departPermanent,addCard,discardDetached} from '../zones.ts';
+import {RuleError} from '../../errors.ts';
+import type {PendingReward} from '../../model/index.ts';
+import {nextRandom,planRitual} from '../../ritual.ts';
+import {removePermanents,resolveDeaths,finishIfLethal} from '../death-queue.ts';
+import {drawCards,leaveCard,placePermanent,departPermanent,addCard,discardDetached} from '../zones.ts';
 import {emitGameEvent} from '../events.ts';
-import {advance} from '../turns.ts';
 
 // A card can opt into a generic ritual-completion bonus without an ID-specific branch.
-declare module '../../core.ts' {
-  interface Card { ritualDrawBonus?: number }
-}
 registerCommand('chooseRitual',(next,command)=>{const p=next.players[command.actor];
       requireRule(next.phase === 'ritual' && next.readyRituals, 'Сейчас нет выбора Ритуала');
       const ready = next.readyRituals.find(r => r.effect.id === command.effectId);
@@ -88,3 +79,4 @@ registerCommand('chooseReward',(next,command)=>{const p=next.players[command.act
       next.pendingReward = null; next.phase = 'main';
       return;
 });
+
