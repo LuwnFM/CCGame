@@ -1,4 +1,4 @@
-import {applySavedLayout,applyLayoutConfig} from './layout-preferences.js?v=designs2';
+import {applySavedLayout,applyLayoutConfig} from './layout-preferences.js?v=designs3';
 const $=id=>document.getElementById(id);
 const card=(name,color,summary,description)=>{
  const wrapper=document.createElement('span');wrapper.className='card-wrapper';
@@ -108,11 +108,18 @@ for(const form of document.forms)form.addEventListener('submit',event=>event.pre
 for(const [button,dialog] of [['chatOpen','matchChatDialog'],['myLegends','legendDialog']])$(button).onclick=()=>showDialog(dialog);
 for(const [button,dialog] of [['chatClose','matchChatDialog'],['legendClose','legendDialog'],['domainPaymentClose','domainPaymentDialog'],['domainPaymentCancel','domainPaymentDialog'],['inspectorClose','cardInspector'],['choiceCancel','choiceDialog']])$(button).onclick=()=>$(dialog).close();
 for(const id of dialogs)$(id).onclick=event=>{if(event.target===$(id))$(id).close()};
+function inspectPreviewCard(button){
+ $('inspectorTitle').textContent=button.querySelector('b').textContent;
+ $('inspectorStats').textContent=button.querySelector('.card-summary').textContent;
+ $('inspectorLore').textContent=button.querySelector('.card-description').textContent;
+ const action=$('inspectorActions').querySelector('button');action.textContent='Закрыть';action.onclick=()=>$('cardInspector').close();
+ showDialog('cardInspector');
+}
 document.addEventListener('click',event=>{
  const info=event.target.closest('.inspect-card');
- if(info){const button=info.parentElement.querySelector('.card');$('inspectorTitle').textContent=button.querySelector('b').textContent;$('inspectorStats').textContent=button.querySelector('.card-summary').textContent;$('inspectorLore').textContent=button.querySelector('.card-description').textContent;showDialog('cardInspector');return}
+ if(info){inspectPreviewCard(info.parentElement.querySelector('.card'));return}
  const button=event.target.closest('#hand .card,.zone-main .card,.zone-aux>.board .card');
- if(button){document.querySelectorAll('.card.is-selected').forEach(el=>el.classList.remove('is-selected'));button.classList.add('is-selected')}
+ if(button){document.querySelectorAll('.card.is-selected').forEach(el=>el.classList.remove('is-selected'));button.classList.add('is-selected');if(matchMedia('(max-height:600px), (max-width:750px)').matches)inspectPreviewCard(button)}
 });
 setScreen('match');applySavedLayout();
 window.FirewellLayout={setScreen,showDialog,applyConfig:config=>applyLayoutConfig(config)};

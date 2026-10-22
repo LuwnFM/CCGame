@@ -231,3 +231,13 @@ body[data-design=arena] #match>.playarea:last-child{background:linear-gradient(#
 }
 
 @media(min-width:1000px) and (min-height:601px){body[data-design=arena] #match .zone-main{justify-content:center}body[data-design=arena] #match .player-area .zone-main .board{grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:minmax(0,1fr);flex:none;height:clamp(150px,19vh,210px)}body[data-design=arena] #match .zone-main .slot-placeholder{border:0;background:none;box-shadow:none;color:transparent}body[data-design=arena] #match .zone-main .card .card-description{display:none}}
+/* Explicit ID anchors override legacy landscape rules that used two IDs. */
+body[data-design] #match .player-area :is(#myBoard,#enemyBoard,#myAux,#enemyAux){display:grid;grid-column:auto;grid-row:auto;position:static;width:100%;height:auto;min-height:0;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));overflow:visible;padding:0;flex:1}
+body[data-design] #match .player-area :is(#myAux,#enemyAux){grid-template-rows:minmax(0,1fr)}
+body[data-design] #match .ruler-ability-bar{order:0}
+@media(min-width:1000px) and (min-height:601px){
+ body[data-design=arena] #match .player-area :is(#myBoard,#enemyBoard){display:flex;justify-content:center;align-items:stretch;gap:7px;flex:none;height:clamp(150px,19vh,210px)}
+ body[data-design=arena] #match .player-area :is(#myBoard,#enemyBoard)>.card-wrapper{flex:0 1 120px;width:120px;min-width:0}
+ body[data-design=arena] #match .player-area :is(#myBoard,#enemyBoard)>.slot-placeholder{display:none}
+}
+@media(orientation:portrait) and (max-width:750px){body[data-design]:has(#match:not(.hidden)) header{height:32px}}
