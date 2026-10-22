@@ -1,4 +1,5 @@
-import {RuleError,type Game,type Permanent,type Player} from '../core.ts';
+import {RuleError} from '../errors.ts';
+import type {Game,Permanent,Player} from '../model/index.ts';
 export type CombatStage='beforeCombat'|'afterAttackerHit'|'afterDefenderHit'|'afterCombat';
 export type CombatContext={
   game:Game;attacker:Permanent;defender:Permanent|null;legend:Permanent|null;
