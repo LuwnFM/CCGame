@@ -1,3 +1,4 @@
+import {createMatchDialogs} from './ui/dialogs.js';
 import {createBattlefieldUI} from './ui/battlefield.js';
 import {createChatUI} from './ui/chat.js';
 import {createApi} from './ui/api.js';
@@ -68,6 +69,7 @@ function textElement(tag, value, className = '') {
 function initials(name) { return [...name.replace(/[^\p{L}\p{N}]/gu,'')].slice(0,2).join('').toUpperCase() || 'FW'; }
 const {abilityText,effectText,chooseCards,playCreature,playTechnique,detailsText,traitDescriptions,showCardDetails,cardSummary,cardButton}=createCardUI({$,button,textElement,cardName,kindName,send,cardLabel,initials});
 const renderBattlefield=createBattlefieldUI({$,button,textElement,cardButton,cardLabel,showCardDetails,send});
+const renderMatchDialogs=createMatchDialogs({$,button,cardButton,kindName,cardLabel,send});
 function setAccount(value) {
   account = value;
   $('profileName').textContent = value.login;
@@ -228,45 +230,11 @@ function renderGame(ready) {
   $('confirmDefense').classList.toggle('hidden',!defense||defenderChoice===null);
   $('turnLabel').textContent=game.winner!==null?'Матч окончен: '+(game.winner==='draw'?'ничья':'победил игрок '+(game.winner+1))
     :'Ход '+game.turn+' · игрок '+(game.active+1);
-  $('mulligan').classList.toggle('hidden',game.phase!=='mulligan');
-  $('ritual').classList.toggle('hidden',game.phase!=='ritual'||seat!==game.active);
-  $('reward').classList.toggle('hidden',game.phase!=='reward'||seat!==game.active);
-  document.querySelectorAll('.playarea').forEach(x=>x.classList.toggle('hidden',['mulligan','ritual','reward'].includes(game.phase)));
-  if(game.phase==='mulligan') {
-    const done=game.mulliganReady[seat];$('mulliganHand').replaceChildren();
-    if(!done)(me.hand||[]).forEach((c,i)=>$('mulliganHand').append(cardButton(c,kindName(c.kind),()=>{selectedMulligan.has(i)?selectedMulligan.delete(i):selectedMulligan.add(i);renderGame(ready)},false,selectedMulligan.has(i))));
-    $('confirmMulligan').disabled=done;$('mulliganWait').textContent=done?'Ответ принят. Ожидание соперника.':'Отмечено на замену: '+selectedMulligan.size;
-    return;
-  }
-  if(game.phase==='ritual') {
-    const sources=game.readyRituals||[];
-    if(!sources.some(r=>r.id===selectedRitual)){selectedRitual=sources[0]?.id;selectedVictims.clear()}
-    const active=sources.find(r=>r.id===selectedRitual);
-    $('ritualSources').replaceChildren(...sources.map(r=>button(r.color+' · Жертва '+r.threshold,()=>{selectedRitual=r.id;selectedVictims.clear();renderGame(ready)},false,r.id===selectedRitual?'secondary':'')));
-    $('ritualVictims').replaceChildren(...[...me.main,...me.auxiliary].filter(p=>active?.eligibleIds.includes(p.objectId))
-      .map(p=>cardButton(p.card,cardLabel(p),()=>{selectedVictims.has(p.objectId)?selectedVictims.delete(p.objectId):selectedVictims.add(p.objectId);renderGame(ready)},false,selectedVictims.has(p.objectId))));
-    $('confirmRitual').disabled=selectedVictims.size!==active?.threshold;return;
-  }
-  if(game.phase==='reward') {
-    const offers=game.pendingReward||[];
-    $('rewardCards').replaceChildren(...offers.map(c=>cardButton(c,(c.attack??0)+'/'+(c.health??0),()=>{
-      const zone=c.createdToken?me.auxiliary:me.main,limit=c.createdToken?4:8;
-      const existing=c.unique?[...me.main,...me.auxiliary].find(p=>p.card.name===c.name):undefined;
-      const keepExisting=existing?confirm('Оставить уже находящееся на поле Уникальное Существо?'):undefined;
-      if(keepExisting===true){send({type:'chooseReward',rewardId:c.id,keepExisting});return}
-      const remaining=existing?zone.filter(p=>p.objectId!==existing.objectId):zone;
-      const choices=remaining.filter(p=>!p.card.majestic);
-      if(remaining.length<limit||!choices.length)send({type:'chooseReward',rewardId:c.id,keepExisting});
-      else{selectedReward=c.id;selectedRewardKeepExisting=keepExisting;renderGame(ready)}
-    },false,selectedReward===c.id)));
-    const reward=offers.find(c=>c.id===selectedReward),zone=reward?.createdToken?me.auxiliary:me.main;
-    const existing=reward?.unique?[...me.main,...me.auxiliary].find(p=>p.card.name===reward.name):undefined;
-    const remaining=existing&&selectedRewardKeepExisting===false?zone.filter(p=>p.objectId!==existing.objectId):zone;
-    $('rewardReplacements').replaceChildren(...(reward&&remaining.length>=(reward.createdToken?4:8)
-      ?remaining.filter(p=>!p.card.majestic).map(p=>cardButton(p.card,'Заменить · '+cardLabel(p),
-         ()=>send({type:'chooseReward',rewardId:reward.id,replaceId:p.objectId,keepExisting:selectedRewardKeepExisting}))):[]));
-    return;
-  }
+  if(renderMatchDialogs({game,me,seat,selectedMulligan,selectedVictims,
+    selectedRitual,setSelectedRitual:v=>{selectedRitual=v},
+    selectedReward,setSelectedReward:v=>{selectedReward=v},
+    selectedRewardKeepExisting,setSelectedRewardKeepExisting:v=>{selectedRewardKeepExisting=v},
+    rerender:()=>renderGame(ready)}))return;
   if(game.phase==='paused')status(game.pauseReason||'Матч приостановлен');
   $('myHp').textContent='· '+me.hp+' HP';$('enemyHp').textContent='· '+enemy.hp+' HP';
   $('myInfo').textContent='Колода '+me.deckCount+' · Рука '+me.handCount+' · Сброс '+me.discardCount+
