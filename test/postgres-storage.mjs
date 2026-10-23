@@ -69,10 +69,11 @@ try {
   result = await request(base, '/api/login', 'POST', { login, password:'ProfilePass123' });
   assert.equal(result.status, 200, JSON.stringify(result.data));
   assert.equal(result.data.account.id, account.id);
-  result = await request(base, '/api/feedback/mine', 'GET', undefined, result.data.token);
+  const restoredToken = result.data.token;
+  result = await request(base, '/api/feedback/mine', 'GET', undefined, restoredToken);
   assert.equal(result.status, 200);
   assert.equal(result.data.reports[0].title, 'Storage smoke');
-  result = await request(base, '/api/rooms/' + room, 'GET', undefined, result.data.token);
+  result = await request(base, '/api/rooms/' + room, 'GET', undefined, restoredToken);
   assert.equal(result.status, 200, JSON.stringify(result.data));
   assert.equal(result.data.game.revision >= revision, true);
   console.log('PostgreSQL smoke: registration, chat, reports, PvP, commands, restart PASS');
