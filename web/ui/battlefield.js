@@ -39,27 +39,16 @@ export function createBattlefieldUI({$,button,textElement,cardButton,cardLabel,s
       const place=textElement('div','◇','slot-placeholder');place.setAttribute('aria-hidden','true');$(id).append(place);
     }
   }
-  const domainLabels={red:'К',blue:'С',green:'З',gold:'Ж',violet:'Ф',neutral:'Н'};
   const readyDomains=me.domains.filter(p=>!p.exhausted);
-  $('domainSummary').textContent=me.domains.length+' всего · '+readyDomains.length+' готовы · '+(me.domains.length-readyDomains.length)+' истощены';
-  $('myDomains').replaceChildren(...me.domains.map(p=>{
-    const wrapper=document.createElement('span');wrapper.className='domain-item';
-    const el=button(domainLabels[p.card.produces]||'◇',()=>send({type:'tapDomain',objectId:p.objectId}),
-      !mine||p.exhausted,'domain-chip '+(p.card.produces||'neutral')+(p.exhausted?' spent':''));
-    el.title=p.card.name+(p.exhausted?' · истощено':' · готово');
-    el.setAttribute('aria-label','Получить Энергию: '+el.title);
-    const inspect=button('ⓘ',()=>showCardDetails(p.card,p),false,'domain-inspect');
-    inspect.setAttribute('aria-label','Подробнее о Владении '+p.card.name);
-    wrapper.append(el,inspect);
-    return wrapper;
-  }));
+  $('domainSummary').textContent=me.domains.length+' · готовы '+readyDomains.length;
   $('enemyDomainCount').textContent=String(enemy.domains.length);
-  $('enemyDomains').replaceChildren(...enemy.domains.map(p=>{
-    const el=button(domainLabels[p.card.produces]||'◇',()=>showCardDetails(p.card,p),false,
-      'domain-chip '+(p.card.produces||'neutral')+(p.exhausted?' spent':''));
-    el.title=p.card.name+(p.exhausted?' · истощено':' · готово');
-    el.setAttribute('aria-label','Подробнее о Владении соперника '+el.title);
-    return el;
-  }));
+  function domainCard(p,own){
+    const view=cardButton(p.card,p.exhausted?'Истощено':'Готово',()=>send({type:'tapDomain',objectId:p.objectId}),!own||!mine||p.exhausted,false,p);
+    const face=view.querySelector('.card');
+    face.classList.add('domain-card');face.classList.toggle('exhausted',p.exhausted);
+    return view;
+  }
+  for(const [id,player,basic,own] of [['myBasicDomains',me,true,true],['mySpecialDomains',me,false,true],['enemyBasicDomains',enemy,true,false],['enemySpecialDomains',enemy,false,false]])
+    $(id).replaceChildren(...player.domains.filter(p=>!!p.card.basic===basic).map(p=>domainCard(p,own)));
  };
 }

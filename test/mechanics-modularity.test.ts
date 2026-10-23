@@ -48,7 +48,7 @@ test('all shipped card effect kinds have registered modules and no silent no-op'
    }
   }
  }
- assert.equal(registeredCommands().length,16);
+ assert.equal(registeredCommands().length,17);
 });
 test('third-party passive mechanic can be mounted/unmounted without kernel modification',()=>{
  // Structural Card augmentation would be declared by a plugin package in its own .d.ts.
@@ -79,3 +79,4 @@ test('effect handlers never import card or token catalogs',()=>{
   assert.ok(!/SIGNATURE_TOKENS|BONE_BLADE|CERA_SERVANT|SKELETON/.test(content),file+' embeds named token behavior');
  }
 });
+

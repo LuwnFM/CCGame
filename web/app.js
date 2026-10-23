@@ -6,16 +6,23 @@ import {createApi} from './ui/api.js';
 import {createCardUI} from './ui/cards.js';
 import { locale, setLocale, cardName, archetypeName, translate, observeLocalization, localize } from './i18n.js';
 import { renderPublicRules } from './rules.js';
+import {formatCost,energyNames} from './ui/card-format.js';
+import {applySavedLayout,layoutStorageKey} from './ui/layout-preferences.js';
+applySavedLayout();
+window.addEventListener('storage',event=>{if(event.key===layoutStorageKey)applySavedLayout()});
 const $ = id => document.getElementById(id);
-const sessionKey = 'firewell_session', serverKey = 'firewell_server', roomKey = 'firewell_room';
+const sessionKey = 'firewell_session', serverKey = 'firewell_server', roomKey = 'firewell_room', minimizedKey='firewell_minimized_room';
 const hostedClient = location.hostname.endsWith('.vercel.app');
 let token = localStorage.getItem(sessionKey) || '';
 let apiBase = hostedClient ? '' : (localStorage.getItem(serverKey) || '');
 let room = localStorage.getItem(roomKey) || '';
+let minimizedRoom=localStorage.getItem(minimizedKey)||'';
 let account = null, catalog = [], presets = [], savedDecks = [], deckIds = [], game = null;
+let editingDeckId;
 let selected = null, selectedMulligan = new Set(), selectedVictims = new Set(), selectedRitual = null;
 let selectedReward = null, selectedRewardKeepExisting = undefined, selectedArtifactIndex = null, busy = false, loading = false;
 let selectedLegendId = null, defenderChoice = null, attackAlertKey = null;
+let autoDomainPayment=localStorage.getItem('firewell_auto_domain_payment')!=='false';
 let chatAvailableAt=0,olderMessages=[],chatMore=true,spectating=null;
 function status(value) { $('status').textContent = translate(value || ''); }
 let healthProbeInFlight = false;
@@ -45,6 +52,7 @@ async function checkGameServer() {
 
 let lastPage='auth';
 function show(id) {
+  document.body.dataset.screen=id;
   if(id!=='rulesPage')lastPage=id;
   for(const pane of ['auth','home','builder','match','spectator','rulesPage'])$(pane).classList.toggle('hidden',pane!==id);
 }
@@ -104,6 +112,7 @@ async function loadData() {
   $('savedDecks').replaceChildren(...savedDecks.map(d=>{
     const row=document.createElement('div');row.className='saved';
     row.append(textElement('span',d.name+' · '+d.count+' карт'));
+    row.append(button('Редактировать',()=>editDeck(d),false,'secondary'));
     row.append(button('Удалить',async()=>{try{await api('/api/my-decks/'+d.id,undefined,'DELETE');await loadData();status('Колода удалена')}catch(e){status(e.message)}},false,'ghost'));
     return row;
   }));
@@ -128,14 +137,14 @@ function renderLobby(data) {
   $('activeMatches').replaceChildren(...(data.activeMatches?.length?data.activeMatches.map(m=>{
     const row=document.createElement('div');row.className='spectator-entry';
     row.append(textElement('span',m.players.join(' против ')+' · ход '+m.turn),
-      button('Смотреть',()=>openSpectator(m.code),false,'secondary'));
+      m.mine?button('Продолжить',()=>enterRoom(m.code),false,'secondary'):button('Смотреть',()=>openSpectator(m.code),false,'secondary'));
     return row;
   }):[textElement('p','Сейчас нет активных матчей','hint')]));
   renderSharedChat(data);
   $('queueStatus').textContent=data.searchingSelf?'Поиск идёт. Подбираем другого игрока…':'';
   $('search').disabled=data.searchingSelf;
   $('cancelSearch').classList.toggle('hidden',!data.searchingSelf);
-  if (data.room && !room) enterRoom(data.room);
+  if(data.room && !room && data.room!==minimizedRoom)enterRoom(data.room);
 }
 async function refresh() {
   if (!token || loading || !$('rulesPage').classList.contains('hidden')) return;
@@ -168,9 +177,13 @@ function renderSpectator(g){
   ...[...g.players[i].main,...g.players[i].auxiliary,...g.players[i].legends].map(p=>cardButton(p.card,cardSummary(p.card),()=>showCardDetails(p.card,p),false,false,p)));
  }
 }
-function enterRoom(value) {spectating=null; room=value;localStorage.setItem(roomKey,room);game=null;show('match');refresh(); }
+function enterRoom(value) {spectating=null;room=value;minimizedRoom='';localStorage.removeItem(minimizedKey);localStorage.setItem(roomKey,room);game=null;show('match');refresh(); }
 async function send(command) {
   if (busy || !game) return;
+  if(['playCreature','playTechnique','playLegend','playArtifact'].includes(command.type)&&command.domainIds===undefined&&!autoDomainPayment){
+    const me=game.players[game.seat],card=me.hand?.[command.handIndex];
+    if(card?.cost){openDomainPayment(card,me,ids=>send({...command,domainIds:ids}));return;}
+  }
   busy=true;
   try {
     const payload={...command,expectedRevision:game.revision,key:crypto.randomUUID()};
@@ -189,6 +202,23 @@ async function send(command) {
   } catch(error){status(error.message);await refresh()}
   finally{busy=false}
 }
+function openDomainPayment(card,me,onConfirm){
+ const dlg=$('domainPaymentDialog'),ready=me.domains.filter(d=>!d.exhausted&&d.card.produces),selected=new Set();
+ const costs=card.cost.colored||{},costTotal=Object.values(costs).reduce((a,b)=>a+b,0)+card.cost.generic;
+ $('domainPaymentSummary').textContent=`${cardName(card)} · ${formatCost(card)}. В запасе: ${Object.entries(me.energy).filter(([,n])=>n).map(([c,n])=>`${energyNames[c]||c} ${n}`).join(', ')||'0'}.`;
+ const choices=$('domainPaymentChoices');
+ const update=()=>{
+   const energy={...me.energy};for(const d of ready)if(selected.has(d.objectId))energy[d.card.produces]++;
+   let payable=true;for(const [color,n] of Object.entries(costs))if((energy[color]||0)<n)payable=false;
+   let total=Object.values(energy).reduce((a,b)=>a+b,0);if(total<costTotal)payable=false;
+   $('domainPaymentStatus').textContent=payable?'Оплата возможна. Выбранные Владения истощатся при розыгрыше.':'Выбранной Энергии пока не хватает.';
+   $('domainPaymentConfirm').disabled=!payable;
+ };
+ const makeGroup=(title,items)=>{const group=document.createElement('section');group.className='payment-group';group.append(textElement('h3',title));for(const d of items){const label=document.createElement('label');label.className='payment-domain';const input=document.createElement('input');input.type='checkbox';input.value=d.objectId;input.onchange=()=>{input.checked?selected.add(d.objectId):selected.delete(d.objectId);update()};label.append(input,textElement('span',`${d.card.name} · ${energyNames[d.card.produces]||d.card.produces}`));group.append(label)}choices.append(group)};
+ choices.replaceChildren();makeGroup('Базовые',ready.filter(d=>d.card.basic));makeGroup('Особые',ready.filter(d=>!d.card.basic));update();
+ $('domainPaymentConfirm').onclick=()=>{const ids=[...selected];dlg.close();onConfirm(ids)};
+ dlg.showModal();
+}
 function kindName(kind){
   const ru={domain:'Владение',creature:'Существо',technique:'Техника',legend:'Легенда',artifact:'Артофакт'};
   const en={domain:'Domain',creature:'Creature',technique:'Technique',legend:'Legend',artifact:'Artifice'};
@@ -200,9 +230,58 @@ function cardLabel(p) {
   const stats=(p.card.attack??0)+'/'+Math.max(0,(p.card.health??0)-p.damage);
   return stats+(p.shield?' · Щит '+p.shield:'')+(p.exhausted?' · истощено':'');
 }
+function enableHandDrag(canPlay) {
+  const cards=[...$('hand').querySelectorAll('.card-wrapper>.card')];
+  const zones=[...document.querySelectorAll('#myPlayarea .zone-main,#myPlayarea .zone-aux')];
+  const playCard=card=>{if(card&&!card.classList.contains('unavailable'))card.onclick?.()};
+  for(const [index,card] of cards.entries()){
+    card.dataset.handIndex=String(index);
+    card.draggable=canPlay&&!card.classList.contains('unavailable');
+    let suppressedClickUntil=0,pointer=null;
+    card.addEventListener('click',event=>{
+      if(Date.now()<suppressedClickUntil){event.preventDefault();event.stopImmediatePropagation()}
+    },true);
+    card.addEventListener('dragstart',event=>{
+      if(!card.draggable){event.preventDefault();return}
+      event.dataTransfer?.setData('text/plain',String(index));
+      event.dataTransfer?.setData('application/x-firewell-hand-index',String(index));
+      card.classList.add('dragging');
+      zones.forEach(zone=>zone.classList.add('drop-ready'));
+    });
+    card.addEventListener('dragend',()=>{card.classList.remove('dragging');zones.forEach(zone=>zone.classList.remove('drop-ready'))});
+    card.addEventListener('pointerdown',event=>{
+      if(!canPlay||event.pointerType==='mouse'||!card.draggable)return;
+      pointer={id:event.pointerId,x:event.clientX,y:event.clientY,at:Date.now(),dragging:false};
+      const move=e=>{
+        if(!pointer||e.pointerId!==pointer.id)return;
+        const distance=Math.hypot(e.clientX-pointer.x,e.clientY-pointer.y);
+        if(distance>16&&(Date.now()-pointer.at>170||distance>48)){pointer.dragging=true;card.classList.add('dragging');zones.forEach(zone=>zone.classList.add('drop-ready'));e.preventDefault()}
+      };
+      const finish=e=>{
+        if(!pointer||e.pointerId!==pointer.id)return;
+        if(pointer.dragging){const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('#myPlayarea .zone-main,#myPlayarea .zone-aux');suppressedClickUntil=Date.now()+650;if(target)playCard(card);e.preventDefault()}
+        pointer=null;card.classList.remove('dragging');zones.forEach(zone=>zone.classList.remove('drop-ready'));
+        document.removeEventListener('pointermove',move,true);document.removeEventListener('pointerup',finish,true);document.removeEventListener('pointercancel',finish,true);
+      };
+      document.addEventListener('pointermove',move,true);document.addEventListener('pointerup',finish,true);document.addEventListener('pointercancel',finish,true);
+    });
+  }
+  for(const zone of zones){
+    if(zone.dataset.dragTargetBound)continue;
+    zone.dataset.dragTargetBound='true';
+    zone.addEventListener('dragover',event=>{event.preventDefault();zone.classList.add('drop-hover')});
+    zone.addEventListener('dragleave',()=>zone.classList.remove('drop-hover'));
+    zone.addEventListener('drop',event=>{
+      event.preventDefault();const index=Number(event.dataTransfer?.getData('application/x-firewell-hand-index')||event.dataTransfer?.getData('text/plain'));
+      zone.classList.remove('drop-hover');zones.forEach(x=>x.classList.remove('drop-ready'));
+      if(Number.isInteger(index)&&index>=0)playCard($('hand').querySelector(`.card[data-hand-index="${index}"]`));
+    });
+  }
+}
 function renderGame(ready) {
 
   $('roomLabel').textContent='Комната '+room;
+  $('surrenderMatch').disabled=!ready||!game||game.phase==='finished'||game.phase==='paused';
   if (!ready || !game) {
     $('turnLabel').textContent='Ожидание соперника. Код комнаты: '+room;
     for(const id of ['mulligan','ritual','reward'])$(id).classList.add('hidden');
@@ -230,7 +309,7 @@ function renderGame(ready) {
     'Нажми на своего доступного защитника. Для отказа нажми «Не защищать».';
   $('confirmDefense').classList.toggle('hidden',!defense||defenderChoice===null);
   $('turnLabel').textContent=game.winner!==null?'Матч окончен: '+(game.winner==='draw'?'ничья':'победил игрок '+(game.winner+1))
-    :'Ход '+game.turn+' · игрок '+(game.active+1);
+    :(game.active===seat?'Твой ход':'Ход соперника')+' · '+game.turn;
   if(renderMatchDialogs({game,me,seat,selectedMulligan,selectedVictims,
     selectedRitual,setSelectedRitual:v=>{selectedRitual=v},
     selectedReward,setSelectedReward:v=>{selectedReward=v},
@@ -242,9 +321,18 @@ function renderGame(ready) {
     ' · Энергия '+(Object.entries(me.energy).filter(([,n])=>n).map(([c,n])=>c+':'+n).join(', ')||'0');
   $('enemyInfo').textContent='Колода '+enemy.deckCount+' · Рука '+enemy.handCount+' · Сброс '+enemy.discardCount;
   $('myLegends').replaceChildren(...me.legends.map(p=>cardButton(p.card,cardLabel(p),
-    ()=>{selectedLegendId=selectedLegendId===p.objectId?null:p.objectId;renderGame(ready)},
-    !mine,false,p)));
+    ()=>{selectedLegendId=p.objectId;renderGame(ready);$('legendDialog').showModal()},
+    false,false,p)));
   const legend=me.legends.find(p=>p.objectId===selectedLegendId);
+  $('legendDialogTitle').textContent=legend?cardName(legend.card):'Легенда';
+  const legendView=$('legendCardView');legendView.replaceChildren();
+  if(legend){const card=document.createElement('article');card.className='legend-card-full '+(legend.card.aspects?.[0]||'neutral');
+    card.append(textElement('span',initials(cardName(legend.card)),'glyph'),textElement('h3',cardName(legend.card)),textElement('div','Лояльность '+legend.loyalty,'legend-loyalty'));
+    const lore=legend.card.lore;card.append(textElement('p',[lore?.summary,lore?.state,lore?.organization,lore?.note].filter(Boolean).join(' · ')||'Легенда поля боя.','legend-lore'));
+    const abilities=legend.card.loyaltyAbilities?.length?legend.card.loyaltyAbilities:legend.card.loyaltyAbility?[legend.card.loyaltyAbility]:[];
+    card.append(textElement('ul',''));for(const ability of abilities)card.lastChild.append(textElement('li',abilityText(ability)));
+    legendView.append(card);
+  }
   const actions=$('legendActions');
   actions.classList.toggle('hidden',!legend);
   actions.replaceChildren();
@@ -289,11 +377,12 @@ function renderGame(ready) {
       else if((c.kind==='artifact'||c.kind==='creature'&&c.createdToken)&&me.auxiliary.length>=4){selectedArtifactIndex=i;renderGame(ready)}
       else send({type:c.kind==='domain'?'playDomain':c.kind==='technique'?'playTechnique':c.kind==='legend'?'playLegend':c.kind==='artifact'?'playArtifact':'playCreature',handIndex:i})},
     !(mine||game.phase==='discard'&&game.active===seat))));
+  enableHandDrag(mine);
   $('artifactReplacements').replaceChildren(...(selectedArtifactIndex===null?[]:me.auxiliary.filter(p=>!p.card.majestic)
     .map(p=>cardButton(p.card,'Вытеснить',()=>send({type:me.hand[selectedArtifactIndex]?.kind==='creature'?'playCreature':'playArtifact',handIndex:selectedArtifactIndex,replaceId:p.objectId})))));
   $('hero').disabled=!mine||selected===null;$('skip').disabled=!defense;$('end').disabled=!mine;
 }
-const {renderBuilder}=createDeckBuilderUI({$,button,textElement,initials,cardName,kindName,status,getCatalog:()=>catalog,getDeckIds:()=>deckIds});
+const {renderBuilder}=createDeckBuilderUI({$,button,textElement,initials,cardName,kindName,status,getCatalog:()=>catalog,getDeckIds:()=>deckIds,cardButton,showCardDetails});
 
 $('rulesOpen').onclick=()=>{show('rulesPage');renderPublicRules();localize()};
 $('rulesClose').onclick=()=>{show(lastPage);refresh()};
@@ -318,9 +407,24 @@ $('cancelSearch').onclick=async()=>{try{await api('/api/queue',undefined,'DELETE
 $('playBot').onclick=async()=>{try{const result=await api('/api/bot',{deckId:$('deck').value});enterRoom(result.code)}catch(e){status(e.message)}};
 $('createRoom').onclick=async()=>{try{enterRoom((await api('/api/rooms',{deckId:$('deck').value})).code)}catch(e){status(e.message)}};
 $('joinRoom').onclick=async()=>{try{const code=$('code').value.trim().toUpperCase();await api('/api/rooms/'+code+'/join',{deckId:$('deck').value});enterRoom(code)}catch(e){status(e.message)}};
-$('leaveMatch').onclick=async()=>{try{await api('/api/queue/leave',{})}catch{}room='';game=null;localStorage.removeItem(roomKey);show('home');await refresh()};
+$('leaveMatch').onclick=async()=>{minimizedRoom=room;localStorage.setItem(minimizedKey,room);room='';game=null;localStorage.removeItem(roomKey);show('home');await refresh();status('Матч продолжается. Вернитесь через «Продолжить» в лобби.')};
+$('surrenderMatch').onclick=async()=>{
+ if(!room||!game||game.phase==='finished'||game.phase==='paused')return;
+ if(!confirm('Сдаться? Сопернику будет засчитана победа. Это действие нельзя отменить.'))return;
+ await send({type:'surrender'});
+};
 const {renderSharedChat,updateChatCooldown,sendSharedChat}=createChatUI({$,textElement,api,refresh,status,getOlderMessages:()=>olderMessages,getChatMore:()=>chatMore,getAvailableAt:()=>chatAvailableAt,setAvailableAt:value=>{chatAvailableAt=value}});
 for(const id of ['chatForm','matchChatForm','spectatorChatForm'])$(id).onsubmit=sendSharedChat;
+$('chatOpen').onclick=()=>$('matchChatDialog').showModal();
+$('chatClose').onclick=()=>$('matchChatDialog').close();
+$('matchChatDialog').onclick=e=>{if(e.target===$('matchChatDialog'))$('matchChatDialog').close()};
+$('legendClose').onclick=()=>$('legendDialog').close();
+$('legendDialog').onclick=e=>{if(e.target===$('legendDialog'))$('legendDialog').close()};
+$('domainPaymentClose').onclick=()=>$('domainPaymentDialog').close();
+$('domainPaymentCancel').onclick=()=>$('domainPaymentDialog').close();
+$('domainPaymentDialog').onclick=e=>{if(e.target===$('domainPaymentDialog'))$('domainPaymentDialog').close()};
+$('autoDomainPayment').checked=autoDomainPayment;
+$('autoDomainPayment').onchange=()=>{autoDomainPayment=$('autoDomainPayment').checked;localStorage.setItem('firewell_auto_domain_payment',String(autoDomainPayment))};
 $('spectatorClose').onclick=()=>{spectating=null;show('home');refresh()};
 $('olderChat').onclick=async()=>{
   try{
@@ -353,11 +457,12 @@ $('feedbackForm').onsubmit=async event=>{
   }catch(e){status(e.message)}
   finally{$('feedbackSubmit').disabled=false}
 };
-$('openBuilder').onclick=()=>{deckIds=[...presets[0].cards];$('deckName').value='Моя колода';show('builder');renderBuilder()};
+function editDeck(deck){editingDeckId=savedDecks.some(d=>d.id===deck.id)?deck.id:undefined;deckIds=[...deck.cards];$('deckName').value=deck.name||'Моя колода';show('builder');renderBuilder()}
+$('openBuilder').onclick=()=>editDeck(savedDecks.find(d=>d.id===$('deck').value)||presets.find(d=>d.id===$('deck').value)||presets[0]);
 $('closeBuilder').onclick=()=>{show('home');refresh()};
-$('loadStarter').onclick=()=>{deckIds=[...presets.find(p=>p.id===$('starter').value).cards];renderBuilder()};
-$('saveDeck').onclick=async()=>{try{await api('/api/my-decks',{name:$('deckName').value,cards:deckIds});await loadData();show('home');status('Колода сохранена')}catch(e){status(e.message)}};
-$('cardSearch').oninput=renderBuilder;$('aspectFilter').onchange=renderBuilder;
+$('loadStarter').onclick=()=>{editingDeckId=undefined;deckIds=[...presets.find(p=>p.id===$('starter').value).cards];renderBuilder()};
+$('saveDeck').onclick=async()=>{try{await api('/api/my-decks',{name:$('deckName').value,cards:deckIds,...(editingDeckId?{id:editingDeckId}:{})});await loadData();show('home');status('Колода сохранена')}catch(e){status(e.message)}};
+$('cardSearch').oninput=renderBuilder;for(const id of ['aspectFilter','kindFilter','costFilter','cardSort'])$(id).onchange=renderBuilder;
 $('confirmMulligan').onclick=()=>send({type:'mulligan',indices:[...selectedMulligan].sort((a,b)=>a-b)});
 $('confirmRitual').onclick=()=>send({type:'chooseRitual',effectId:selectedRitual,objectIds:[...selectedVictims]});
 $('hero').onclick=()=>send({type:'attack',attackerId:selected,target:{kind:'player'}});
@@ -375,7 +480,13 @@ show('auth');
 checkGameServer();
 setInterval(checkGameServer,20000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){checkGameServer();refresh()} /* Hidden sessions expire via server TTL; don't issue unload-time requests rejected by mobile WebKit. */ });
-if(token)api('/api/me').then(async data=>{setAccount(data.account);await loadData();await refresh()}).catch(()=>{token='';localStorage.removeItem(sessionKey);show('auth')});
+if(token)api('/api/me').then(async data=>{
+  setAccount(data.account);
+  try{await loadData();await refresh()}catch(error){status(error.message)}
+}).catch(error=>{
+  if(error.status===401){token='';localStorage.removeItem(sessionKey);show('auth')}
+  else status('Не удалось восстановить соединение. Обнови страницу, когда сервер будет доступен.');
+});
 observeLocalization();
 setInterval(()=>{if(!document.hidden)refresh()},2500);setInterval(tick,1000);setInterval(updateChatCooldown,250);
 updateChatCooldown();

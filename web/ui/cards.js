@@ -1,3 +1,4 @@
+import {formatCost,energyNames} from './card-format.js';
 /** Card views, choice modal, info popup and detailed trait descriptions. */
 export function createCardUI({$,button,textElement,cardName,kindName,send,cardLabel,initials}) {
 function abilityText(ability) {
@@ -52,8 +53,8 @@ function detailsText(card,p) {
   if(p?.damage)bits.push('Ранения '+p.damage);
   if(p?.shield)bits.push('Щит '+p.shield);
   if(p?.loyalty!==undefined)bits.push('Лояльность '+p.loyalty);
-  if(card.cost)bits.push('Стоимость '+(card.cost.generic+Object.values(card.cost.colored||{}).reduce((a,b)=>a+b,0))+' энергии');
-  if(card.produces)bits.push('Даёт энергию: '+card.produces);
+  if(card.cost)bits.push(formatCost(card));
+  if(card.produces)bits.push('Даёт энергию: '+(energyNames[card.produces]||card.produces));
   if(card.unique)bits.push('Уникальная карта');
   if(card.cannotAttack)bits.push('Не может атаковать');
   return bits.join(' · ');
@@ -97,25 +98,27 @@ function showCardDetails(card,p) {
 }
 $('inspectorClose').onclick=()=>$('cardInspector').close();
 $('cardInspector').onclick=e=>{if(e.target===$('cardInspector'))$('cardInspector').close()};
-function cardSummary(card){
- const cost=card.cost?Object.entries(card.cost.colored||{}).filter(([,v])=>v).map(([k,v])=>k+':'+v).join(' ')+' '+(card.cost.generic?'+'+card.cost.generic:''): '0';
- const stats=card.kind==='creature'?(card.attack??0)+'/'+(card.health??0):card.kind==='legend'?'Лояльность '+(card.loyalty??0):'';
- return 'Стоимость '+cost.trim()+(stats?' · '+stats:'');
+function cardSummary(card,p){
+ const stats=card.kind==='creature'?(card.attack??0)+'/'+Math.max(0,(card.health??0)-(p?.damage||0)):card.kind==='legend'?'Лояльность '+(p?.loyalty??card.loyalty??0):'';
+ return formatCost(card)+(stats?' · '+stats:'');
 }
 function cardButton(card, label, onClick, disabled = false, active = false, permanent = undefined) {
   const element = button('',onClick,disabled,'card '+(card.aspects?.[0] || 'neutral')+(active?' active':''));
   if(permanent?.objectId!==undefined)element.dataset.objectId=permanent.objectId;
   element.disabled=false;
   element.classList.toggle('unavailable',disabled);
+  element.dataset.actionAvailable=String(!disabled);
   element.onclick=()=>disabled?showCardDetails(card,permanent):onClick();
-  element.append(textElement('span',initials(cardName(card)),'glyph'),textElement('b',cardName(card)));
+  element.append(textElement('span',initials(cardName(card)),'glyph'),textElement('b',cardName(card)),textElement('span','','card-art'));
   // Card is a button itself. A nested interactive element is invalid HTML and
   // mobile browsers may swallow taps; use a sibling info button instead.
   const inspect=button('ⓘ',()=>showCardDetails(card,permanent),false,'inspect-card');
   inspect.setAttribute('aria-label','Подробнее о карте '+cardName(card));
   const wrapper=document.createElement('span');wrapper.className='card-wrapper';
   wrapper.append(element,inspect);
-  element.append(textElement('small',cardSummary(card),'card-summary'),textElement('small',label));
+  element.append(textElement('small',cardSummary(card,permanent),'card-summary'),textElement('small',label));
+  const description=traitDescriptions(card).join(' · ')||card.lore?.summary||'';
+  if(description)element.append(textElement('small',description,'card-description'));
   const flags = [['unique','Уникальная'],['guard','Страж'],['flying','Полёт'],['firstStrike','Первый удар'],
     ['piercing','Пробивание'],['lifesteal','Похищение жизни'],['stealth','Скрытность'],['majestic','Величественный'],
     ['sacrifice','Жертва'],['haste','Мгновенная атака'],['zeal','Рвение'],['untiring','Неутомимость']]
@@ -125,7 +128,7 @@ function cardButton(card, label, onClick, disabled = false, active = false, perm
   if(card.shield)flags.push('Щит '+card.shield);
   if(card.abilities?.length)flags.push('⚠ Временно неактивно: '+card.abilities.join(', '));
   element.title=cardName(card)+' · '+label+(flags.length?'\n'+flags.join(' · '):'');
-  element.setAttribute('aria-label',cardName(card)+' · '+label+(flags.length?' · '+flags.join(', '):''));
+  element.setAttribute('aria-label',cardName(card)+' · '+cardSummary(card)+' · '+label+(flags.length?' · '+flags.join(', '):''));
   if(flags.length)element.append(textElement('small',flags.slice(0,2).join(' · ')+(flags.length>2?' · +'+(flags.length-2):''),'card-flags'));
   if(card.abilities?.length)element.append(textElement('small','⚠ Способность пока не работает','inactive-ability'));
   return wrapper;

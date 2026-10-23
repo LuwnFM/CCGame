@@ -94,7 +94,7 @@ export class Social {
   }
   deckList(id: string) {
     const saved = this.db.prepare('SELECT id,name,cards FROM saved_decks WHERE owner_id=? ORDER BY created_at DESC').all(id) as DeckRow[];
-    return saved.map(row => ({ id: row.id, name: row.name, count: JSON.parse(row.cards).length }));
+    return saved.map(row => ({ id: row.id, name: row.name, count: JSON.parse(row.cards).length, cards: JSON.parse(row.cards) }));
   }
   resolveDeck(id: string, selection: unknown): Card[] {
     if (typeof selection !== 'string') throw new RuleError('Выберите колоду');
@@ -112,10 +112,15 @@ export class Social {
     if (issues.length) throw new RuleError(issues.join('; '));
     return deck;
   }
-  saveDeck(id: string, nameInput: unknown, ids: unknown) {
+  saveDeck(id: string, nameInput: unknown, ids: unknown, existingId?: unknown) {
     if (typeof nameInput !== 'string' || nameInput.trim().length < 2 || nameInput.trim().length > 40)
       throw new RuleError('Название колоды: 2–40 символов');
     this.mapDeck(ids);
+    if (existingId !== undefined) {
+      if (typeof existingId !== 'string' || !this.db.prepare('SELECT id FROM saved_decks WHERE id=? AND owner_id=?').get(existingId,id)) throw new RuleError('Колода не найдена');
+      this.db.prepare('UPDATE saved_decks SET name=?,cards=? WHERE id=? AND owner_id=?').run(nameInput.trim(),JSON.stringify(ids),existingId,id);
+      return {id:existingId,name:nameInput.trim()};
+    }
     if (this.deckList(id).length >= 10) throw new RuleError('Не более 10 сохранённых колод');
     const entry = { id: randomUUID(), name: nameInput.trim() };
     this.db.prepare('INSERT INTO saved_decks (id,owner_id,name,cards,created_at) VALUES (?,?,?,?,?)')

@@ -7,7 +7,7 @@ return async function api(path,data,method) {
     body: data === undefined ? undefined : JSON.stringify(data),
   });
   const result = await response.json();
-  if (!response.ok) throw Error(result.error || 'Ошибка сервера');
+  if (!response.ok) {const error=Error(result.error || 'Ошибка сервера');error.status=response.status;throw error;}
   return result;
 }
 }

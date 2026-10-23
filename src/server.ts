@@ -170,6 +170,8 @@ export function createApp(options: { databasePath: string; accessPassword: strin
     const timing=timers(before,next,row,now);
     updateRoom.run(JSON.stringify(next),timing.deadline,timing.turn,timing.started,timing.banks,code);
     if(next.revision>before.revision&&!isBot(row))history.record(code,source,command,before,next,now);
+    if(next.phase==='finished'||next.phase==='paused')
+      db.prepare('DELETE FROM matchmaking WHERE matched_room=?').run(code);
   }
   function advanceTestBot(code:string,row:Room):Room {
     if(!isBot(row))return row;
@@ -237,10 +239,10 @@ export function createApp(options: { databasePath: string; accessPassword: strin
       if (origin) { try { originHost = new URL(origin).host; } catch { return json(res,403,{error:'Недопустимый источник'}); } }
       if (origin && originHost !== req.headers.host && origin !== options.clientOrigin)
         return json(res,403,{error:'Недопустимый источник'});
-      if (req.method === 'GET' && (['/', '/style.css', '/app.js', '/i18n.js', '/rules.js'].includes(url.pathname) || /^\/ui\/[a-z][a-z0-9-]*\.js$/.test(url.pathname))) {
+      if (req.method === 'GET' && (['/', '/style.css', '/design-variants.css', '/interface.css', '/app.js', '/i18n.js', '/rules.js', '/layout-editor.html', '/layout-editor.css', '/ui-preview.html'].includes(url.pathname) || /^\/ui\/[a-z][a-z0-9-]*\.js$/.test(url.pathname) || /^\/assets\/kenney-boardgame\/[a-zA-Z0-9_-]+\.(png|txt)$/.test(url.pathname))) {
         const file = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
-        const contentType = file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : 'text/html';
-        res.writeHead(200, { 'content-type': `${contentType}; charset=utf-8`, 'cache-control':'no-store, max-age=0', 'x-content-type-options': 'nosniff' });
+        const contentType = file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : file.endsWith('.png') ? 'image/png' : file.endsWith('.txt') ? 'text/plain' : 'text/html';
+        res.writeHead(200, { 'content-type': contentType === 'image/png' ? contentType : `${contentType}; charset=utf-8`, 'cache-control':'no-store, max-age=0', 'x-content-type-options': 'nosniff' });
         res.end(await readFile(new URL(`../web/${file}`, import.meta.url)));
         return;
       }
@@ -304,15 +306,16 @@ export function createApp(options: { databasePath: string; accessPassword: strin
       if (url.pathname === '/api/my-decks' && req.method === 'GET')
         return json(res,200,{decks:social.deckList(uid)});
       if (url.pathname === '/api/my-decks' && req.method === 'POST')
-        { const input=await body(req); return json(res,201,{deck:social.saveDeck(uid,input.name,input.cards)}); }
+        { const input=await body(req); return json(res,201,{deck:social.saveDeck(uid,input.name,input.cards,input.id)}); }
       const deckDelete = /^\/api\/my-decks\/([a-f0-9-]{36})$/.exec(url.pathname);
       if (deckDelete && req.method === 'DELETE') {
         social.deleteDeck(uid,deckDelete[1]); return json(res,200,{ok:true});
       }
       if (url.pathname === '/api/lobby' && req.method === 'GET') {
         const info=social.lobby(uid), active=onlineUsers(), rooms=activeRooms().filter(r=>r.guest!==TEST_BOT);
+        const mine=activeRooms().filter(r=>r.host===uid||r.guest===uid);
         return json(res,200,{...info,online:active.size,inMatches:new Set(rooms.flatMap(r=>[r.host,r.guest])).size,
-          activeMatches:rooms.map(r=>({code:r.code,turn:r.turn,phase:r.phase,players:[r.host,r.guest].map(id=>{
+          activeMatches:[...rooms,...mine.filter(r=>isBot(r))].map(r=>({code:r.code,turn:r.turn,phase:r.phase,mine:r.host===uid||r.guest===uid,players:[r.host,r.guest].map(id=>{
             const a=db.prepare('SELECT login FROM accounts WHERE id=?').get(id) as {login:string}|undefined;
             return id===TEST_BOT?'Тестовый бот':a?.login??'Игрок';
           })}))});
@@ -419,7 +422,7 @@ export function createApp(options: { databasePath: string; accessPassword: strin
       if (req.method === 'POST' && action === 'commands') {
         if (!row.guest) throw new RuleError('Ожидание второго игрока');
         const input = await body(req);
-        if (!input || typeof input !== 'object' || !['rulerDraw', 'mulligan', 'playDomain', 'tapDomain', 'playCreature', 'playTechnique', 'playLegend', 'activateLegend', 'playArtifact', 'chooseRitual', 'chooseReward', 'attack', 'intercept', 'endTurn', 'discard'].includes(input.type))
+        if (!input || typeof input !== 'object' || !['rulerDraw', 'mulligan', 'playDomain', 'tapDomain', 'playCreature', 'playTechnique', 'playLegend', 'activateLegend', 'playArtifact', 'chooseRitual', 'chooseReward', 'attack', 'intercept', 'endTurn', 'discard', 'surrender'].includes(input.type))
           throw new RuleError('Недопустимая команда');
         db.exec('BEGIN IMMEDIATE');
         try {

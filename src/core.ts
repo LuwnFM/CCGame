@@ -52,7 +52,7 @@ export function apply(game: Game, command: Command): Game {
     return game;
   }
   requireRule(game.revision === command.expectedRevision, 'Устаревшая ревизия');
-  requireRule(game.phase !== 'finished' && game.phase !== 'paused' && command.actor === (command.type === 'mulligan' ? command.actor : command.type === 'intercept' ? game.pendingAttack?.defender : game.active), 'Не ваш ход');
+  requireRule(game.phase !== 'finished' && game.phase !== 'paused' && (command.type === 'surrender' || command.actor === (command.type === 'mulligan' ? command.actor : command.type === 'intercept' ? game.pendingAttack?.defender : game.active)), 'Не ваш ход');
   const next = structuredClone(game);
   const p = next.players[command.actor];
   try {

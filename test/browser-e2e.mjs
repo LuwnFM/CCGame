@@ -37,7 +37,7 @@ async function register(page, name) {
   await page.waitForFunction(() => document.querySelector('#deck')?.options.length > 0);
 }
 try {
-  browser = await chromium.launch({ headless: true });
+  browser = await chromium.launch({ headless: true, ...(process.env.FIREWELL_BROWSER_PATH?{executablePath:process.env.FIREWELL_BROWSER_PATH,args:['--no-sandbox']}: {}) });
   const desktop = await browser.newContext({ viewport: { width: 1350, height: 900 } });
   const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   const a = await desktop.newPage(), b = await phone.newPage();
@@ -67,6 +67,12 @@ try {
   await a.waitForFunction(()=>document.querySelector('#connection')?.dataset.state==='online',null,{timeout:12000});
   await a.locator('#leaderboard').waitFor({state:'visible'});
   assert.equal(await a.locator('#leaderboard li').count(),1);
+  const savedSession=await a.evaluate(()=>localStorage.getItem('firewell_session'));
+  await a.route('**/api/me',route=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'temporary outage'})}));
+  await a.reload({waitUntil:'domcontentloaded'});
+  await a.locator('#status').getByText(/Не удалось восстановить соединение/).waitFor();
+  assert.equal(await a.evaluate(()=>localStorage.getItem('firewell_session')),savedSession);
+  await a.unroute('**/api/me');
   await a.reload({waitUntil:'domcontentloaded'});
   await a.locator('#profileName').waitFor({state:'visible'});
   assert.equal(await a.locator('#profileName').innerText(),'AlphaBrowser');
@@ -137,9 +143,8 @@ try {
   assert.deepEqual(visibility, { own: true, enemyHidden: true });
   await a.locator('#hand .card').filter({ hasText: /владение/i }).first().click();
   checkpoint("mulligan completed; preparing energy");
-  await a.locator('#domainDetails summary').click();
-  await a.locator('#myDomains button').first().waitFor({ state: 'visible' });
-  await a.locator('#myDomains button').first().click();
+  await a.locator('#myBasicDomains .card').first().waitFor({ state: 'visible' });
+  await a.locator('#myBasicDomains .card').first().click();
   await a.waitForFunction(() => document.querySelector('#myInfo')?.textContent.includes('red:1'));
   checkpoint("first player energy and turn confirmed");
   await a.locator('#end').click();
@@ -148,15 +153,13 @@ try {
     return button && !button.disabled && !document.querySelector('#match').classList.contains('hidden');
   }, null, { timeout: 12000 });
   await b.locator('#hand .card').filter({ hasText: /владение/i }).first().click();
-  await b.locator('#domainDetails summary').click();
-  await b.locator('#myDomains button').first().waitFor({ state: 'visible' });
-  assert.match(await b.locator('#domainSummary').innerText(),/\d+ всего · \d+ готовы · \d+ истощены/);
-  await b.locator('#myDomains .domain-inspect').first().click();
+  await b.locator('#myBasicDomains .card').first().waitFor({ state: 'visible' });
+  assert.match(await b.locator('#domainSummary').innerText(),/\d+ · готовы \d+/i);
+  await b.locator('#myBasicDomains .inspect-card').first().click();
   await b.locator('#cardInspector').waitFor({state:'visible'});
   assert.match(await b.locator('#inspectorLore').innerText(),/энергией и укрытием/);
   await b.locator('#inspectorClose').click();
-  await a.locator('#enemyDomains').locator('..').locator('summary').click();
-  await a.locator('#enemyDomains button').first().click();
+  await a.locator('#enemyBasicDomains .card').first().click();
   await a.locator('#cardInspector').waitFor({state:'visible'});
   await a.locator('#inspectorClose').click();
   // Inject a battle-ready server state to verify the entire client -> command -> server -> board path.
@@ -298,5 +301,6 @@ try {
   app.db.close();
   await rm(temp, { recursive: true, force: true });
 }
+
 
 

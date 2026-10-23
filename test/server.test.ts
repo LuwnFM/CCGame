@@ -68,6 +68,12 @@ test('catalog, 70-card custom deck, uniqueness and queue match retain hidden han
     assert.equal(starter.cards.length,70);
     assert.equal((await request('/api/my-decks',a.token,{name:'Микс',cards:starter.cards.slice(0,69)})).status,409);
     const saved=await request('/api/my-decks',a.token,{name:'Ритуал',cards:starter.cards});
+    assert.equal((await request('/api/my-decks',b.token,{id:saved.body.deck.id,name:'Чужая правка',cards:starter.cards})).status,409);
+    const edited=await request('/api/my-decks',a.token,{id:saved.body.deck.id,name:'Ритуал обновлён',cards:starter.cards});
+    assert.equal(edited.body.deck.id,saved.body.deck.id);
+    const list=await request('/api/my-decks',a.token);
+    assert.equal(list.body.decks.length,1);
+    assert.deepEqual(list.body.decks[0].cards,starter.cards);
     assert.equal(saved.status,201,JSON.stringify(saved.body));
     const custom=saved.body.deck.id;
     assert.equal((await request('/api/queue',a.token,{deckId:custom})).body.searching,true);
@@ -208,6 +214,29 @@ test('matchmaking pairs distinct accounts, honors persistent identity, rejects s
   assert.equal((await request('/api/lobby',a.token)).body.searching,1);
   assert.equal((await request('/api/queue',b.token,{deckId:'violet'})).body.room!==null,true);
   assert.equal((await request('/api/queue',a.token,{deckId:'gold'})).body.room!==null,true);
+ }finally{app.close()}
+});
+
+test('minimized match is resumable and surrender records an irreversible loss from either turn',async()=>{
+ const {app,request,register}=await fixture();
+ try{
+  const first=await register('Resume_A'),second=await register('Resume_B'),stranger=await register('Resume_C');
+  const created=await request('/api/rooms',first.token,{deckId:'red'});
+  const code=created.body.code;
+  assert.equal((await request('/api/rooms/'+code+'/join',second.token,{deckId:'blue'})).status,200);
+  const lobby=(await request('/api/lobby',second.token)).body;
+  assert.equal(lobby.activeMatches.find((m:any)=>m.code===code).mine,true);
+  assert.equal((await request('/api/lobby',stranger.token)).body.activeMatches.find((m:any)=>m.code===code).mine,false);
+  assert.equal((await request('/api/rooms/'+code+'/commands',stranger.token,{type:'surrender',expectedRevision:0,key:'stranger'})).status,404);
+  const current=(await request('/api/rooms/'+code,second.token)).body.game;
+  const conceded=await request('/api/rooms/'+code+'/commands',second.token,{type:'surrender',expectedRevision:current.revision,key:'concede'});
+  assert.equal(conceded.status,200,JSON.stringify(conceded.body));
+  assert.equal(conceded.body.game.winner,0);
+  assert.equal(conceded.body.game.phase,'finished');
+  assert.equal((await request('/api/rooms/'+code+'/commands',second.token,{type:'surrender',expectedRevision:conceded.body.game.revision,key:'again'})).status,409);
+  assert.equal((await request('/api/lobby',second.token)).body.activeMatches.some((m:any)=>m.code===code),false);
+  assert.equal((app.db.prepare('SELECT winner FROM match_history WHERE room=?').get(code) as any).winner,'0');
+  assert.equal((await request('/api/queue',second.token,{deckId:'blue'})).body.searching,true);
  }finally{app.close()}
 });
 
@@ -408,6 +437,11 @@ test('server serves first-party UI ES modules and rejects traversal',async()=>{
    assert.equal(response.status,200,path);
    assert.match(response.headers.get('content-type')||'',/javascript/);
    assert.match(await response.text(),/export function/);
+  }
+  for(const path of ['/layout-editor.html','/layout-editor.css','/ui-preview.html','/ui/layout-editor.js','/ui/layout-preferences.js','/ui/layout-preview.js']){
+   const response=await fetch('http://127.0.0.1:'+((app.server.address() as {port:number}).port)+path);
+   assert.equal(response.status,200,path);
+   assert.ok((await response.text()).length>100,path);
   }
   const bad=await fetch('http://127.0.0.1:'+((app.server.address() as {port:number}).port)+'/ui/secrets.json');
   assert.notEqual(bad.status,200);
