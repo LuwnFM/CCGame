@@ -60,9 +60,19 @@ try {
   assert.equal(result.status, 200, JSON.stringify(result.data));
   assert.equal(result.data.ready, true);
   const revision = result.data.game.revision;
+  const botCreated = await request(base,'/api/bot','POST',{deckId:'green'},token);
+  assert.equal(botCreated.status,201,JSON.stringify(botCreated.data));
+  const botCode=botCreated.data.code;
   const mulligan = await request(base, '/api/rooms/' + room + '/commands', 'POST',
     { type:'mulligan', indices:[], expectedRevision:revision, key:'pg-smoke-mulligan' }, token);
   assert.equal(mulligan.status, 200, JSON.stringify(mulligan.data));
+  // Save already-running PvP + bot room state and simulate a restart that
+  // takes longer than their old clocks. The new instance must not forfeit.
+  const ongoing=[room,botCode].map(code=>({
+    code,game:app.db.prepare('SELECT game FROM rooms WHERE code=?').get(code).game
+  }));
+  for(const entry of ongoing)app.db.prepare('UPDATE rooms SET deadline=?,turn_deadline=? WHERE code=?')
+    .run(Date.now()-600000,Date.now()-600000,entry.code);
   await stop();
   app = createApp({ databasePath: ':memory:', accessPassword:password });
   base = await start();
@@ -76,7 +86,15 @@ try {
   result = await request(base, '/api/rooms/' + room, 'GET', undefined, restoredToken);
   assert.equal(result.status, 200, JSON.stringify(result.data));
   assert.equal(result.data.game.revision >= revision, true);
-  console.log('PostgreSQL smoke: registration, chat, reports, PvP, commands, restart PASS');
+  for(const entry of ongoing){
+    const snapshot=app.db.prepare('SELECT game,deadline FROM rooms WHERE code=?').get(entry.code);
+    assert.equal(snapshot.game,entry.game,'No game-state loss on Postgres deployment');
+    assert.ok(snapshot.deadline>Date.now()+10000,'Restart clock protection missing');
+    const match=await request(base,'/api/rooms/'+entry.code,'GET',undefined,restoredToken);
+    assert.equal(match.status,200,JSON.stringify(match.data));
+    assert.notEqual(match.data.game.phase,'finished');
+  }
+  console.log('PostgreSQL smoke: accounts, PvP + bot live rooms, timer recovery and restart PASS');
 } finally {
   try { await stop(); } catch { /* already closed */ }
 }
