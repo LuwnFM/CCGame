@@ -1,4 +1,4 @@
-import {canBeDisplaced} from '../traits/majestic.ts';
+import {isDisplaceable,findDisplaceable,findNamedConflict} from '../rules/placement.ts';
 import {registerCommand} from '../command-router.ts';
 import {requireRule} from './shared.ts';
 import {RuleError} from '../../errors.ts';
@@ -43,7 +43,7 @@ registerCommand('chooseReward',(next,command)=>{const p=next.players[command.act
       const limit = reward.createdToken ? 4 : 8;
       // Unique-name collisions follow the ordinary explicit-survivor rule.
       // This is not a failed placement and must not cause a five-card reroll.
-      const sameUnique = reward.unique ? [...p.main, ...p.auxiliary].find(unit => unit.card.name === reward.name) : undefined;
+      const sameUnique = reward.unique ? findNamedConflict([...p.main,...p.auxiliary],reward) : undefined;
       if (sameUnique) {
         requireRule(typeof command.keepExisting === 'boolean', 'Выберите, какую Уникальную оставить');
         if (command.keepExisting) {
@@ -51,11 +51,11 @@ registerCommand('chooseReward',(next,command)=>{const p=next.players[command.act
           next.pendingReward = null; next.phase = 'main';
           return;
         }
-        requireRule(canBeDisplaced(sameUnique),'Величественного нельзя вытеснить');
+        requireRule(isDisplaceable(sameUnique),'Величественного нельзя вытеснить');
         departPermanent(next,command.actor,sameUnique.objectId);
       }
       if (zone.length >= limit) {
-        const replacement = zone.find(unit => unit.objectId === command.replaceId && canBeDisplaced(unit));
+        const replacement = findDisplaceable(zone,command.replaceId);
         if (replacement) {
           const removed = removePermanents(p, [replacement.objectId]);
           if (reward.createdToken) {
@@ -65,7 +65,7 @@ registerCommand('chooseReward',(next,command)=>{const p=next.players[command.act
               emitGameEvent(next,{type:'zoneMoved',owner:command.actor,cardId:unit.card.id,objectId:unit.objectId,from:'detached',to:target});
             }
           } else resolveDeaths(next, removed.map(unit => ({ unit, owner: command.actor })));
-        } else if (zone.some(unit => canBeDisplaced(unit))) throw new RuleError('Выберите заменяемое Существо');
+        } else if (zone.some(unit => isDisplaceable(unit))) throw new RuleError('Выберите заменяемое Существо');
       }
       if (finishIfLethal(next)) { next.pendingReward = null; return; }
       if (zone.length >= limit) {
