@@ -62,6 +62,19 @@ try{
    await page.reload();
    await page.locator('#home').waitFor({state:'visible'});
    assert.equal(await page.evaluate(()=>localStorage.getItem('firewell_minimized_room')),null);
+   // When an active minimized bot match ends in another session, periodic
+   // lobby polling must hide the persistent continuation hint automatically.
+   await page.locator('#playBot').click();
+   await page.locator('#mulligan').waitFor({state:'visible'});
+   const backgroundBotRoom=await page.evaluate(()=>localStorage.getItem('firewell_room'));
+   await page.locator('#leaveMatch').click();
+   await page.waitForFunction(()=>document.querySelector('#status')?.textContent.includes('Матч продолжается'));
+   const backgroundGame=JSON.parse(app.db.prepare('SELECT game FROM rooms WHERE code=?').get(backgroundBotRoom).game);
+   backgroundGame.phase='finished';backgroundGame.winner=1;backgroundGame.revision++;
+   app.db.prepare('UPDATE rooms SET game=? WHERE code=?').run(JSON.stringify(backgroundGame),backgroundBotRoom);
+   await page.waitForFunction(()=>!document.querySelector('#status')?.textContent.includes('Матч продолжается')
+     && localStorage.getItem('firewell_minimized_room')===null,null,{timeout:16000});
+   assert.ok(!(await page.locator('#activeMatches').innerText()).includes(backgroundBotRoom));
   fixture();await load(observer.token,null);await page.locator('#activeMatches .spectator-entry').filter({hasText:'DialogOpponent'}).getByRole('button',{name:'Смотреть'}).click();await page.locator('#spectator .spectator-zone').first().waitFor();await shot('15-spectator',true);
   const adminUnlock=await fetch(url+'/api/admin/editor/unlock',{
     method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+observer.token},
