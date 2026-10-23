@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { existsSync, statSync, mkdirSync, readdirSync, unlinkSync } from 'node:fs';
 import { dirname, join, basename } from 'node:path';
 import { openStorage, isPostgresStorage } from './storage.ts';
+import {restoreActiveMatchTimers} from './match-recovery.ts';
 import { apply, openingGame, RULES_VERSION, RuleError, type Command, type Game, type PlayerId } from './core.ts';
 import {chooseBotCommand} from './bots/opponent.ts';
 export function applyForMatch(game: Game, command: Command): Game {
@@ -157,6 +158,9 @@ export function createApp(options: { databasePath: string; accessPassword: strin
     if (!columns.has(column)) db.exec(`ALTER TABLE rooms ADD COLUMN ${column} ${definition}`);
   const sessionColumns = new Set((db.prepare('PRAGMA table_info(sessions)').all() as {name:string}[]).map(c=>c.name));
   if (!sessionColumns.has('user_id')) db.exec('ALTER TABLE sessions ADD COLUMN user_id TEXT');
+  // The game snapshot stays unchanged; only clock budgets are recovered before
+  // this new server accepts requests after restart or Render replacement.
+  restoreActiveMatchTimers(db,Date.now(),postgres);
   const social = new Social(db);
   const history = new MatchHistory(db, postgres ? ':memory:' : options.databasePath);
   function archiveSafely() {
@@ -188,6 +192,9 @@ export function createApp(options: { databasePath: string; accessPassword: strin
     return !!(selectSession.get(ticket.sid, Date.now()) as {user_id: string} | undefined)?.user_id;
   }
   const selectRoom = db.prepare('SELECT * FROM rooms WHERE code=?');
+  // Render briefly overlaps old/new instances. Lock the specific PostgreSQL
+  // room row for command/replay serialization across the two processes.
+  const selectRoomLocked = postgres ? db.prepare('SELECT * FROM rooms WHERE code=? FOR UPDATE') : selectRoom;
   const insertRoom = db.prepare('INSERT INTO rooms (code,host,guest,game,host_deck) VALUES (?, ?, NULL, ?, ?)');
   const updateRoom = db.prepare('UPDATE rooms SET game=?, deadline=?, turn_deadline=?, intercept_started=?, intercept_banks=? WHERE code=?');
   function commitGame(code:string,row:Room,before:Game,next:Game,now:number,
@@ -451,7 +458,7 @@ export function createApp(options: { databasePath: string; accessPassword: strin
         const guestDeck=social.resolveDeck(uid,choice);
         db.exec('BEGIN IMMEDIATE');
         try {
-          const row = selectRoom.get(code) as { host: string; guest: string | null; host_deck: ArchetypeId | null } | undefined;
+          const row = selectRoomLocked.get(code) as { host: string; guest: string | null; host_deck: ArchetypeId | null } | undefined;
           if (!row || (row.guest && row.guest !== uid) || row.host === uid) throw new RuleError('Комната недоступна');
           if (!row.guest) {
             const game = newGame(social.resolveDeck(row.host,row.host_deck ?? 'red'),guestDeck);
@@ -468,7 +475,7 @@ export function createApp(options: { databasePath: string; accessPassword: strin
       if (req.method === 'GET' && !action) {
         db.exec('BEGIN IMMEDIATE');
         let current: Room;
-        try { current = settleExpired(code, selectRoom.get(code) as Room, Date.now()); current=advanceTestBot(code,current); db.exec('COMMIT'); }
+        try { current = settleExpired(code, selectRoomLocked.get(code) as Room, Date.now()); current=advanceTestBot(code,current); db.exec('COMMIT'); }
         catch (error) { db.exec('ROLLBACK'); throw error; }
         archiveSafely();
         return json(res, 200, { code, ready: !!current.guest, game: current.guest ? view(JSON.parse(current.game), seat, current) : null, bot:isBot(current) });
@@ -480,7 +487,7 @@ export function createApp(options: { databasePath: string; accessPassword: strin
           throw new RuleError('Недопустимая команда');
         db.exec('BEGIN IMMEDIATE');
         try {
-          const current = settleExpired(code, selectRoom.get(code) as Room, Date.now());
+          const current = settleExpired(code, selectRoomLocked.get(code) as Room, Date.now());
           const before = JSON.parse(current.game) as Game;
           const next = applyForMatch(before, { ...input, actor: seat } as Command);
           if (input.type === 'endTurn' && next.revision > before.revision && next.phase !== 'paused') {
@@ -504,5 +511,17 @@ if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).
   const app = createApp({ databasePath: process.env.FIREWELL_DB ?? './firewell.sqlite', accessPassword: process.env.FIREWELL_ALPHA_PASSWORD ?? '', clientOrigin: process.env.FIREWELL_CLIENT_ORIGIN });
   const port = Number(process.env.PORT ?? 3000);
   app.server.listen(port, process.env.FIREWELL_BIND ?? '127.0.0.1', () => process.stdout.write(`Firewell CCG: http://localhost:${port}\n`));
+  // Drain in-flight requests before closing the database during Render SIGTERM.
+  let draining=false;
+  const shutdown=()=>{
+    if(draining)return;
+    draining=true;
+    app.server.close(()=>{
+      try{app.db.close()}catch(error){console.error('Database shutdown:',error)}
+      process.exitCode=0;
+    });
+  };
+  process.once('SIGTERM',shutdown);
+  process.once('SIGINT',shutdown);
 }
 
