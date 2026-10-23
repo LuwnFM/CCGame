@@ -1,4 +1,5 @@
 import type {Card,Permanent} from '../model/index.ts';
+import {isTraitSuppressed} from './rules/suppression.ts';
 export type TraitResolver<K extends keyof Card>=(unit:Permanent)=>Card[K]|undefined;
 const traits=new Map<keyof Card,(unit:Permanent)=>unknown>();
 /** One trait module = one resolver. Printed card data is immutable and all
@@ -11,7 +12,7 @@ export function registerTrait<K extends keyof Card>(name:K,resolve:TraitResolver
 }
 export function registeredTraits():string[]{return [...traits.keys()].map(String).sort();}
 export function readTrait<K extends keyof Card>(unit:Permanent,name:K):Card[K]|undefined{
- if(unit.stasis||unit.silenced)return undefined;
+ if(isTraitSuppressed(unit))return undefined;
  const handler=traits.get(name);
  // Keep arbitrary Card metadata inert unless a mechanic module explicitly opts in.
  return handler?handler(unit) as Card[K]:undefined;

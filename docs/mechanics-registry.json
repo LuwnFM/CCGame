@@ -1,7 +1,7 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "version": "0.9.15-alpha",
-  "note": "Inventory of server registrations, not complete rules or UI coverage; legacy/manual means UI must be audited",
+  "note": "Canonical registry of registered mechanics, owned behavior, targeting, suppression and cross-rules. Rule implementations remain in mechanic and shared rules modules; NOT executable JSON.",
   "mechanics": [
     {
       "kind": "bind",
@@ -24,7 +24,16 @@
       "ru": "Сковывание",
       "en": "bind",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "target": "chosenEnemyCreature",
+        "interactions": [
+          "majestic",
+          "stunned",
+          "stasis"
+        ]
+      },
+      "ruleModule": "src/mechanics/effects/bind.ts"
     },
     {
       "kind": "cleanse",
@@ -47,7 +56,18 @@
       "ru": "Очищение",
       "en": "cleanse",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "target": "chosenFriendlyPermanent",
+        "interactions": [
+          "majestic",
+          "poison",
+          "silenced",
+          "stunned",
+          "stasis"
+        ]
+      },
+      "ruleModule": "src/mechanics/effects/cleanse.ts"
     },
     {
       "kind": "damageAllCreatures",
@@ -70,7 +90,16 @@
       "ru": "Урон всем существам",
       "en": "damageAllCreatures",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "target": "allCreatures",
+        "interactions": [
+          "majestic",
+          "shield",
+          "deathQueue"
+        ]
+      },
+      "ruleModule": "src/mechanics/effects/damageAllCreatures.ts"
     },
     {
       "kind": "damageController",
@@ -93,7 +122,14 @@
       "ru": "Урон владельцу",
       "en": "damageController",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "target": "sourceController",
+        "interactions": [
+          "deathQueue"
+        ]
+      },
+      "ruleModule": "src/mechanics/effects/damageController.ts"
     },
     {
       "kind": "damageOpponent",
@@ -120,7 +156,15 @@
       "ru": "Урон противнику",
       "en": "damageOpponent",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "target": "opponentRuler",
+        "interactions": [
+          "shield",
+          "lifesteal"
+        ]
+      },
+      "ruleModule": "src/mechanics/effects/damageOpponent.ts"
     },
     {
       "kind": "draw",
@@ -147,7 +191,15 @@
       "ru": "Добор",
       "en": "draw",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "target": "ownDeck",
+        "interactions": [
+          "deckEmpty",
+          "handLimit"
+        ]
+      },
+      "ruleModule": "src/mechanics/effects/draw.ts"
     },
     {
       "kind": "healRuler",
@@ -174,7 +226,14 @@
       "ru": "Лечение Владетеля",
       "en": "healRuler",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "target": "ownRuler",
+        "interactions": [
+          "healthCap"
+        ]
+      },
+      "ruleModule": "src/mechanics/effects/healRuler.ts"
     },
     {
       "kind": "reanimate",
@@ -197,7 +256,16 @@
       "ru": "Воскрешение",
       "en": "reanimate",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "target": "ownDiscardCreature",
+        "interactions": [
+          "entry",
+          "secondChance",
+          "zoneCapacity"
+        ]
+      },
+      "ruleModule": "src/mechanics/effects/reanimate.ts"
     },
     {
       "kind": "recoverCreature",
@@ -220,7 +288,14 @@
       "ru": "Возврат существа",
       "en": "recoverCreature",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "target": "ownDiscardCreature",
+        "interactions": [
+          "zoneTransfer"
+        ]
+      },
+      "ruleModule": "src/mechanics/effects/recoverCreature.ts"
     },
     {
       "kind": "silence",
@@ -243,7 +318,17 @@
       "ru": "Немота",
       "en": "silence",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "target": "chosenEnemyPermanent",
+        "interactions": [
+          "majestic",
+          "cannotAttack",
+          "poisonHit",
+          "stasis"
+        ]
+      },
+      "ruleModule": "src/mechanics/effects/silence.ts"
     },
     {
       "kind": "stasisEnemy",
@@ -266,7 +351,17 @@
       "ru": "Стазис",
       "en": "stasisEnemy",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "target": "chosenEnemyCreature",
+        "interactions": [
+          "majestic",
+          "stunned",
+          "poison",
+          "silenced"
+        ]
+      },
+      "ruleModule": "src/mechanics/effects/stasisEnemy.ts"
     },
     {
       "kind": "stunEnemy",
@@ -289,7 +384,16 @@
       "ru": "Ошеломление",
       "en": "stunEnemy",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "target": "chosenEnemyCreature",
+        "interactions": [
+          "majestic",
+          "stasis",
+          "stunned"
+        ]
+      },
+      "ruleModule": "src/mechanics/effects/stunEnemy.ts"
     },
     {
       "kind": "summon",
@@ -314,7 +418,15 @@
       "ru": "Призыв",
       "en": "summon",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "target": "ownBoard",
+        "interactions": [
+          "zoneCapacity",
+          "ritual"
+        ]
+      },
+      "ruleModule": "src/mechanics/effects/summon.ts"
     },
     {
       "kind": "ward",
@@ -337,7 +449,15 @@
       "ru": "Оберег",
       "en": "ward",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "target": "chosenFriendlyPermanent",
+        "interactions": [
+          "majestic",
+          "notImplemented"
+        ]
+      },
+      "ruleModule": "src/mechanics/effects/ward.ts"
     },
     {
       "kind": "auraAttack",
@@ -358,7 +478,17 @@
       "ru": "Аура атаки",
       "en": "auraAttack",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "behavior": "modifier",
+        "suppressible": true,
+        "interactions": [
+          "silenced",
+          "stasis",
+          "combat"
+        ]
+      },
+      "ruleModule": "src/mechanics/traits/auraAttack.ts"
     },
     {
       "kind": "cannotAttack",
@@ -379,7 +509,18 @@
       "ru": "Не может атаковать",
       "en": "cannotAttack",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "behavior": "negativeRestriction",
+        "suppressible": true,
+        "interactions": [
+          "silenced",
+          "stasis",
+          "stunned",
+          "attack"
+        ]
+      },
+      "ruleModule": "src/mechanics/traits/cannotAttack.ts"
     },
     {
       "kind": "extraAttacks",
@@ -400,7 +541,17 @@
       "ru": "Ещё удар!",
       "en": "extraAttacks",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "behavior": "attackLimit",
+        "suppressible": true,
+        "interactions": [
+          "silenced",
+          "stasis",
+          "combat"
+        ]
+      },
+      "ruleModule": "src/mechanics/traits/extraAttacks.ts"
     },
     {
       "kind": "firstStrike",
@@ -421,7 +572,18 @@
       "ru": "Первый удар",
       "en": "firstStrike",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "behavior": "combatOrder",
+        "suppressible": true,
+        "interactions": [
+          "silenced",
+          "stasis",
+          "shield",
+          "combat"
+        ]
+      },
+      "ruleModule": "src/mechanics/traits/firstStrike.ts"
     },
     {
       "kind": "flying",
@@ -442,7 +604,17 @@
       "ru": "Полёт",
       "en": "flying",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "behavior": "interception",
+        "suppressible": true,
+        "interactions": [
+          "guard",
+          "silenced",
+          "stasis"
+        ]
+      },
+      "ruleModule": "src/mechanics/traits/flying.ts"
     },
     {
       "kind": "guard",
@@ -463,7 +635,17 @@
       "ru": "Страж",
       "en": "guard",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "behavior": "interception",
+        "suppressible": true,
+        "interactions": [
+          "flying",
+          "silenced",
+          "stasis"
+        ]
+      },
+      "ruleModule": "src/mechanics/traits/guard.ts"
     },
     {
       "kind": "haste",
@@ -484,7 +666,18 @@
       "ru": "Мгновенная атака",
       "en": "haste",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "behavior": "entryAttack",
+        "suppressible": true,
+        "interactions": [
+          "zeal",
+          "exhausted",
+          "stunned",
+          "stasis"
+        ]
+      },
+      "ruleModule": "src/mechanics/traits/haste.ts"
     },
     {
       "kind": "lifesteal",
@@ -505,7 +698,18 @@
       "ru": "Похищение жизни",
       "en": "lifesteal",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "behavior": "effectiveDamage",
+        "suppressible": true,
+        "interactions": [
+          "shield",
+          "silenced",
+          "stasis",
+          "combat"
+        ]
+      },
+      "ruleModule": "src/mechanics/traits/lifesteal.ts"
     },
     {
       "kind": "majestic",
@@ -526,7 +730,20 @@
       "ru": "Величественный",
       "en": "majestic",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "behavior": "printedTargetRestriction",
+        "suppressible": false,
+        "interactions": [
+          "manualTarget",
+          "aoe",
+          "random",
+          "combat",
+          "ritual",
+          "displacement"
+        ]
+      },
+      "ruleModule": "src/mechanics/traits/majestic.ts"
     },
     {
       "kind": "piercing",
@@ -547,7 +764,17 @@
       "ru": "Пробивание",
       "en": "piercing",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "behavior": "overflow",
+        "suppressible": true,
+        "interactions": [
+          "shield",
+          "combat",
+          "firstStrike"
+        ]
+      },
+      "ruleModule": "src/mechanics/traits/piercing.ts"
     },
     {
       "kind": "poisonHit",
@@ -568,7 +795,18 @@
       "ru": "Отрава",
       "en": "poisonHit",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "behavior": "combatTrigger",
+        "suppressible": true,
+        "interactions": [
+          "shield",
+          "poison",
+          "stasis",
+          "silenced"
+        ]
+      },
+      "ruleModule": "src/mechanics/traits/poisonHit.ts"
     },
     {
       "kind": "sacrifice",
@@ -589,7 +827,18 @@
       "ru": "Жертва",
       "en": "sacrifice",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "behavior": "ritualEligibility",
+        "suppressible": false,
+        "interactions": [
+          "majestic",
+          "stunned",
+          "stasis",
+          "ritual"
+        ]
+      },
+      "ruleModule": "src/mechanics/traits/sacrifice.ts"
     },
     {
       "kind": "shield",
@@ -610,7 +859,18 @@
       "ru": "Щит",
       "en": "shield",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "behavior": "damageBuffer",
+        "suppressible": false,
+        "interactions": [
+          "combat",
+          "poisonHit",
+          "lifesteal",
+          "firstStrike"
+        ]
+      },
+      "ruleModule": "src/mechanics/traits/shield.ts"
     },
     {
       "kind": "stealth",
@@ -631,7 +891,17 @@
       "ru": "Скрытность",
       "en": "stealth",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "behavior": "attackTargetRestriction",
+        "suppressible": true,
+        "interactions": [
+          "silenced",
+          "stasis",
+          "combat"
+        ]
+      },
+      "ruleModule": "src/mechanics/traits/stealth.ts"
     },
     {
       "kind": "zeal",
@@ -652,7 +922,17 @@
       "ru": "Рвение",
       "en": "zeal",
       "introducedIn": "<=0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "behavior": "creatureOnlyEntryAttack",
+        "suppressible": true,
+        "interactions": [
+          "haste",
+          "silenced",
+          "stasis"
+        ]
+      },
+      "ruleModule": "src/mechanics/traits/zeal.ts"
     },
     {
       "kind": "untiring",
@@ -673,7 +953,221 @@
       "ru": "Неутомимость",
       "en": "Untiring",
       "introducedIn": "0.9.15-alpha",
-      "deprecatedAlias": false
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "behavior": "exhaustionOnAttack",
+        "suppressible": true,
+        "interactions": [
+          "extraAttacks",
+          "silenced",
+          "stasis"
+        ]
+      },
+      "ruleModule": "src/mechanics/traits/untiring.ts"
+    }
+  ],
+  "statusPolicies": {
+    "silenced": {
+      "owner": "src/mechanics/rules/suppression.ts",
+      "effects": [
+        "suppressRegisteredTraits",
+        "suppressDeathTriggers"
+      ],
+      "duration": "untilOwnTurnEnd"
+    },
+    "stasis": {
+      "owner": "src/mechanics/statuses.ts",
+      "effects": [
+        "suppressRegisteredTraits",
+        "blockActions",
+        "pausePoison"
+      ],
+      "duration": "decrementsAtOwnTurnEnd"
+    },
+    "stunned": {
+      "owner": "src/mechanics/commands/combat.ts",
+      "effects": [
+        "blockAttack",
+        "limitRitualEligibility"
+      ],
+      "duration": "untilOwnTurnEnd"
+    },
+    "poison": {
+      "owner": "src/mechanics/statuses.ts",
+      "effects": [
+        "periodicDamage",
+        "shieldAbsorbs",
+        "pausedByStasis"
+      ],
+      "duration": "ticksOnOwnerTurnStart"
+    },
+    "shield": {
+      "owner": "src/mechanics/traits/shield.ts",
+      "effects": [
+        "absorbDamageBeforeHP",
+        "doesNotRefreshAutomatically"
+      ],
+      "duration": "untilDepleted"
+    },
+    "exhausted": {
+      "owner": "src/mechanics/rules/combat-eligibility.ts",
+      "effects": [
+        "blockAttack",
+        "blockInterception"
+      ],
+      "duration": "refreshAtOwnTurnStart"
+    }
+  },
+  "crossRules": [
+    {
+      "id": "silence-cannotAttack",
+      "subject": "cannotAttack",
+      "with": "silenced",
+      "rule": "Silence removes the printed no-attack restriction, but does not grant readiness",
+      "test": "test/mechanics-interactions-20261023.test.ts"
+    },
+    {
+      "id": "stasis-actions",
+      "subject": "stasis",
+      "with": "cannotAttack",
+      "rule": "Stasis blocks actions even though it suppresses all registered traits",
+      "test": "test/mechanics-interactions-20261023.test.ts"
+    },
+    {
+      "id": "majestic-manual",
+      "subject": "majestic",
+      "with": "manualTarget",
+      "rule": "No manually chosen Technique or ability target, including friendly",
+      "test": "test/starter-and-effects.test.ts"
+    },
+    {
+      "id": "majestic-aoe",
+      "subject": "majestic",
+      "with": "aoe",
+      "rule": "Untargeted damage to all Creatures includes Majestic",
+      "test": "test/mechanics-interactions-20261023.test.ts"
+    },
+    {
+      "id": "majestic-random",
+      "subject": "majestic",
+      "with": "random",
+      "rule": "Automatically randomized target pools include Majestic",
+      "test": "test/mechanics-interactions-20261023.test.ts"
+    },
+    {
+      "id": "majestic-combat",
+      "subject": "majestic",
+      "with": "combat",
+      "rule": "Creature combat targeting and on-hit effects are allowed",
+      "test": "test/mechanics-interactions-20261023.test.ts"
+    },
+    {
+      "id": "majestic-displacement",
+      "subject": "majestic",
+      "with": "displacement",
+      "rule": "Printed Majestic cannot be displaced, including a Unique conflict",
+      "test": "test/mechanics-interactions-20261023.test.ts"
+    },
+    {
+      "id": "guard-flying",
+      "subject": "guard",
+      "with": "flying",
+      "rule": "A Ground Guard cannot intercept flying attack unless it has Flying",
+      "test": "test/mechanics-interactions-20261023.test.ts"
+    },
+    {
+      "id": "stealth-attack",
+      "subject": "stealth",
+      "with": "combat",
+      "rule": "Stealth blocks declared attacks but not automatically assigned damage",
+      "test": "test/mechanics-interactions-20261023.test.ts"
+    },
+    {
+      "id": "haste-zeal",
+      "subject": "haste",
+      "with": "zeal",
+      "rule": "Zeal allows only attacks against Creatures on entry, Haste allows ordinary attack",
+      "test": "test/mechanics-interactions-20261023.test.ts"
+    },
+    {
+      "id": "shield-poisonHit",
+      "subject": "shield",
+      "with": "poisonHit",
+      "rule": "Fully shielded combat hit does not apply Poison",
+      "test": "test/starter-and-effects.test.ts"
+    },
+    {
+      "id": "shield-lifesteal",
+      "subject": "shield",
+      "with": "lifesteal",
+      "rule": "Lifesteal uses actual post-shield damage",
+      "test": "test/mechanics-interactions-20261023.test.ts"
+    },
+    {
+      "id": "stasis-poison",
+      "subject": "stasis",
+      "with": "poison",
+      "rule": "Poison duration and damage tick pause under Stasis",
+      "test": "test/mechanics-interactions-20261023.test.ts"
+    },
+    {
+      "id": "silence-poisonHit",
+      "subject": "silenced",
+      "with": "poisonHit",
+      "rule": "Silence prevents new on-hit Poison by suppressing trait; existing Poison still ticks",
+      "test": "test/mechanics-interactions-20261023.test.ts"
+    },
+    {
+      "id": "ritual-majestic",
+      "subject": "majestic",
+      "with": "ritual",
+      "rule": "Cannot be selected as sacrifice even if printed sacrifice property exists",
+      "test": "test/mechanics-interactions-20261023.test.ts"
+    },
+    {
+      "id": "firstStrike-shield",
+      "subject": "firstStrike",
+      "with": "shield",
+      "rule": "Damage order and absorption are resolved by combat, not trait-specific state edits",
+      "test": "test/starter-and-effects.test.ts"
+    },
+    {
+      "id": "unique-displacement",
+      "subject": "majestic",
+      "with": "displacement",
+      "rule": "Replacing an identical Unique cannot bypass Majestic",
+      "test": "test/mechanics-interactions-20261023.test.ts"
+    }
+  ],
+  "plannedMechanics": [
+    {
+      "name": "Предвидение",
+      "state": "planned"
+    },
+    {
+      "name": "Отклик Владения",
+      "state": "planned"
+    },
+    {
+      "name": "Детонация",
+      "state": "planned"
+    },
+    {
+      "name": "Рикошет",
+      "state": "planned"
+    },
+    {
+      "name": "Магомутация",
+      "state": "design-only"
+    },
+    {
+      "name": "Случайный урон как эффект карты",
+      "state": "planned"
+    },
+    {
+      "name": "Оберег",
+      "state": "registered-blocked",
+      "key": "ward"
     }
   ]
 }
