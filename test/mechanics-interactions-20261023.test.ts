@@ -28,13 +28,15 @@ const make=(id:number,patch:Partial<Card>={},runtime:Partial<Permanent>={}):Perm
  damage:0,shield:0,exhausted:false,enteredTurn:0,interceptions:0,...runtime
 });
 
-test('neutral starting deck has exactly 2 distinct Majestic creatures / 4 copies, unchanged deck size',()=>{
+test('neutral starting deck has exactly 3 distinct Majestic creatures / 6 copies, unchanged deck size',()=>{
  assert.equal(neutralStarter.reduce((total,row)=>total+row.copies,0),70);
  const majestic=neutralStarter.filter(entry=>entry.card.kind==='creature'&&entry.card.majestic);
  assert.deepEqual(majestic.map(row=>[row.card.name,row.copies]).sort(),[
-  ['Последний часовой',2],['Страж архивов',2]
+  ['Последний часовой',2],['Свирус Жирникус',2],['Страж архивов',2]
  ]);
- assert.equal(majestic.reduce((total,row)=>total+row.copies,0),4);
+ assert.equal(majestic.reduce((total,row)=>total+row.copies,0),6);
+ assert.ok(majestic.filter(row=>row.card.cost?.generic>5).every(row=>row.card.id==='neutral-свирус-жирникус'));
+ assert.equal(majestic.filter(row=>row.card.cost?.generic>5).length,1);
  assert.ok(registeredTraits().includes('majestic'));
  assert.ok(registeredEffects('death').includes('death:damageAllCreatures'));
 });
