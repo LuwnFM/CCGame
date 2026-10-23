@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/design-variants.css">
   <link rel="stylesheet" href="/interface.css">
   <link rel="stylesheet" href="/overlays.css">
+  <link rel="stylesheet" href="/display-controls.css">
   <script src="/ui/layout-preview.js" type="module"></script>
 </head>
 <body id="layoutRoot">
@@ -62,7 +63,7 @@
         <section class="zone zone-aux"><h3>Вспомогательное поле · 4</h3><div id="myAux" class="board"></div><div class="domain-divider" aria-hidden="true"></div><section class="domains-zone"><h3>Владения · <span id="domainSummary"></span></h3><div class="domain-cards"><div id="myBasicDomains" class="domain-card-group"></div><div id="mySpecialDomains" class="domain-card-group"></div></div></section><details id="domainDetails" class="domain-details domain-settings"><summary>Настроить оплату</summary><label class="auto-payment"><input type="checkbox" id="autoDomainPayment" checked>Автооплата · базовые первыми</label><p class="hint">Отключи автооплату, чтобы выбирать Владения при розыгрыше. Нажатие Владения заранее даёт Энергию.</p></details></section>
       </section>
     </div>
-    <section class="panel playarea"><h2>Рука</h2><div id="hand" class="hand"></div><div id="artifactReplacements" class="hand"></div><div class="actions"><button id="hero">Атаковать Владетеля</button><button id="end" class="secondary">Завершить ход</button></div></section>
+    <section class="panel playarea"><h2>Рука <span id="matchStatus" class="match-notice" role="status" aria-live="polite" aria-atomic="true"></span></h2><div id="hand" class="hand"></div><div id="artifactReplacements" class="hand"></div><div class="actions"><button id="hero">Атаковать Владетеля</button><button id="end" class="secondary">Завершить ход</button></div></section>
   </section>
   <section id="spectator" class="hidden"><div class="panel top"><h2 id="spectatorHeading">Наблюдение за матчем</h2><button id="spectatorClose" class="secondary">В лобби</button></div><div class="panel"><p class="hint">Наблюдение только за открытым полем. Руки и колоды игроков скрыты; управлять чужим матчем нельзя.</p><div id="spectatorPlayer0" class="spectator-board"></div><div id="spectatorPlayer1" class="spectator-board"></div></div><section class="panel"><h3>Общий чат</h3><div id="spectatorChat" class="chat"></div><form id="spectatorChatForm" class="actions"><input maxlength="500" aria-label="Сообщение в общий чат" placeholder="Написать всем"><button id="spectatorChatSubmit">Отправить</button></form></section></section>
   <section id="rulesPage" class="hidden">
