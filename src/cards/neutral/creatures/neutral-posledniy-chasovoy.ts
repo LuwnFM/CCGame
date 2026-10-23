@@ -10,6 +10,7 @@ export default {
   },
   "attack": 3,
   "health": 4,
+  "majestic": true,
   "onDeath": {
     "kind": "damageOpponent",
     "amount": 1
