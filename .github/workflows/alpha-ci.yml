@@ -8,16 +8,21 @@ on:
 permissions:
   contents: read
 
+# Supersede only obsolete CI on the exact same ref.
+concurrency:
+  group: firewell-alpha-\${{ github.workflow }}-\${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
+  unit:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - name: Tests
+      - name: Server tests and card catalog check
         run: npm test
       - name: Client syntax
         run: |
@@ -27,10 +32,24 @@ jobs:
           node --check web/ui/api.js
           node --check web/ui/cards.js
           node --check web/ui/chat.js
-      - name: Install browser test runner
-        run: npm install --no-save playwright@1.57.0
-      - name: Install Chromium only (avoid long Firefox/WebKit downloads)
-        run: npx playwright install --with-deps chromium
+  browser:
+    needs: unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Chromium and OS libraries are preinstalled and pinned to Playwright.
+    # Avoid repeated downloads and --with-deps apt installs on each job.
+    container:
+      image: mcr.microsoft.com/playwright:v1.57.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install matching Playwright JS client
+        run: npm install --no-save --no-audit --no-fund playwright@1.57.0
+      - name: Prepare card catalog
+        run: npm run cards:sync
       - name: Browser end-to-end smoke
         timeout-minutes: 5
         run: node --experimental-strip-types test/browser-e2e.mjs
@@ -46,4 +65,3 @@ jobs:
           name: firewell-browser-screenshots
           path: artifacts/browser/
           if-no-files-found: ignore
-
