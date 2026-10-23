@@ -54,7 +54,7 @@ export function resolveCombat(game: Game, attacker: Permanent, defender: Permane
       const shieldBefore = defender.shield;
       const dealt = damage(defender, attack);
       heal(attackingPlayer, attacker, Math.min(remaining, dealt));
-      applyPoisonFromHit(defender, attacker);
+      if (dealt > 0) applyPoisonFromHit(defender, attacker);
       spill(interceptedOverflow(attacker,intercepted,attack,shieldBefore,remaining));
       notify('afterAttackerHit',attacker,defender,attack,Math.min(remaining,dealt));
     } else if (legend) {
@@ -69,7 +69,7 @@ export function resolveCombat(game: Game, attacker: Permanent, defender: Permane
     const remaining = Math.max(0, (attacker.card.health ?? 0) - attacker.damage);
     const dealt = damage(attacker, response);
     heal(defendingPlayer, defender, Math.min(remaining, dealt));
-    applyPoisonFromHit(attacker, defender);
+    if (dealt > 0) applyPoisonFromHit(attacker, defender);
     notify('afterDefenderHit',defender,attacker,response,Math.min(remaining,dealt));
   };
   if (!defender) { hit(); notify('afterCombat',attacker,legend,attack,0); return; }

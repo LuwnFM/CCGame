@@ -34,9 +34,9 @@ $('choiceDialog').addEventListener('click',e=>{const d=$('choiceDialog'),r=d.get
 $('rulerDraw').onclick=()=>send({type:'rulerDraw'});
 function playCreature(card,index,enemy) {
   const targets=card.onEntry?.kind==='stunEnemy'
-    ? [...enemy.main,...enemy.auxiliary].filter(p=>p.card.kind==='creature'&&!p.stunned&&!p.stasis):
+    ? [...enemy.main,...enemy.auxiliary].filter(p=>p.card.kind==='creature'&&!p.card.majestic&&!p.stunned&&!p.stasis):
     card.onEntry?.kind==='stasisEnemy'
-      ? [...enemy.main,...enemy.auxiliary].filter(p=>p.card.kind==='creature'&&!p.stasis):[];
+      ? [...enemy.main,...enemy.auxiliary].filter(p=>p.card.kind==='creature'&&!p.card.majestic&&!p.stasis):[];
   if(targets.length)chooseCards('Выбери Существо противника для '+(card.onEntry.kind==='stasisEnemy'?'Стазиса':'Ошеломления'),targets.map(p=>({
     card:p.card,label:cardLabel(p),choose:()=>send({type:'playCreature',handIndex:index,targetId:p.objectId})
   })));
@@ -48,7 +48,7 @@ function playTechnique(card,index,me,enemy) {
     chooseCards('Вернуть Существо на поле',(me.discard||[]).flatMap((c,i)=>c.kind==='creature'?[{card:c,label:'Воскресить',choose:()=>send({type:'playTechnique',handIndex:index,discardIndex:i})}]:[]));
   } else if(['cleanse','silence','bind'].includes(e?.kind)) {
     const side=e.kind==='cleanse'?me:enemy;
-    chooseCards('Выбери цель Техники',[...side.main,...side.auxiliary,...side.legends].filter(p=>e.kind==='bind'?p.card.kind==='creature':true).map(p=>({card:p.card,label:cardLabel(p),choose:()=>send({type:'playTechnique',handIndex:index,targetId:p.objectId})})));
+    chooseCards('Выбери цель Техники',[...side.main,...side.auxiliary,...side.legends].filter(p=>!p.card.majestic&&(e.kind==='bind'?p.card.kind==='creature':true)).map(p=>({card:p.card,label:cardLabel(p),choose:()=>send({type:'playTechnique',handIndex:index,targetId:p.objectId})})));
   } else send({type:'playTechnique',handIndex:index});
 }
 function detailsText(card,p) {
@@ -79,7 +79,7 @@ function traitDescriptions(card) {
     ['zeal','Рвение: может сразу атаковать Существо'],
     ['untiring','Неутомимость: не истощается при атаке, но не получает дополнительных атак'],
     ['sacrifice','Жертва: подходит для ритуального принесения в жертву'],
-    ['majestic','Величественный: нельзя вытеснить из зоны']];
+    ['majestic','Величественный: нельзя выбрать целью прицельной Техники или способности; атаки Существ, урон по всем Существам и эффекты боевого попадания действуют. Нельзя вытеснить из зоны или принести в Жертву']];
   const result=traits.filter(([k])=>card[k]).map(([,txt])=>txt);
   if(card.shield)result.push('Щит '+card.shield+': поглощает урон');
   if(card.cannotAttack)result.push('Не может объявлять атаки (но может быть Стражем)');
