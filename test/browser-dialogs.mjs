@@ -43,6 +43,8 @@ try{
    // The bug was reported specifically after surrendering to the bot.
    await page.locator('#playBot').click();
    await page.locator('#mulligan').waitFor({state:'visible'});
+   await page.locator('#confirmMulligan').click();
+   await page.locator('#hand .card').first().waitFor({state:'visible'});
    const botRoom=await page.evaluate(()=>localStorage.getItem('firewell_room'));
    await page.locator('#leaveMatch').click();
    await page.locator('#home').waitFor({state:'visible'});
@@ -50,7 +52,7 @@ try{
    assert.equal(await page.evaluate(()=>localStorage.getItem('firewell_minimized_room')),botRoom);
    assert.ok((await api('/api/lobby',owner.token)).activeMatches.some(m=>m.code===botRoom));
    await page.locator('#activeMatches').getByRole('button',{name:'Продолжить'}).click();
-   await page.locator('#mulligan').waitFor({state:'visible'});
+   await page.locator('#hand .card').first().waitFor({state:'visible'});
    await page.locator('#surrenderMatch').click();
    await page.locator('#actionDialog button[type=submit]').click();
    await page.locator('#matchOutcome h2').getByText('Поражение',{exact:true}).waitFor();
@@ -66,6 +68,8 @@ try{
    // lobby polling must hide the persistent continuation hint automatically.
    await page.locator('#playBot').click();
    await page.locator('#mulligan').waitFor({state:'visible'});
+   await page.locator('#confirmMulligan').click();
+   await page.locator('#hand .card').first().waitFor({state:'visible'});
    const backgroundBotRoom=await page.evaluate(()=>localStorage.getItem('firewell_room'));
    await page.locator('#leaveMatch').click();
    await page.waitForFunction(()=>document.querySelector('#status')?.textContent.includes('Матч продолжается'));
