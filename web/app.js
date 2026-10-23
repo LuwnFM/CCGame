@@ -27,7 +27,32 @@ let selectedReward = null, selectedRewardKeepExisting = undefined, selectedArtif
 let selectedLegendId = null, defenderChoice = null, attackAlertKey = null;
 let autoDomainPayment=localStorage.getItem('firewell_auto_domain_payment')!=='false';
 let chatAvailableAt=0,olderMessages=[],chatMore=true,spectating=null;
-function status(value) { const message=translate(value||'');$('status').textContent=message;if(!$('auth').classList.contains('hidden'))$('authMessage').textContent=message; }
+let matchNoticeFadeTimer, matchNoticeClearTimer;
+function clearMatchNotice() {
+  clearTimeout(matchNoticeFadeTimer);
+  clearTimeout(matchNoticeClearTimer);
+  const notice=$('matchStatus');
+  notice.classList.remove('match-notice-fading');
+  notice.textContent='';
+  notice.removeAttribute('title');
+}
+function status(value) {
+  const message=translate(value||'');
+  if(document.body.dataset.screen==='match'&&!$('match').classList.contains('hidden')) {
+    clearMatchNotice();
+    $('status').textContent='';
+    if(!message)return;
+    const notice=$('matchStatus');
+    notice.textContent=message;
+    notice.title=message;
+    // Stay visible for 2.5 seconds, then fade for the final 0.5 second.
+    matchNoticeFadeTimer=setTimeout(()=>notice.classList.add('match-notice-fading'),2500);
+    matchNoticeClearTimer=setTimeout(clearMatchNotice,3000);
+    return;
+  }
+  $('status').textContent=message;
+  if(!$('auth').classList.contains('hidden'))$('authMessage').textContent=message;
+}
 let healthProbeInFlight = false;
 async function checkGameServer() {
   if (healthProbeInFlight) return;
@@ -55,6 +80,8 @@ async function checkGameServer() {
 
 let lastPage='auth';
 function show(id) {
+  if(id!=='match') clearMatchNotice();
+  if(id==='match') $('status').textContent='';
   document.body.dataset.screen=id;
   if(id!=='auth')$('authMessage').textContent='';
   if(id!=='rulesPage')lastPage=id;
