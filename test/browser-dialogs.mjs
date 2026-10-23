@@ -35,6 +35,50 @@ try{
   fixture(g=>{g.phase='reward';g.players[0].main[0].card=unique;g.pendingReward={owner:0,pool:[unique,...creatures.slice(1,5)],offeredIds:[unique.id,...creatures.slice(1,3).map(c=>c.id)]}});const oldId=state().players[0].main[0].objectId;await page.reload();await page.locator('#rewardCards .card').first().click();await page.locator('#choiceCards .card').nth(1).click();await page.locator('#choiceConfirm').click();await page.waitForFunction(()=>document.querySelector('#reward')?.classList.contains('hidden'));assert.equal(state().players[0].main.some(p=>p.objectId===oldId),false);
   await ready();await page.locator('#chatOpen').click();await shot('12-chat');await page.locator('#chatClose').click();
   await page.locator('#surrenderMatch').click();const rev=state().revision;await shot('13-surrender');await page.locator('#actionDialog').getByRole('button',{name:'Отмена',exact:true}).click();assert.equal(state().revision,rev);await page.locator('#surrenderMatch').click();await page.locator('#actionDialog button[type=submit]').click();await page.locator('#matchOutcome h2').getByText('Поражение',{exact:true}).waitFor();await shot('14-result');
+   await page.locator('#matchOutcome').getByRole('button',{name:'Вернуться в лобби'}).click();
+   await page.locator('#home').waitFor({state:'visible'});
+   await page.waitForFunction(()=>document.querySelector('#activeMatches')?.textContent.includes('Сейчас нет активных матчей'));
+   assert.ok(!(await page.locator('#status').innerText()).includes('Матч продолжается'));
+   assert.equal(await page.evaluate(()=>localStorage.getItem('firewell_minimized_room')),null);
+   // The bug was reported specifically after surrendering to the bot.
+   await page.locator('#playBot').click();
+   await page.locator('#mulligan').waitFor({state:'visible'});
+   await page.locator('#confirmMulligan').click();
+   await page.locator('#hand .card').first().waitFor({state:'visible'});
+   const botRoom=await page.evaluate(()=>localStorage.getItem('firewell_room'));
+   await page.locator('#leaveMatch').click();
+   await page.locator('#home').waitFor({state:'visible'});
+   await page.waitForFunction(()=>document.querySelector('#status')?.textContent.includes('Матч продолжается'));
+   assert.equal(await page.evaluate(()=>localStorage.getItem('firewell_minimized_room')),botRoom);
+   assert.ok((await api('/api/lobby',owner.token)).activeMatches.some(m=>m.code===botRoom));
+   await page.locator('#activeMatches').getByRole('button',{name:'Продолжить'}).click();
+   await page.locator('#hand .card').first().waitFor({state:'visible'});
+   await page.locator('#surrenderMatch').click();
+   await page.locator('#actionDialog button[type=submit]').click();
+   await page.locator('#matchOutcome h2').getByText('Поражение',{exact:true}).waitFor();
+   await page.locator('#matchOutcome').getByRole('button',{name:'Вернуться в лобби'}).click();
+   await page.locator('#home').waitFor({state:'visible'});
+   await page.waitForFunction(()=>document.querySelector('#activeMatches')?.textContent.includes('Сейчас нет активных матчей'));
+   assert.ok(!(await page.locator('#status').innerText()).includes('Матч продолжается'));
+   assert.equal(await page.evaluate(()=>localStorage.getItem('firewell_minimized_room')),null);
+   await page.reload();
+   await page.locator('#home').waitFor({state:'visible'});
+   assert.equal(await page.evaluate(()=>localStorage.getItem('firewell_minimized_room')),null);
+   // When an active minimized bot match ends in another session, periodic
+   // lobby polling must hide the persistent continuation hint automatically.
+   await page.locator('#playBot').click();
+   await page.locator('#mulligan').waitFor({state:'visible'});
+   await page.locator('#confirmMulligan').click();
+   await page.locator('#hand .card').first().waitFor({state:'visible'});
+   const backgroundBotRoom=await page.evaluate(()=>localStorage.getItem('firewell_room'));
+   await page.locator('#leaveMatch').click();
+   await page.waitForFunction(()=>document.querySelector('#status')?.textContent.includes('Матч продолжается'));
+   const backgroundGame=JSON.parse(app.db.prepare('SELECT game FROM rooms WHERE code=?').get(backgroundBotRoom).game);
+   backgroundGame.phase='finished';backgroundGame.winner=1;backgroundGame.revision++;
+   app.db.prepare('UPDATE rooms SET game=? WHERE code=?').run(JSON.stringify(backgroundGame),backgroundBotRoom);
+   await page.waitForFunction(()=>!document.querySelector('#status')?.textContent.includes('Матч продолжается')
+     && localStorage.getItem('firewell_minimized_room')===null,null,{timeout:16000});
+   assert.ok(!(await page.locator('#activeMatches').innerText()).includes(backgroundBotRoom));
   fixture();await load(observer.token,null);await page.locator('#activeMatches .spectator-entry').filter({hasText:'DialogOpponent'}).getByRole('button',{name:'Смотреть'}).click();await page.locator('#spectator .spectator-zone').first().waitFor();await shot('15-spectator',true);
   const adminUnlock=await fetch(url+'/api/admin/editor/unlock',{
     method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+observer.token},
