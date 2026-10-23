@@ -89,7 +89,7 @@ test('combat readiness separates suppressible Cannot Attack and hard action bloc
 test('shared placement rule respects Majestic and existing Unique identity',()=>{
  const majestic=make(1,{majestic:true,name:'Twin'});
  const ordinary=make(2,{name:'Twin'});
- assert.equal(findNamedConflict([majestic,ordinary],ordinary),majestic);
+ assert.equal(findNamedConflict([majestic,ordinary],ordinary.card),majestic);
  assert.equal(isDisplaceable(majestic),false);
  assert.equal(isDisplaceable(ordinary),true);
  assert.equal(findDisplaceable([majestic,ordinary],1),undefined);
