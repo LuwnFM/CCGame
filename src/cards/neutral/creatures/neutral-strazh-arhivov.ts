@@ -10,6 +10,7 @@ export default {
   },
   "attack": 3,
   "health": 5,
+  "majestic": true,
   "guard": true,
   "lore": {
     "state": "Межгосударственный орден",
