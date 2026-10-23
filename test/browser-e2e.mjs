@@ -110,6 +110,24 @@ try {
   const scrollInfo=await b.evaluate(()=>({body:document.documentElement.scrollWidth,viewport:innerWidth}));
   assert.ok(scrollInfo.body<=scrollInfo.viewport+5,JSON.stringify(scrollInfo));
   await b.locator('#presence').waitFor();
+  // Phone controls are available in the lobby and in an active match.
+  assert.equal(await b.locator('#fullscreenToggle').isVisible(),true);
+  assert.equal(await b.locator('#orientationToggle').isVisible(),true);
+  assert.equal(await b.locator('#adminEditorOpen').isVisible(),true);
+  assert.equal(await b.locator('#match a[href="/layout-editor.html"]').count(),0);
+  await b.evaluate(()=>{
+    Object.defineProperty(document.documentElement,'requestFullscreen',{configurable:true,value:async()=>{window.__gameFullscreenRequested=true}});
+    Object.defineProperty(screen.orientation,'lock',{configurable:true,value:async orientation=>{window.__gameOrientationRequested=orientation}});
+  });
+  await b.locator('#orientationToggle').click();
+  await b.waitForFunction(()=>window.__gameOrientationRequested==='landscape');
+  assert.equal(await b.evaluate(()=>window.__gameFullscreenRequested),true);
+  await b.locator('#adminEditorOpen').click();
+  await b.locator('#editorAuthDialog').waitFor({state:'visible'});
+  await b.locator('#editorPassword').fill('incorrect-test-password');
+  await b.locator('#editorAuthSubmit').click();
+  await b.locator('#editorAuthError').getByText(/Неверный пароль|не настроен/).waitFor();
+  await b.locator('#editorAuthCancel').click();
   await b.screenshot({ path: join(artifacts, 'alpha-lobby-mobile.png'), fullPage: true });
 
   await a.locator('summary:visible').first().click();
@@ -126,6 +144,8 @@ try {
   await b.locator('#joinRoom').click();
   checkpoint("guest joined; waiting for mulligan");
   await b.locator('#mulligan').waitFor({ state: 'visible' });
+  assert.equal(await b.locator('#fullscreenToggle').isVisible(),true);
+  assert.equal(await b.locator('#orientationToggle').isVisible(),true);
   await a.locator('#mulligan').waitFor({ state: 'visible', timeout: 12000 });
   assert.equal(await a.locator('#mulliganHand .card').count(), 7);
   assert.equal(await b.locator('#mulliganHand .card').count(), 7);

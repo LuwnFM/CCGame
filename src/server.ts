@@ -79,6 +79,7 @@ export function timeoutCommand(game: Game): { command: Command; seed: number } {
 }
 
 const cookieName = 'firewell_alpha';
+const editorCookieName = 'firewell_editor';
 const json = (res: ServerResponse, status: number, body: unknown) => {
   res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' });
   res.end(JSON.stringify(body));
@@ -124,7 +125,7 @@ function view(game: Game, seat: PlayerId, row?: Room) {
       lastRulerDrawTurn: p.lastRulerDrawTurn, energy: p.energy, domainsPlayed: p.domainsPlayed, rituals: p.rituals.map(r => ({ id: r.id, color: r.color, threshold: r.threshold, remainingStarts: r.remainingStarts })) }))
   };
 }
-export function createApp(options: { databasePath: string; accessPassword: string; clientOrigin?: string }) {
+export function createApp(options: { databasePath: string; accessPassword: string; clientOrigin?: string; editorPassword?: string }) {
   // Weak shared alpha passwords are explicitly opt-in for disposable test servers.
   // Personal player passwords still require 10+ characters in Social.register().
   const minimumAlphaLength = process.env.FIREWELL_ALLOW_SHORT_ALPHA_PASSWORD === 'true' ? 3 : 10;
@@ -166,6 +167,26 @@ export function createApp(options: { databasePath: string; accessPassword: strin
   const TEST_BOT='__firewell_tester_bot__';
   const isBot=(row:Pick<Room,'guest'>)=>row.guest===TEST_BOT;
   const selectSession = db.prepare('SELECT user_id FROM sessions WHERE id=? AND expires>?');
+  // Editor credentials stay in server environment, never in client JS or markup.
+  const editorPassword = options.editorPassword ?? process.env.FIREWELL_EDITOR_PASSWORD ?? '';
+  const editorTickets = new Map<string, { sid: string; expiresAt: number }>();
+  const editorFailures = new Map<string, { count: number; until: number }>();
+  const editorResources = new Set(['/layout-editor.html', '/ui-preview.html',
+    '/layout-editor.css', '/ui/layout-editor.js', '/ui/layout-preview.js']);
+  const editorSessionMs = 2 * 60 * 60 * 1000;
+  function editorAuthorized(req: IncomingMessage): boolean {
+    const raw = (req.headers.cookie ?? '').split(';').map(item => item.trim())
+      .find(item => item.startsWith(editorCookieName + '='));
+    const token = raw?.slice(editorCookieName.length + 1);
+    if (!token || !/^[a-f0-9]{64}$/.test(token)) return false;
+    const ticket = editorTickets.get(token);
+    if (!ticket) return false;
+    if (Date.now() >= ticket.expiresAt) {
+      editorTickets.delete(token);
+      return false;
+    }
+    return !!(selectSession.get(ticket.sid, Date.now()) as {user_id: string} | undefined)?.user_id;
+  }
   const selectRoom = db.prepare('SELECT * FROM rooms WHERE code=?');
   const insertRoom = db.prepare('INSERT INTO rooms (code,host,guest,game,host_deck) VALUES (?, ?, NULL, ?, ?)');
   const updateRoom = db.prepare('UPDATE rooms SET game=?, deadline=?, turn_deadline=?, intercept_started=?, intercept_banks=? WHERE code=?');
@@ -244,7 +265,9 @@ export function createApp(options: { databasePath: string; accessPassword: strin
       if (origin) { try { originHost = new URL(origin).host; } catch { return json(res,403,{error:'Недопустимый источник'}); } }
       if (origin && originHost !== req.headers.host && origin !== options.clientOrigin)
         return json(res,403,{error:'Недопустимый источник'});
-      if (req.method === 'GET' && (['/', '/style.css', '/design-variants.css', '/interface.css', '/overlays.css', '/app.js', '/i18n.js', '/rules.js', '/layout-editor.html', '/layout-editor.css', '/ui-preview.html'].includes(url.pathname) || /^\/ui\/[a-z][a-z0-9-]*\.js$/.test(url.pathname) || /^\/assets\/kenney-boardgame\/[a-zA-Z0-9_-]+\.(png|txt)$/.test(url.pathname))) {
+      if (req.method === 'GET' && editorResources.has(url.pathname) && !editorAuthorized(req))
+        return json(res,403,{error:'Для редактора требуется авторизация администратора'});
+      if (req.method === 'GET' && (['/', '/style.css', '/design-variants.css', '/interface.css', '/overlays.css', '/display-controls.css', '/app.js', '/i18n.js', '/rules.js', '/layout-editor.html', '/layout-editor.css', '/ui-preview.html'].includes(url.pathname) || /^\/ui\/[a-z][a-z0-9-]*\.js$/.test(url.pathname) || /^\/assets\/kenney-boardgame\/[a-zA-Z0-9_-]+\.(png|txt)$/.test(url.pathname))) {
         const file = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
         const contentType = file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : file.endsWith('.png') ? 'image/png' : file.endsWith('.txt') ? 'text/plain' : 'text/html';
         res.writeHead(200, { 'content-type': contentType === 'image/png' ? contentType : `${contentType}; charset=utf-8`, 'cache-control':'no-store, max-age=0', 'x-content-type-options': 'nosniff' });
@@ -288,6 +311,31 @@ export function createApp(options: { databasePath: string; accessPassword: strin
       const user = sid && selectSession.get(sid, Date.now()) as {user_id:string|null}|undefined;
       if (!user?.user_id) return json(res, 401, { error: 'Войдите в профиль' });
       const uid = user.user_id;
+      if (url.pathname === '/api/admin/editor/unlock' && req.method === 'POST') {
+        if (editorPassword.length < 8) return json(res,503,{error:'Админский доступ не настроен'});
+        const now = Date.now(), source = sid!;
+        const failed = editorFailures.get(source);
+        if (failed && now < failed.until && failed.count >= 5)
+          return json(res,429,{error:'Слишком много попыток. Повторите через 15 минут'});
+        const input = await body(req);
+        if (!input || !checkPassword(input.password,editorPassword)) {
+          const count = failed && now < failed.until ? failed.count + 1 : 1;
+          editorFailures.set(source,{count,until:now + 15 * 60_000});
+          return json(res,403,{error:'Неверный пароль администратора'});
+        }
+        editorFailures.delete(source);
+        // Keep the session private in an HttpOnly cookie and tie it to a live player login.
+        const ticket = randomBytes(32).toString('hex');
+        const expiresAt = now + editorSessionMs;
+        editorTickets.set(ticket,{sid:source,expiresAt});
+        if (editorTickets.size > 500) for (const [id,record] of editorTickets)
+          if (record.expiresAt <= now) editorTickets.delete(id);
+        const secure = req.headers['x-forwarded-proto'] === 'https' ||
+          !!(req.socket as typeof req.socket & {encrypted?: boolean}).encrypted;
+        res.setHeader('set-cookie',editorCookieName + '=' + ticket +
+          '; Path=/; Max-Age=7200; HttpOnly; SameSite=Strict' + (secure ? '; Secure' : ''));
+        return json(res,200,{ok:true});
+      }
       const heartbeat = url.pathname==='/api/lobby'||url.pathname==='/api/presence'||url.pathname==='/api/chat'||/^\/api\/rooms\/[A-F0-9]{8}$/.test(url.pathname);
       if(heartbeat && req.method==='GET' && sid) presence.set(sid,{userId:uid,seenAt:Date.now()});
       if(url.pathname==='/api/presence/away' && req.method==='POST'){if(sid)presence.delete(sid);return json(res,200,{ok:true})}

@@ -1,4 +1,5 @@
 import {requestAction} from './ui/action-dialogs.js';
+import {setupDisplayControls} from './ui/display-controls.js';
 import {createDeckBuilderUI} from './ui/deck-builder.js';
 import {createMatchDialogs} from './ui/dialogs.js';
 import {createBattlefieldUI} from './ui/battlefield.js';
@@ -415,6 +416,32 @@ $('languageToggle').onclick=async()=>{
   if(!$('builder').classList.contains('hidden'))renderBuilder();
   if(token){await loadData();await refresh()}
   localize();
+};
+setupDisplayControls({
+  fullscreenButton:$('fullscreenToggle'),orientationButton:$('orientationToggle'),
+  fullscreenLabel:$('fullscreenLabel'),orientationLabel:$('orientationLabel'),
+  notify:status,translate
+});
+$('adminEditorOpen').onclick=()=>{
+  $('editorAuthError').textContent='';
+  $('editorPassword').value='';
+  $('editorAuthDialog').showModal();
+  $('editorPassword').focus();
+};
+$('editorAuthCancel').onclick=()=>$('editorAuthDialog').close();
+$('editorAuthForm').onsubmit=async event=>{
+  event.preventDefault();
+  const submit=$('editorAuthSubmit');
+  submit.disabled=true;
+  $('editorAuthError').textContent='';
+  try{
+    await api('/api/admin/editor/unlock',{password:$('editorPassword').value});
+    $('editorPassword').value='';
+    window.location.assign('/layout-editor.html');
+  }catch(error){
+    $('editorPassword').value='';
+    $('editorAuthError').textContent=translate(error.message);
+  }finally{submit.disabled=false}
 };
 $('register').onclick=()=>authenticate(true);
 $('signIn').onclick=()=>authenticate(false);
