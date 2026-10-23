@@ -10,7 +10,8 @@
     "cards:sync": "node scripts/sync-card-catalog.mjs",
     "cards:check": "node scripts/sync-card-catalog.mjs --check",
     "pretest": "npm run cards:sync",
-    "prestart": "npm run cards:sync"
+    "prestart": "npm run cards:sync",
+    "test:dialogs": "node --experimental-strip-types test/browser-dialogs.mjs"
   },
   "engines": {
     "node": ">=24"

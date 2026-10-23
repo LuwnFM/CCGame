@@ -87,6 +87,7 @@ try {
   await a.locator('#rulesClose').click();
   await a.locator('#chatText').fill('Привет из браузерного теста');
   await a.locator('#chatForm button').click();
+  await a.locator('#feedbackForm').locator('..').locator('summary').click();
   await a.locator('#feedbackTitle').fill('Тестовое обращение');
   await a.locator('#feedbackType').selectOption('problem');
   await a.locator('#feedbackText').fill('Проверка формы обратной связи в браузере');
@@ -113,11 +114,13 @@ try {
 
   await a.locator('summary').first().click();
   checkpoint("both players registered");
+  await a.locator('#friendOpen').click();
   await a.locator('#createRoom').click();
   await a.locator('#match').waitFor({ state: 'visible' });
   await a.waitForFunction(() => /^Комната [A-F0-9]{8}$/.test(document.querySelector('#roomLabel')?.textContent ?? ''));
   const code = (await a.locator('#roomLabel').innerText()).match(/[A-F0-9]{8}/)[0];
   await b.locator('summary').first().click();
+  await b.locator('#friendOpen').click();
   await b.locator('#code').fill(code);
   checkpoint("room created, invite sent");
   await b.locator('#joinRoom').click();
@@ -211,6 +214,7 @@ try {
   await b.locator('#hand .card').first().click();
   await b.locator('#choiceDialog').waitFor({state:'visible'});
   await b.locator('#choiceCards .card').first().click();
+  await b.locator('#choiceConfirm').click();
   await b.waitForFunction(()=>document.querySelector('#myBoard')?.textContent.includes('Возвращённый теста'));
   assert.equal(await b.locator('#myAux .card').count(),1);
   checkpoint("resurrection and second chance resolved");

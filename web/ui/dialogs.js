@@ -1,5 +1,5 @@
 /** Owns only match choice screens. The game state remains immutable and server-owned. */
-export function createMatchDialogs({$,button,cardButton,kindName,cardLabel,send}){
+export function createMatchDialogs({$,button,cardButton,kindName,cardLabel,send,chooseCards}){
  return function renderMatchDialogs({game,me,seat,selectedMulligan,selectedVictims,
   selectedRitual,setSelectedRitual,selectedReward,setSelectedReward,
   selectedRewardKeepExisting,setSelectedRewardKeepExisting,rerender}){
@@ -27,7 +27,8 @@ export function createMatchDialogs({$,button,cardButton,kindName,cardLabel,send}
     $('rewardCards').replaceChildren(...offers.map(c=>cardButton(c,(c.attack??0)+'/'+(c.health??0),()=>{
       const zone=c.createdToken?me.auxiliary:me.main,limit=c.createdToken?4:8;
       const existing=c.unique?[...me.main,...me.auxiliary].find(p=>p.card.name===c.name):undefined;
-      const keepExisting=existing?confirm('Оставить уже находящееся на поле Уникальное Существо?'):undefined;
+      if(existing){chooseCards('Какое Уникальное Существо оставить?',[{card:existing.card,label:'Оставить на поле',choose:()=>send({type:'chooseReward',rewardId:c.id,keepExisting:true})},{card:c,label:'Оставить новую награду',choose:()=>{setSelectedReward(c.id);setSelectedRewardKeepExisting(false);rerender();const remaining=zone.filter(p=>p.objectId!==existing.objectId);if(remaining.length<limit||!remaining.some(p=>!p.card.majestic))send({type:'chooseReward',rewardId:c.id,keepExisting:false})}}]);return}
+      const keepExisting=undefined;
       if(keepExisting===true){send({type:'chooseReward',rewardId:c.id,keepExisting});return}
       const remaining=existing?zone.filter(p=>p.objectId!==existing.objectId):zone;
       const choices=remaining.filter(p=>!p.card.majestic);

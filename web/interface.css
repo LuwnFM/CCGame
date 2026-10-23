@@ -82,3 +82,88 @@ body[data-design]:not(:has(#match:not(.hidden))) main>#status{max-width:calc(100
 body[data-design]{min-height:100dvh}
 body[data-design] .legend-card-full{padding:22px;border:1px solid #c9ab73;border-radius:14px;background:radial-gradient(ellipse at top,#576144,#182a2b);line-height:1.6}
 body[data-design] .legend-card-full .legend-loyalty{font-size:24px;color:#f5d797}
+/* One card face across collection, choices, details and public spectator zones.
+   Kept outside #match so the approved Atlas/Hearth table dimensions stay intact. */
+body[data-design] :is(dialog,#catalog,#deckPreviewCards,#spectator) .card-wrapper{position:relative;display:block;min-width:0;width:100%;height:auto;margin:0;flex:initial}
+body[data-design] :is(dialog,#catalog,#deckPreviewCards,#spectator) .card{display:flex;flex-direction:column;justify-content:flex-start;gap:7px;position:relative;width:100%;min-width:0;height:100%;min-height:260px;padding:40px 10px 12px;border:1px solid #9c9474;border-radius:12px;background:linear-gradient(145deg,#354941,#17282c 78%);color:#f0eadb;text-align:left;box-shadow:inset 0 0 0 2px #0a16183d,0 5px 14px #0004;overflow:hidden}
+body[data-design] :is(dialog,#catalog,#deckPreviewCards,#spectator) .card.red{border-color:#bd806a;background:linear-gradient(145deg,#51413a,#1f2a2c 78%)}
+body[data-design] :is(dialog,#catalog,#deckPreviewCards,#spectator) .card.blue{border-color:#719aac;background:linear-gradient(145deg,#314b57,#18282f 78%)}
+body[data-design] :is(dialog,#catalog,#deckPreviewCards,#spectator) .card.violet{border-color:#a48bb4;background:linear-gradient(145deg,#4d425b,#202735 78%)}
+body[data-design] :is(dialog,#catalog,#deckPreviewCards,#spectator) .card.gold{border-color:#baa16b;background:linear-gradient(145deg,#534e36,#222b29 78%)}
+body[data-design] :is(dialog,#catalog,#deckPreviewCards,#spectator) .card .glyph{top:8px;left:10px;width:23px;height:23px;font-size:8px;border-width:1px;border-radius:7px;box-shadow:none}
+body[data-design] :is(dialog,#catalog,#deckPreviewCards,#spectator) .card b{display:block;min-height:30px;margin:0;padding:0;background:none;text-shadow:none;color:#fff0d0;white-space:normal;overflow:visible;line-height:1.3;font-size:13px;letter-spacing:0}
+body[data-design] :is(dialog,#catalog,#deckPreviewCards,#spectator) .card .card-art{display:grid;min-height:58px;height:78px;max-height:100px;flex:0 0 auto;border-radius:7px;background:radial-gradient(ellipse at center,#b5a16a22,transparent),#0a1b20;border-color:#bea87433}
+body[data-design] :is(dialog,#catalog,#deckPreviewCards,#spectator) .card .card-art:before{width:45px;height:45px}
+body[data-design] :is(dialog,#catalog,#deckPreviewCards,#spectator) .card small{color:#c6d1c6;font-size:12px;line-height:1.4;margin:0}
+body[data-design] :is(dialog,#catalog,#deckPreviewCards,#spectator) .card .card-summary{font-size:13px;font-weight:700;color:#f6d593;border-top:1px solid #c4bc8544;padding-top:6px}
+body[data-design] :is(dialog,#catalog,#deckPreviewCards,#spectator) .card .card-description{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden;font-size:12px;line-height:1.4;color:#cbd6cb}
+body[data-design] :is(dialog,#catalog,#deckPreviewCards,#spectator) .card .card-flags{color:#d9c18f;font-size:11px}
+body[data-design] :is(dialog,#catalog,#deckPreviewCards,#spectator) .inspect-card{position:absolute;z-index:3;top:7px;right:7px;width:28px;height:28px;min-width:28px;min-height:28px;margin:0;padding:0;display:grid;place-items:center;border:1px solid #b4c8ae80;border-radius:50%;background:#15303a;color:#f1dfb1;font-family:Georgia,serif;font-size:17px;line-height:1}
+body[data-design] :is(dialog,#catalog,#deckPreviewCards,#spectator) .card.active{outline:2px solid #cce2ac;outline-offset:-3px;background:linear-gradient(145deg,#476147,#223d35)}
+body[data-design] #inspectorCard .card:disabled{opacity:1;cursor:default}
+body[data-design] #inspectorCard .card .card-description{display:none}
+body[data-design] #catalog{max-height:70dvh;padding:4px 6px 14px;scrollbar-width:thin;scrollbar-color:#758b7655 transparent}
+body[data-design] #builder>.panel{position:sticky;top:0;z-index:6;background:#1a2c31ed;backdrop-filter:blur(10px)}
+body[data-design] #builder>.panel>p{margin:10px 0 0;font-size:12px}
+body[data-design] .catalog-filters{padding-top:4px}
+/* Player-facing lobby with real server counters and all existing entry points. */
+body[data-design] #home{max-width:1500px;margin:auto}
+body[data-design] #home .lobby-heading{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:12px 0 16px}
+body[data-design] #home .lobby-heading h1{font-family:Georgia,serif;font-size:clamp(28px,3vw,42px);font-weight:500;margin:5px 0 10px}
+body[data-design] #home .lobby-heading p{margin:0}
+body[data-design] .eyebrow{color:#d2b97c;font-size:10px;letter-spacing:.2em;text-transform:uppercase}
+body[data-design] .lobby-nav{display:flex;flex-wrap:wrap;align-items:center;gap:9px;padding:8px 0 18px;border-bottom:1px solid #a5ac7c22;margin-bottom:22px}
+body[data-design] .lobby-nav a,body[data-design] .lobby-nav button{display:inline-flex;align-items:center;min-height:36px;padding:7px 15px;border:1px solid #9cac8b33;border-radius:8px;color:#d8d5be;background:#192b30;text-decoration:none;font-size:13px}
+body[data-design] .lobby-nav a:first-child{color:#ecd39d;border-color:#b49c5c80;background:#293b31}
+body[data-design] .lobby-play-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:20px;margin-bottom:20px;align-items:stretch}
+body[data-design] #home .lobby-hero{padding:32px;background:radial-gradient(ellipse at right top,#5d79592c,transparent 70%),linear-gradient(130deg,#283e36,#14242c);margin:0;display:flex;flex-direction:column;align-items:stretch;gap:14px}
+body[data-design] .lobby-hero h2{font:32px/1.2 Georgia,serif;max-width:420px;margin:0}
+body[data-design] .lobby-hero .lobby-intro{font-size:13px;line-height:1.7;color:#b5c7b9;max-width:410px;margin:0}
+body[data-design] #presence{display:block;align-self:flex-start;white-space:normal;line-height:1.6;margin:0;padding:8px 12px;background:#101f2577;border:1px solid #b0bd8d44;border-radius:8px;color:#dae3c7;font-size:13px;font-variant-numeric:tabular-nums}
+body[data-design] .lobby-hero>.actions{margin:5px 0 0}
+body[data-design] #search{min-width:230px;min-height:52px;font-size:16px}
+body[data-design] #playBot{min-height:48px}
+body[data-design] #activeMatches{width:100%}
+body[data-design] #activeMatches .spectator-entry{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;background:#19312a;border:1px solid #91ab7666;border-radius:9px;margin-top:8px}
+body[data-design] .lobby-hero h3{margin:8px 0 0;font-size:12px}
+body[data-design] #queueStatus:empty{display:none}
+body[data-design] #home .lobby-selected-deck{padding:24px;margin:0;min-width:0}
+body[data-design] .lobby-selected-deck h2{font:25px Georgia,serif;margin:9px 0 15px}
+body[data-design] .lobby-selected-deck>label{margin:10px 0 4px}
+body[data-design] #deckPreviewInfo{margin:8px 0}
+body[data-design] #deckPreviewCards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:14px 0 18px}
+body[data-design] #deckPreviewCards .card{min-height:198px;padding:34px 7px 8px;gap:5px}
+body[data-design] #deckPreviewCards .card b{font-size:11px;min-height:28px}
+body[data-design] #deckPreviewCards .card .card-art{height:55px;min-height:45px}
+body[data-design] #deckPreviewCards .card .card-summary{font-size:10px}
+body[data-design] #deckPreviewCards .card .card-description,body[data-design] #deckPreviewCards .card .card-flags{display:none}
+body[data-design] .home-secondary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start}
+body[data-design] .home-secondary>.panel{margin:0;scroll-margin-top:20px}
+body[data-design] #lobbyPlay{scroll-margin-top:20px}
+body[data-design] .settings-body{padding:20px}
+body[data-design] .settings-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+body[data-design] .settings-actions .editor-link{display:flex;align-items:center;justify-content:center;padding:12px;border:1px solid #b4aa6d55;border-radius:8px}
+body[data-design] .room-controls>.actions{display:grid;grid-template-columns:1fr;gap:12px}
+body[data-design] .room-controls #code{width:100%;text-transform:uppercase;letter-spacing:.12em;text-align:center;margin:8px 0}
+body[data-design] .settings-actions .danger{background:#663b3b;color:#ffe7da;border-color:#ae7c6a}
+/* Rules, observation and outcome views use the same surfaces. */
+body[data-design] .rules-tools{max-width:1000px;margin:auto auto 22px}
+body[data-design] #rulesSearch{width:100%;margin-bottom:14px}
+body[data-design] #rulesToc{display:flex;gap:8px;flex-wrap:wrap}
+body[data-design] #rulesToc a{padding:5px 10px;background:#182b2c;border:1px solid #9aa87b33;border-radius:7px;color:#d9cba4;text-decoration:none;font-size:12px}
+body[data-design] .rule-section{scroll-margin-top:24px}
+body[data-design] .rule-section[hidden]{display:none}
+body[data-design] .spectator-board{display:block;padding:16px 0;border-bottom:1px solid #9aa87b44}
+body[data-design] .spectator-zone{margin:15px 0}.spectator-zone h4{color:#d8bd80;margin:12px 0;font-size:13px}
+body[data-design] .spectator-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:14px;align-items:stretch}
+body[data-design] .spectator-cards .card{min-height:240px}
+body[data-design] #matchOutcome{position:absolute;left:25%;right:25%;top:65px;z-index:25;padding:25px;background:#1b3437f5;border:1px solid #dfc17d;border-radius:14px;text-align:center;box-shadow:0 15px 60px #0009}
+body[data-design] #matchOutcome h2{font:30px Georgia,serif;margin:0 0 12px}
+body[data-design] #matchOutcome p{line-height:1.5;color:#d4dfcd}
+body[data-design]:not(:has(#match:not(.hidden))) header{display:flex;height:auto;min-height:52px;padding:10px 18px}
+body[data-design]:not(:has(#match:not(.hidden))) header .brand strong{font-size:15px}
+body[data-design]:not(:has(#match:not(.hidden))) header button{min-height:34px;font-size:12px}
+@media(max-width:1000px){body[data-design] .lobby-play-grid{grid-template-columns:1.15fr 1fr;gap:12px}body[data-design] #home .lobby-hero{padding:20px}body[data-design] .lobby-hero h2{font-size:26px}body[data-design] #home .lobby-selected-deck{padding:18px}body[data-design] #search{min-width:180px}body[data-design] #deckPreviewCards{gap:5px}body[data-design] #deckPreviewCards .card-wrapper:last-child{display:none}body[data-design] #deckPreviewCards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){body[data-design] .lobby-play-grid,body[data-design] .home-secondary{grid-template-columns:1fr}body[data-design] #home .lobby-heading{align-items:flex-start;flex-wrap:wrap}body[data-design] #home .lobby-heading h1{font-size:28px}body[data-design] .lobby-nav{gap:6px;padding-bottom:12px;margin-bottom:14px}body[data-design] .lobby-nav a,body[data-design] .lobby-nav button{font-size:12px;padding:6px 10px}body[data-design] .settings-actions{grid-template-columns:1fr}body[data-design] #catalog{max-height:65dvh}body[data-design] #builder>.panel>.actions{gap:7px}body[data-design] #builder>.panel>p{max-height:55px;overflow:auto}body[data-design] #matchOutcome{left:6%;right:6%;top:70px;padding:16px}body[data-design] #builder>.panel{position:static}}
+@media(orientation:landscape) and (max-height:600px){body[data-design] #home .lobby-heading h1{font-size:28px}body[data-design] #home .lobby-heading .muted{font-size:12px}body[data-design] .lobby-nav{margin-bottom:12px;padding-bottom:12px}body[data-design] #builder>.panel{position:static}body[data-design] #deckPreviewCards .card{min-height:178px}body[data-design] #matchOutcome{top:40px;left:15%;right:15%;max-height:calc(100dvh - 60px);overflow:auto;padding:14px}body[data-design] #matchOutcome h2{font-size:24px}}
+@media(prefers-reduced-motion:reduce){body[data-design] .card,body[data-design] button{transition:none}}

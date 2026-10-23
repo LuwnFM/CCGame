@@ -1,0 +1,60 @@
+/* Shared modal language, independent of table geometry and editor theme. */
+dialog.action-dialog{position:fixed;width:min(520px,calc(100vw - 24px));max-width:none;max-height:calc(100dvh - 24px);margin:auto;padding:24px;border:1px solid #a99464;border-radius:16px;background:linear-gradient(145deg,#263b3c,#14212a);color:#f1ead9;box-shadow:0 24px 80px #000a;overflow:auto;color-scheme:dark;font:15px/1.5 system-ui,sans-serif}
+dialog.action-dialog::backdrop{background:#060f16ba;backdrop-filter:blur(5px)}
+.action-dialog .inspector-top{display:flex;align-items:center;justify-content:space-between;gap:16px;border-bottom:1px solid #aa98664d;padding-bottom:14px;margin-bottom:16px}
+.action-dialog h2{margin:0;font-size:22px;color:#f0ddb5}.action-dialog p{color:#b9c7bd}.action-dialog label{display:block;margin:14px 0;color:#d1dacd}.action-dialog input{display:block;width:100%;min-height:44px;margin-top:7px;padding:10px 12px;border-radius:8px;border:1px solid #829c8877;background:#101f26;color:#fff;font:inherit}.action-dialog button{min-height:42px;padding:9px 17px;border-radius:8px;border:1px solid #dfc383;background:#dec48b;color:#1d2d26;font:inherit;font-weight:650;cursor:pointer}.action-dialog button.secondary{background:#263d42;color:#f1e8cf;border-color:#7d998766}.action-dialog button.danger{background:#723d3c;color:#ffeded;border-color:#c27d71}.action-dialog button:disabled{opacity:.5;cursor:wait}.action-dialog :focus-visible{outline:2px solid #f1d69a;outline-offset:3px}.action-dialog .action-error{color:#ffc0ac;background:#632a282e;border-radius:8px}.action-dialog .action-error:empty{display:none}.action-dialog .dialog-footer{display:flex;justify-content:flex-end;gap:10px;border-top:1px solid #aa98664d;padding-top:16px;margin-top:18px}
+body[data-design] dialog.card-inspector,body[data-design] dialog.match-chat-dialog{width:min(880px,calc(100vw - 24px));max-width:none;max-height:calc(100dvh - 24px);padding:0;overflow:auto}
+body[data-design] dialog>.inspector-top{position:sticky;top:0;z-index:5;margin:0;padding:16px 20px;background:#203437;border-bottom:1px solid #aa986650}
+body[data-design] dialog>.inspector-top h2{font-size:20px}
+body[data-design] dialog>.dialog-footer{position:sticky;bottom:0;z-index:5;display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:13px 20px;background:#1b2c32;border-top:1px solid #aa986650}
+body[data-design] #choiceCards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;max-height:none;overflow:visible;padding:18px 20px;margin:0}
+body[data-design] #choiceHint{padding:12px 20px 0;margin:0;color:#b9cdbb;font-size:13px}
+body[data-design] #choiceSelection{margin-right:auto;color:#e8d4a9;font-size:12px}
+body[data-design] #legendDialog{width:min(780px,calc(100vw - 24px))}
+body[data-design] #legendCardView{padding:18px 20px 8px}
+body[data-design] #legendCardView>.card-wrapper{max-width:none;margin:0;width:100%}
+body[data-design] #legendCardView>.card-wrapper>.card{min-height:230px;height:auto}
+body[data-design] #legendActions{display:grid;grid-template-columns:1fr;gap:10px;margin:0;padding:12px 20px 20px;background:transparent;border:0}
+body[data-design] #legendActions>strong{display:none}
+body[data-design] #legendActions>button{width:100%;text-align:left;white-space:normal;padding:14px;min-height:48px}
+body[data-design] #domainPaymentSummary,body[data-design] #domainPaymentStatus{padding:0 20px}
+body[data-design] #domainPaymentChoices{padding:0 20px;max-height:none;overflow:visible}
+body[data-design] #matchChat{margin:16px 20px;height:min(48dvh,430px)}
+body[data-design] #matchChatForm{padding:12px 20px 16px;margin:0;position:sticky;bottom:0;background:#1b2c32}
+body[data-design] #inspectorStats{margin:18px 20px 12px}
+body[data-design] #inspectorTraits,body[data-design] #inspectorLore,body[data-design] #inspectorActions{margin:12px 20px}
+body[data-design] #inspectorCard{margin:18px 20px}
+body[data-design] #inspectorCard .card-wrapper{display:block;max-width:280px;margin:auto}
+@media(orientation:landscape) and (max-height:600px){body[data-design] dialog>.inspector-top{padding:9px 14px}body[data-design] dialog>.inspector-top h2{font-size:17px}body[data-design] dialog>.dialog-footer{padding:9px 14px}body[data-design] #choiceCards{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));padding:12px 14px;gap:10px}body[data-design] #legendCardView>.card-wrapper>.card{min-height:170px}.action-dialog{padding:16px!important}}
+@media(max-width:550px){body[data-design] #choiceCards{grid-template-columns:repeat(2,minmax(0,1fr));padding:12px;gap:10px}body[data-design] dialog>.dialog-footer{padding:10px;flex-wrap:wrap}body[data-design] #choiceSelection{width:100%}body[data-design] dialog>.inspector-top{padding:12px}body[data-design] dialog>.inspector-top h2{font-size:17px}}
+@media(min-width:650px){
+ body[data-design] #legendDialog[open]{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,.85fr);grid-template-rows:auto minmax(0,1fr);overflow:hidden}
+ body[data-design] #legendDialog>.inspector-top{grid-column:1/-1;grid-row:1}
+ body[data-design] #legendCardView{grid-column:1;grid-row:2;min-height:0;overflow:auto;padding:16px}
+ body[data-design] #legendActions{grid-column:2;grid-row:2;align-content:center;align-self:stretch;overflow:auto;min-height:0;padding:16px 16px 16px 0}
+}
+@media(orientation:landscape) and (max-height:600px){
+ body[data-design] #legendDialog[open]{height:calc(100dvh - 24px)}
+ body[data-design] #legendCardView>.card-wrapper>.card{min-height:0;height:100%;padding-top:32px;gap:5px}
+ body[data-design] #legendCardView .card .card-art{height:50px;min-height:35px}
+ body[data-design] #legendCardView .card .card-description{-webkit-line-clamp:2;font-size:11px}
+ body[data-design] #legendActions>button{padding:12px;font-size:13px;line-height:1.4}
+ body[data-design] #choiceDialog[open]{display:grid;height:calc(100dvh - 24px);grid-template-rows:auto auto minmax(0,1fr) auto;overflow:hidden}
+ body[data-design] #choiceHint{font-size:11px;padding:7px 14px 0}
+ body[data-design] #choiceCards{display:flex;align-items:stretch;min-height:0;height:100%;overflow-x:auto;overflow-y:hidden;padding:10px 14px;gap:10px}
+ body[data-design] #choiceCards>.card-wrapper{flex:0 0 180px;min-height:0;height:100%}
+ body[data-design] #choiceCards .card{min-height:0;height:100%;padding:27px 8px 7px;gap:4px}
+ body[data-design] #choiceCards .card .glyph{top:4px;width:18px;height:18px;font-size:6px}
+ body[data-design] #choiceCards .inspect-card{top:3px;width:22px;height:22px;min-height:22px;min-width:22px;font-size:14px}
+ body[data-design] #choiceCards .card b{font-size:12px;line-height:1.2;min-height:27px;max-height:29px;overflow:hidden;flex:none}
+ body[data-design] #choiceCards .card .card-art{height:30px;min-height:25px;flex:1 1 30px}
+ body[data-design] #choiceCards .card .card-art:before{width:24px;height:24px}
+ body[data-design] #choiceCards .card .card-summary{font-size:11px;line-height:1.25;padding-top:3px}
+ body[data-design] #choiceCards .card .card-description{font-size:11px;line-height:1.25;-webkit-line-clamp:2;flex:none}
+ body[data-design] #choiceCards .card>.card-flags,body[data-design] #choiceCards .card>small:not(.card-summary):not(.card-description):not(.card-flags):not(.card-action-label){display:none}
+}
+body[data-design] #authMessage:not(:empty){padding:12px;border:1px solid #ba8c6355;border-radius:8px;color:#ffe2b6;background:#45312255}
+.action-dialog form>.inspector-top{position:sticky;top:-24px;background:#23373a;z-index:2}
+.action-dialog form>.dialog-footer{position:sticky;bottom:-24px;background:#1b2d34;z-index:2;margin-bottom:0}
+
+body[data-design] #choiceCards .card-action-label{color:#e9ddb7;font-weight:700}

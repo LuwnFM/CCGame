@@ -239,7 +239,7 @@ export function createApp(options: { databasePath: string; accessPassword: strin
       if (origin) { try { originHost = new URL(origin).host; } catch { return json(res,403,{error:'Недопустимый источник'}); } }
       if (origin && originHost !== req.headers.host && origin !== options.clientOrigin)
         return json(res,403,{error:'Недопустимый источник'});
-      if (req.method === 'GET' && (['/', '/style.css', '/design-variants.css', '/interface.css', '/app.js', '/i18n.js', '/rules.js', '/layout-editor.html', '/layout-editor.css', '/ui-preview.html'].includes(url.pathname) || /^\/ui\/[a-z][a-z0-9-]*\.js$/.test(url.pathname) || /^\/assets\/kenney-boardgame\/[a-zA-Z0-9_-]+\.(png|txt)$/.test(url.pathname))) {
+      if (req.method === 'GET' && (['/', '/style.css', '/design-variants.css', '/interface.css', '/overlays.css', '/app.js', '/i18n.js', '/rules.js', '/layout-editor.html', '/layout-editor.css', '/ui-preview.html'].includes(url.pathname) || /^\/ui\/[a-z][a-z0-9-]*\.js$/.test(url.pathname) || /^\/assets\/kenney-boardgame\/[a-zA-Z0-9_-]+\.(png|txt)$/.test(url.pathname))) {
         const file = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
         const contentType = file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : file.endsWith('.png') ? 'image/png' : file.endsWith('.txt') ? 'text/plain' : 'text/html';
         res.writeHead(200, { 'content-type': contentType === 'image/png' ? contentType : `${contentType}; charset=utf-8`, 'cache-control':'no-store, max-age=0', 'x-content-type-options': 'nosniff' });

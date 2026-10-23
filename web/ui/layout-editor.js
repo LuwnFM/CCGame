@@ -1,3 +1,4 @@
+import {requestAction} from './action-dialogs.js';
 import {layoutProfiles,layoutProperties,layoutChoices,layoutColors,loadLayoutConfig,saveLayoutConfig,applyLayoutConfig,normalizeLayoutConfig,selectorForElement} from './layout-preferences.js?v=devices1';
 const $=id=>document.getElementById(id);
 const frame=$('previewFrame'),area=$('previewArea'),box=$('viewportBox');
@@ -223,8 +224,8 @@ $('selectParent').onclick=()=>{if(selected?.parentElement)choose(selected.parent
 $('clearElement').onclick=()=>{
  if(!selector)return;delete config.profiles[profile][selector];persist();renderControls();$('clearElement').disabled=true;
 };
-$('resetProfile').onclick=()=>{
- if(!confirm('Сбросить все размеры для устройства «'+layoutProfiles[profile].name+'»?'))return;
+$('resetProfile').onclick=async()=>{
+ if(!await requestAction({title:'Сбросить настройки устройства?',message:'Будут сброшены размеры для «'+layoutProfiles[profile].name+'». Другие устройства сохранят свои настройки.',confirmText:'Сбросить',danger:true}))return;
  config.profiles[profile]={};delete config.viewports[profile];persist();setProfile(profile);status('Размеры этого устройства сброшены');
 };
 $('downloadLayout').onclick=()=>{

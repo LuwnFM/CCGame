@@ -1,3 +1,4 @@
+import {requestAction} from './action-dialogs.js';
 import {applySavedLayout,applyLayoutConfig} from './layout-preferences.js?v=devices1';
 const $=id=>document.getElementById(id);
 const card=(name,color,summary,description)=>{
@@ -98,7 +99,7 @@ for(const [areaId,settingsId,basicId,specialId,own] of [
 $('hand').append(card('Крылатый посланник','blue','2 синих · 2/2','Полёт. Может атаковать над защитой.'));
 const screens=['auth','home','builder','match','spectator','rulesPage'];
 const phases=['mulligan','ritual','reward','attackAlert'];
-const dialogs=['choiceDialog','cardInspector','legendDialog','domainPaymentDialog','matchChatDialog'];
+const dialogs=['choiceDialog','cardInspector','legendDialog','domainPaymentDialog','matchChatDialog','profileDialog','friendDialog'];
 function setScreen(screen){
  const base=phases.includes(screen)?'match':screens.includes(screen)?screen:'match';
  document.body.dataset.screen=base;
@@ -107,8 +108,8 @@ function setScreen(screen){
 }
 function showDialog(id){for(const name of dialogs)if($(name).open)$(name).close();if(dialogs.includes(id))$(id).showModal()}
 for(const form of document.forms)form.addEventListener('submit',event=>event.preventDefault());
-for(const [button,dialog] of [['chatOpen','matchChatDialog'],['myLegends','legendDialog']])$(button).onclick=()=>showDialog(dialog);
-for(const [button,dialog] of [['chatClose','matchChatDialog'],['legendClose','legendDialog'],['domainPaymentClose','domainPaymentDialog'],['domainPaymentCancel','domainPaymentDialog'],['inspectorClose','cardInspector'],['choiceCancel','choiceDialog']])$(button).onclick=()=>$(dialog).close();
+for(const [button,dialog] of [['chatOpen','matchChatDialog'],['myLegends','legendDialog'],['profileOpen','profileDialog'],['friendOpen','friendDialog']])$(button).onclick=()=>showDialog(dialog);
+for(const [button,dialog] of [['profileClose','profileDialog'],['friendClose','friendDialog'],['choiceClose','choiceDialog'],['chatClose','matchChatDialog'],['legendClose','legendDialog'],['domainPaymentClose','domainPaymentDialog'],['domainPaymentCancel','domainPaymentDialog'],['inspectorClose','cardInspector'],['choiceCancel','choiceDialog']])$(button).onclick=()=>$(dialog).close();
 for(const id of dialogs)$(id).onclick=event=>{if(event.target===$(id))$(id).close()};
 function inspectPreviewCard(button){
  $('inspectorTitle').textContent=button.querySelector('b').textContent;
@@ -125,3 +126,15 @@ document.addEventListener('click',event=>{
 });
 setScreen('match');applySavedLayout();
 window.FirewellLayout={setScreen,showDialog,applyConfig:config=>applyLayoutConfig(config)};
+
+$('rename').onclick=()=>requestAction({title:'Сменить логин',fields:[{name:'login',label:'Новый логин',value:'Игрок'}],confirmText:'Сохранить',onSubmit:({login})=>{$('profileName').textContent=login}});
+$('deleteProfile').onclick=()=>requestAction({title:'Удалить профиль?',message:'Демонстрация окна без удаления данных.',fields:[{name:'password',label:'Пароль профиля',type:'password'}],confirmText:'Удалить',danger:true});
+$('surrenderMatch').onclick=()=>requestAction({title:'Сдаться?',message:'Демонстрация подтверждения без отправки игровой команды.',confirmText:'Сдаться',danger:true});
+$('homeRulesOpen').onclick=()=>setScreen('rulesPage');
+$('rulesClose').onclick=()=>setScreen('home');
+$('choiceConfirm').onclick=()=>$('choiceDialog').close();
+
+$('selectedDeckTitle').textContent='Лесной дозор';$('deckPreviewInfo').textContent='70 карт · 26 Владений';
+$('deckPreviewCards').append(card('Лиора Кейн','green','Лояльность 4','Легенда'),card('Лесной страж','green','3/4','Страж'),card('Крылатый посланник','blue','2/2','Полёт'));
+$('presence').textContent='Онлайн: 8 · в поиске: 2 · в матчах: 4';
+$('choiceCards').onclick=e=>{const face=e.target.closest('.card');if(!face)return;for(const c of $('choiceCards').querySelectorAll('.card'))c.classList.toggle('active',c===face);$('choiceConfirm').disabled=false;$('choiceSelection').textContent=face.querySelector('b').textContent};

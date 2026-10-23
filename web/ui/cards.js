@@ -17,12 +17,20 @@ function effectText(e) {
   return (descriptions[e.kind]||e.kind+' ')+e.amount;
 }
 function chooseCards(title,choices) {
-  $('choiceTitle').textContent=title;
-  $('choiceCards').replaceChildren(...choices.map(x=>cardButton(x.card,x.label,()=>{$('choiceDialog').close();x.choose()})));
-  if(!choices.length)$('choiceCards').append(textElement('p','Нет подходящих карт'));
-  $('choiceDialog').showModal();
+  const dialog=$('choiceDialog');let selected=null;
+  $('choiceTitle').textContent=title;$('choiceSelection').textContent='Карта не выбрана';$('choiceConfirm').disabled=true;
+  const views=choices.map(x=>cardButton(x.card,x.label,()=>{
+    selected=x;views.forEach(view=>{const face=view.querySelector('.card'),active=view===views[choices.indexOf(x)];face.classList.toggle('active',active);face.setAttribute('aria-pressed',String(active))});
+    $('choiceSelection').textContent=cardName(x.card);$('choiceConfirm').disabled=false;
+  }));
+  for(const view of views)view.querySelector('.card').setAttribute('aria-pressed','false');
+  $('choiceCards').replaceChildren(...views);
+  if(!choices.length)$('choiceCards').append(textElement('p','Нет подходящих карт. Можно закрыть это окно.','hint'));
+  $('choiceConfirm').onclick=()=>{if(selected){dialog.close();selected.choose()}};
+  if(!dialog.open)dialog.showModal();
 }
-$('choiceCancel').onclick=()=>$('choiceDialog').close();
+for(const id of ['choiceCancel','choiceClose'])$(id).onclick=()=>$('choiceDialog').close();
+$('choiceDialog').addEventListener('click',e=>{const d=$('choiceDialog'),r=d.getBoundingClientRect();if(e.target===d&&(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom))d.close()});
 $('rulerDraw').onclick=()=>send({type:'rulerDraw'});
 function playCreature(card,index,enemy) {
   const targets=card.onEntry?.kind==='stunEnemy'
@@ -90,6 +98,9 @@ function traitDescriptions(card) {
 function showCardDetails(card,p) {
   const dialog=$('cardInspector');
   $('inspectorTitle').textContent=cardName(card);
+  $('inspectorCard').replaceChildren(cardButton(card,kindName(card.kind),()=>{},false,false,p));
+  $('inspectorCard').querySelector('.inspect-card')?.remove();
+  $('inspectorCard').querySelector('.card').disabled=true;
   $('inspectorStats').textContent=kindName(card.kind)+' · '+detailsText(card,p);
   $('inspectorTraits').replaceChildren(...traitDescriptions(card).map(value=>textElement('p',value,'trait-description')));
   const lore=card.lore;
@@ -112,11 +123,11 @@ function cardButton(card, label, onClick, disabled = false, active = false, perm
   element.append(textElement('span',initials(cardName(card)),'glyph'),textElement('b',cardName(card)),textElement('span','','card-art'));
   // Card is a button itself. A nested interactive element is invalid HTML and
   // mobile browsers may swallow taps; use a sibling info button instead.
-  const inspect=button('ⓘ',()=>showCardDetails(card,permanent),false,'inspect-card');
+  const inspect=button('i',()=>showCardDetails(card,permanent),false,'inspect-card');
   inspect.setAttribute('aria-label','Подробнее о карте '+cardName(card));
   const wrapper=document.createElement('span');wrapper.className='card-wrapper';
   wrapper.append(element,inspect);
-  element.append(textElement('small',cardSummary(card,permanent),'card-summary'),textElement('small',label));
+  element.append(textElement('small',cardSummary(card,permanent),'card-summary'),textElement('small',label,'card-action-label'));
   const description=traitDescriptions(card).join(' · ')||card.lore?.summary||'';
   if(description)element.append(textElement('small',description,'card-description'));
   const flags = [['unique','Уникальная'],['guard','Страж'],['flying','Полёт'],['firstStrike','Первый удар'],

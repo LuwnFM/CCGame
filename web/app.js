@@ -1,3 +1,4 @@
+import {requestAction} from './ui/action-dialogs.js';
 import {createDeckBuilderUI} from './ui/deck-builder.js';
 import {createMatchDialogs} from './ui/dialogs.js';
 import {createBattlefieldUI} from './ui/battlefield.js';
@@ -24,7 +25,7 @@ let selectedReward = null, selectedRewardKeepExisting = undefined, selectedArtif
 let selectedLegendId = null, defenderChoice = null, attackAlertKey = null;
 let autoDomainPayment=localStorage.getItem('firewell_auto_domain_payment')!=='false';
 let chatAvailableAt=0,olderMessages=[],chatMore=true,spectating=null;
-function status(value) { $('status').textContent = translate(value || ''); }
+function status(value) { const message=translate(value||'');$('status').textContent=message;if(!$('auth').classList.contains('hidden'))$('authMessage').textContent=message; }
 let healthProbeInFlight = false;
 async function checkGameServer() {
   if (healthProbeInFlight) return;
@@ -53,6 +54,7 @@ async function checkGameServer() {
 let lastPage='auth';
 function show(id) {
   document.body.dataset.screen=id;
+  if(id!=='auth')$('authMessage').textContent='';
   if(id!=='rulesPage')lastPage=id;
   for(const pane of ['auth','home','builder','match','spectator','rulesPage'])$(pane).classList.toggle('hidden',pane!==id);
 }
@@ -78,7 +80,7 @@ function textElement(tag, value, className = '') {
 function initials(name) { return [...name.replace(/[^\p{L}\p{N}]/gu,'')].slice(0,2).join('').toUpperCase() || 'FW'; }
 const {abilityText,effectText,chooseCards,playCreature,playTechnique,detailsText,traitDescriptions,showCardDetails,cardSummary,cardButton}=createCardUI({$,button,textElement,cardName,kindName,send,cardLabel,initials});
 const renderBattlefield=createBattlefieldUI({$,button,textElement,cardButton,cardLabel,showCardDetails,send});
-const renderMatchDialogs=createMatchDialogs({$,button,cardButton,kindName,cardLabel,send});
+const renderMatchDialogs=createMatchDialogs({$,button,cardButton,kindName,cardLabel,send,chooseCards});
 function setAccount(value) {
   account = value;
   $('profileName').textContent = value.login;
@@ -106,8 +108,11 @@ async function authenticate(register) {
 async function loadData() {
   const [cards, saved]=await Promise.all([api('/api/catalog'),api('/api/my-decks')]);
   catalog=cards.cards; presets=cards.presets; savedDecks=saved.decks;
+  const previousDeck=$('deck').value;
   const options=[...presets.map(p=>({id:p.id,name:archetypeName(p)})),...savedDecks.map(d=>({id:d.id,name:d.name+' · своя'}))];
   $('deck').replaceChildren(...options.map(o=>{const element=document.createElement('option');element.value=o.id;element.textContent=o.name;return element}));
+  if(options.some(o=>o.id===previousDeck))$('deck').value=previousDeck;
+  renderSelectedDeck();
   $('starter').replaceChildren(...presets.map(p=>{const element=document.createElement('option');element.value=p.id;element.textContent=archetypeName(p);return element}));
   $('savedDecks').replaceChildren(...savedDecks.map(d=>{
     const row=document.createElement('div');row.className='saved';
@@ -117,6 +122,21 @@ async function loadData() {
     return row;
   }));
 }
+function renderSelectedDeck(){
+ const deck=[...presets,...savedDecks].find(d=>d.id===$('deck').value);if(!deck)return;
+ $('selectedDeckTitle').textContent=deck.name||archetypeName(deck);
+ const cards=(deck.cards||[]).map(id=>catalog.find(c=>c.id===id)).filter(Boolean);
+ $('deckPreviewInfo').textContent=cards.length+' карт · '+cards.filter(c=>c.kind==='domain').length+' Владений';
+ const preview=[...cards.filter(c=>c.kind==='legend').slice(0,1),...[...new Map(cards.filter(c=>c.kind==='creature').map(c=>[c.id,c])).values()].slice(0,2)];
+ $('deckPreviewCards').replaceChildren(...preview.map(c=>cardButton(c,kindName(c.kind),()=>showCardDetails(c))));
+}
+$('deck').onchange=renderSelectedDeck;
+$('editSelectedDeck').onclick=()=>$('openBuilder').click();
+for(const [open,dialog,close] of [['profileOpen','profileDialog','profileClose'],['friendOpen','friendDialog','friendClose']]){
+ $(open).onclick=()=>$(dialog).showModal();$(close).onclick=()=>$(dialog).close();
+ $(dialog).onclick=e=>{const d=$(dialog),r=d.getBoundingClientRect();if(e.target===d&&(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom))d.close()};
+}
+$('profileLanguage').onclick=()=>$('languageToggle').click();
 function renderLeaderboard(board){
   if(!board)return;
   const root=$('leaderboard');
@@ -173,11 +193,16 @@ function openSpectator(code){spectating=code;room='';game=null;localStorage.remo
 function renderSpectator(g){
  show('spectator');$('spectatorHeading').textContent='Матч '+g.code+' · ход '+g.turn+' · '+g.phase;
  for(const i of [0,1]){
- const root=$('spectatorPlayer'+i);root.replaceChildren(textElement('h3','Игрок '+(i+1)+' · '+g.players[i].hp+' HP · рука '+g.players[i].handCount),
-  ...[...g.players[i].main,...g.players[i].auxiliary,...g.players[i].legends].map(p=>cardButton(p.card,cardSummary(p.card),()=>showCardDetails(p.card,p),false,false,p)));
+ const root=$('spectatorPlayer'+i);root.replaceChildren(textElement('h3','Игрок '+(i+1)+' · '+g.players[i].hp+' HP · рука '+g.players[i].handCount));
+ for(const [zone,title] of [['legends','Легенды'],['main','Основное поле'],['auxiliary','Вспомогательное поле'],['domains','Владения']]){
+  const section=document.createElement('section');section.className='spectator-zone';section.append(textElement('h4',title));
+  const row=document.createElement('div');row.className='spectator-cards';
+  row.append(...g.players[i][zone].map(p=>cardButton(p.card,(p.exhausted?'Истощено · ':'')+(zone==='domains'?'Владение':cardLabel(p)),()=>showCardDetails(p.card,p),false,false,p)));
+  if(!row.children.length)row.append(textElement('p','Пока пусто','hint'));section.append(row);root.append(section);
+ }
  }
 }
-function enterRoom(value) {spectating=null;room=value;minimizedRoom='';localStorage.removeItem(minimizedKey);localStorage.setItem(roomKey,room);game=null;show('match');refresh(); }
+function enterRoom(value) {$('friendDialog').close();spectating=null;room=value;minimizedRoom='';localStorage.removeItem(minimizedKey);localStorage.setItem(roomKey,room);game=null;show('match');refresh(); }
 async function send(command) {
   if (busy || !game) return;
   if(['playCreature','playTechnique','playLegend','playArtifact'].includes(command.type)&&command.domainIds===undefined&&!autoDomainPayment){
@@ -310,6 +335,8 @@ function renderGame(ready) {
   $('confirmDefense').classList.toggle('hidden',!defense||defenderChoice===null);
   $('turnLabel').textContent=game.winner!==null?'Матч окончен: '+(game.winner==='draw'?'ничья':'победил игрок '+(game.winner+1))
     :(game.active===seat?'Твой ход':'Ход соперника')+' · '+game.turn;
+  const outcome=$('matchOutcome');outcome.classList.toggle('hidden',!['finished','paused'].includes(game.phase));
+  if(['finished','paused'].includes(game.phase)){const title=game.phase==='paused'?'Матч приостановлен':game.winner==='draw'?'Ничья':game.winner===seat?'Победа':'Поражение';outcome.replaceChildren(textElement('h2',title),textElement('p',game.phase==='paused'?(game.pauseReason||'Матч приостановлен сервером'):'Матч завершён. Можно вернуться в лобби и выбрать следующую игру.'),button('Вернуться в лобби',()=>$('leaveMatch').click(),false,'secondary'))}
   if(renderMatchDialogs({game,me,seat,selectedMulligan,selectedVictims,
     selectedRitual,setSelectedRitual:v=>{selectedRitual=v},
     selectedReward,setSelectedReward:v=>{selectedReward=v},
@@ -326,12 +353,8 @@ function renderGame(ready) {
   const legend=me.legends.find(p=>p.objectId===selectedLegendId);
   $('legendDialogTitle').textContent=legend?cardName(legend.card):'Легенда';
   const legendView=$('legendCardView');legendView.replaceChildren();
-  if(legend){const card=document.createElement('article');card.className='legend-card-full '+(legend.card.aspects?.[0]||'neutral');
-    card.append(textElement('span',initials(cardName(legend.card)),'glyph'),textElement('h3',cardName(legend.card)),textElement('div','Лояльность '+legend.loyalty,'legend-loyalty'));
-    const lore=legend.card.lore;card.append(textElement('p',[lore?.summary,lore?.state,lore?.organization,lore?.note].filter(Boolean).join(' · ')||'Легенда поля боя.','legend-lore'));
-    const abilities=legend.card.loyaltyAbilities?.length?legend.card.loyaltyAbilities:legend.card.loyaltyAbility?[legend.card.loyaltyAbility]:[];
-    card.append(textElement('ul',''));for(const ability of abilities)card.lastChild.append(textElement('li',abilityText(ability)));
-    legendView.append(card);
+  if(legend){
+    legendView.replaceChildren(cardButton(legend.card,'Лояльность '+legend.loyalty,()=>showCardDetails(legend.card,legend),false,false,legend));
   }
   const actions=$('legendActions');
   actions.classList.toggle('hidden',!legend);
@@ -348,14 +371,9 @@ function renderGame(ready) {
         (!['raiseSacrifice','summonSignature','summon'].includes(ability.kind)||me.auxiliary.length<4);
       actions.append(button(abilityText(ability),()=>{
         if(ability.kind==='recoverCreature'){
-          const picker=$('discardPicker');
-          picker.classList.remove('hidden');
-          picker.replaceChildren(textElement('h3','Выбери Существо из сброса'));
           const choices=(me.discard||[]).map((card,i)=>({card,index:i})).filter(x=>x.card.kind==='creature');
-          for(const item of choices)picker.append(cardButton(item.card,detailsText(item.card),()=>{
-            send({type:'activateLegend',objectId:legend.objectId,abilityIndex:index,discardIndex:item.index});
-            picker.classList.add('hidden');
-          }));
+          $('legendDialog').close();
+          chooseCards('Сброс → рука · выбери Существо',choices.map(item=>({card:item.card,label:'Вернуть в руку',choose:()=>send({type:'activateLegend',objectId:legend.objectId,abilityIndex:index,discardIndex:item.index})})));
         }else send({type:'activateLegend',objectId:legend.objectId,abilityIndex:index});
       },!allowed,index===0?'secondary':''));
     }
@@ -385,6 +403,9 @@ function renderGame(ready) {
 const {renderBuilder}=createDeckBuilderUI({$,button,textElement,initials,cardName,kindName,status,getCatalog:()=>catalog,getDeckIds:()=>deckIds,cardButton,showCardDetails});
 
 $('rulesOpen').onclick=()=>{show('rulesPage');renderPublicRules();localize()};
+$('homeRulesOpen').onclick=()=>$('rulesOpen').click();
+$('rulesSearch').oninput=filterRules;
+function filterRules(){const term=$('rulesSearch').value.toLocaleLowerCase('ru');for(const section of $('rulesContent').children){section.hidden=!!term&&!section.textContent.toLocaleLowerCase('ru').includes(term);const link=$('rulesToc').querySelector('[href="#'+section.id+'"]');if(link)link.hidden=section.hidden}}
 $('rulesClose').onclick=()=>{show(lastPage);refresh()};
 $('languageToggle').onclick=async()=>{
   setLocale(locale()==='ru'?'en':'ru');
@@ -396,12 +417,9 @@ $('languageToggle').onclick=async()=>{
 };
 $('register').onclick=()=>authenticate(true);
 $('signIn').onclick=()=>authenticate(false);
-$('logout').onclick=async()=>{try{await api('/api/logout',{})}catch{}token='';account=null;room='';localStorage.removeItem(sessionKey);localStorage.removeItem(roomKey);show('auth');status('Вы вышли')};
-$('rename').onclick=async()=>{const login=prompt('Новый логин (3–20 букв, цифр или _)');if(login===null)return;try{setAccount((await api('/api/me/rename',{login})).account);status('Логин обновлён')}catch(e){status(e.message)}};
-$('deleteProfile').onclick=async()=>{if(!confirm('Удалить профиль, колоды и доступ навсегда? Этот ID больше не восстановится.'))return;
-  const password=prompt('Введи пароль профиля для удаления');if(password===null)return;
-  try{await api('/api/me/delete',{password});token='';account=null;room='';localStorage.removeItem(sessionKey);localStorage.removeItem(roomKey);show('auth');status('Профиль удалён')}
-  catch(e){status(e.message)} };
+$('logout').onclick=async()=>{$('profileDialog').close();try{await api('/api/logout',{})}catch{}token='';account=null;room='';localStorage.removeItem(sessionKey);localStorage.removeItem(roomKey);show('auth');status('Вы вышли')};
+$('rename').onclick=async()=>{await requestAction({title:'Сменить логин',message:'Твой постоянный ID, колоды и статистика сохранятся.',confirmText:'Сохранить',fields:[{name:'login',label:'Новый логин',value:account?.login,minLength:3,maxLength:20,pattern:'[A-Za-z0-9_]{3,20}',autocomplete:'username'}],onSubmit:async({login})=>{setAccount((await api('/api/me/rename',{login})).account);status('Логин обновлён')}})};
+$('deleteProfile').onclick=async()=>{await requestAction({title:'Удалить профиль?',message:'Профиль, сохранённые колоды и доступ будут удалены навсегда. Введи пароль профиля для подтверждения.',confirmText:'Удалить навсегда',danger:true,fields:[{name:'password',label:'Пароль профиля',type:'password',autocomplete:'current-password',minLength:10,maxLength:128}],onSubmit:async({password})=>{await api('/api/me/delete',{password});token='';account=null;room='';localStorage.removeItem(sessionKey);localStorage.removeItem(roomKey);$('profileDialog').close();show('auth');status('Профиль удалён')}})};
 $('search').onclick=async()=>{try{const data=await api('/api/queue',{deckId:$('deck').value});if(data.room)enterRoom(data.room);else await refresh()}catch(e){status(e.message)}};
 $('cancelSearch').onclick=async()=>{try{await api('/api/queue',undefined,'DELETE');await refresh()}catch(e){status(e.message)}};
 $('playBot').onclick=async()=>{try{const result=await api('/api/bot',{deckId:$('deck').value});enterRoom(result.code)}catch(e){status(e.message)}};
@@ -410,7 +428,7 @@ $('joinRoom').onclick=async()=>{try{const code=$('code').value.trim().toUpperCas
 $('leaveMatch').onclick=async()=>{minimizedRoom=room;localStorage.setItem(minimizedKey,room);room='';game=null;localStorage.removeItem(roomKey);show('home');await refresh();status('Матч продолжается. Вернитесь через «Продолжить» в лобби.')};
 $('surrenderMatch').onclick=async()=>{
  if(!room||!game||game.phase==='finished'||game.phase==='paused')return;
- if(!confirm('Сдаться? Сопернику будет засчитана победа. Это действие нельзя отменить.'))return;
+ if(!await requestAction({title:'Сдаться в этом матче?',message:'Сопернику будет засчитана победа. Если хочешь только вернуться в лобби, используй «Свернуть матч».',confirmText:'Сдаться',danger:true}))return;
  await send({type:'surrender'});
 };
 const {renderSharedChat,updateChatCooldown,sendSharedChat}=createChatUI({$,textElement,api,refresh,status,getOlderMessages:()=>olderMessages,getChatMore:()=>chatMore,getAvailableAt:()=>chatAvailableAt,setAvailableAt:value=>{chatAvailableAt=value}});

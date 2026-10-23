@@ -168,8 +168,10 @@ const content = {
 };
 export function renderPublicRules(){
  const root=document.getElementById('rulesContent');
+ const toc=document.getElementById('rulesToc');if(toc)toc.replaceChildren();
  root.replaceChildren(...content[locale()].map(([name,body],i)=>{
-  const part=document.createElement('section');part.className='rule-section';
+  const part=document.createElement('section');part.className='rule-section';part.id='rule-'+i;
+  if(toc){const link=document.createElement('a');link.href='#'+part.id;link.textContent=name;toc.append(link)}
   const title=document.createElement('h2');title.textContent=(i+1)+'. '+name;
   const text=document.createElement('p');text.textContent=body.replace(/\*\*/g,'');
   part.append(title,text);return part;

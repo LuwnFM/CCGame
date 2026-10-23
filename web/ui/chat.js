@@ -8,7 +8,7 @@ function renderSharedChat(data) {
   chat.dataset.earliest=String(items[0]?.id||'');
   chat.replaceChildren(...items.map(message=>{
     const line=document.createElement('div');line.className='message';
-    line.append(textElement('strong',message.login+' '),textElement('small','ID '+message.accountId+' · '),
+    line.append(textElement('strong',message.login+' '),textElement('small','· '),
       textElement('span',message.body));
     line.title=message.accountId;return line;
   }));
