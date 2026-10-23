@@ -4,4 +4,4 @@ registerTrait('cannotAttack',printedTrait('cannotAttack'));
 
 import type {Permanent} from '../../model/index.ts';
 import {ability} from '../abilities.ts';
-export function isAttackProhibited(unit:Permanent):boolean{return !!unit.card.cannotAttack}
+export function isAttackProhibited(unit:Permanent):boolean{return !!ability(unit,'cannotAttack')}
