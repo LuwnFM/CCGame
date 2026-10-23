@@ -1,4 +1,4 @@
-import {mayTargetWithEffect} from '../traits/majestic.ts';
+import {mayChooseEffectTarget} from '../traits/majestic.ts';
 import {RuleError} from '../../errors.ts';
 import type {PlayerId} from '../../model/index.ts';
 import {registerEffect} from '../effects-registry.ts';
@@ -12,7 +12,7 @@ function requireRule(ok:unknown,message:string):asserts ok{if(!ok)throw new Rule
 registerEffect('entry','stunEnemy',({game,actor,amount,targetId})=>{
  requireRule(valid(amount!,4),'Неверное количество контроля');
  const enemy=game.players[(1-actor) as PlayerId];
- const targets=[...enemy.main,...enemy.auxiliary].filter(u=>u.card.kind==='creature'&&mayTargetWithEffect(u)&&!u.stasis&&!u.stunned);
+ const targets=[...enemy.main,...enemy.auxiliary].filter(u=>u.card.kind==='creature'&&mayChooseEffectTarget(u)&&!u.stasis&&!u.stunned);
  if(targets.length){
   requireRule(Number.isSafeInteger(targetId),'Выберите цель синего контроля');
   const target=targets.find(u=>u.objectId===targetId);

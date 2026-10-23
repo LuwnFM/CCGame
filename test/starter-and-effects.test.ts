@@ -184,3 +184,21 @@ test('Majestic accepts creature attacks, combat poison and global damage to all 
  assert.equal(defended.players[1].main[0].damage,0);
  assert.equal(defended.players[1].main[0].poison,undefined,'Fully shielded attack does not land combat poison');
 });
+
+test('Untargeted random damage still includes Majestic in its candidate pool',async()=>{
+ const {nextRandom}=await import('../src/ritual.ts');
+ const {damage}=await import('../src/mechanics/combat.ts');
+ const majestic={objectId:101,card:{...unit,majestic:true,health:20},damage:0,shield:0,exhausted:false,interceptions:0,enteredTurn:0};
+ const ordinary={objectId:102,card:{...unit,health:20},damage:0,shield:0,exhausted:false,interceptions:0,enteredTurn:0};
+ const candidates=[majestic,ordinary];
+ let seed=1;
+ // Exercise the same seeded sampler used elsewhere in the game, including a
+ // seed whose random result points at Majestic. No manual target was selected.
+ while(nextRandom(seed,candidates.length).value!==0&&seed<200)seed++;
+ assert.ok(seed<200,'expected a seed selecting Majestic');
+ const chosen=candidates[nextRandom(seed,candidates.length).value];
+ assert.equal(chosen.objectId,majestic.objectId);
+ damage(chosen,2);
+ assert.equal(majestic.damage,2,'randomly assigned damage must not filter Majestic');
+ assert.equal(ordinary.damage,0);
+});

@@ -44,7 +44,7 @@ const content = {
     ],
     [
       "Щит, Аура атаки, запрет атаки",
-      "**Щит (N)** (shield) сначала поглощает до N единиц полученного урона и расходуется. **Аура атаки (N)** (auraAttack) усиливает атаку союзных Существ, пока действует её источник. **Не может атаковать** (cannotAttack) запрещает самому объявлять атаку, но не исключает допустимый перехват готовым Существом. **Величественный** (majestic) нельзя выбрать целью прицельной Техники или способности (в том числе союзной), а также вытеснить с заполненного поля или принести в ритуальную Жертву. Прямые атаки Существ по Величественному разрешены, эффекты при нанесении боевого урона (например, Отрава) действуют. Массовые эффекты, распространяющиеся на всех Существ, включая общий урон, также действуют."
+      "**Щит (N)** (shield) сначала поглощает до N единиц полученного урона и расходуется. **Аура атаки (N)** (auraAttack) усиливает атаку союзных Существ, пока действует её источник. **Не может атаковать** (cannotAttack) запрещает самому объявлять атаку, но не исключает допустимый перехват готовым Существом. **Величественный** (majestic) нельзя выбрать целью прицельной Техники или способности (в том числе союзной), а также вытеснить с заполненного поля или принести в ритуальную Жертву. Прямые атаки Существ по Величественному разрешены, эффекты при нанесении боевого урона (например, Отрава) действуют. Массовые эффекты, распространяющиеся на всех Существ, включая общий урон, также действуют. Случайный урон без ручного выбора цели тоже может попасть по Величественному."
     ],
     [
       "Отрава, Ошеломление, Стазис и Немота",
@@ -126,11 +126,11 @@ const content = {
     ],
     [
       "Shield, Attack Aura and attack limits",
-      "Shield (N) absorbs N incoming damage first and is depleted. Attack Aura (N) adds attack to allied Creatures while its source is active. Cannot Attack stops attack declarations but not otherwise legal interceptions. Majestic permanents cannot be displaced from full zones."
+      "Shield (N) absorbs N incoming damage first and is depleted. Attack Aura (N) adds attack to allied Creatures while its source is active. Cannot Attack stops attack declarations but not otherwise legal interceptions. Majestic cannot be manually selected as the target of an individual Technique or ability, whether allied or enemy, and cannot be displaced from a full zone or used as a Ritual sacrifice. Creature attacks, on-hit effects, damage to all Creatures and randomly assigned damage without manual target selection still affect Majestic."
     ],
     [
       "Poison, Stun, Stasis and Silence",
-      "Poison on Hit applies damage over time with printed strength and duration; new applications use stronger or longer compatible values. Stun prevents attacking but may leave a ready unit available to intercept. Stasis stops actions and suppresses traits while pausing Poison; Poison resumes afterwards. Silence suppresses card traits and relevant triggered abilities."
+      "Poison on Hit applies damage over time when a combat strike deals at least 1 damage (fully shielded strikes do not poison), with printed strength and duration; new applications use stronger or longer compatible values. Stun prevents attacking but may leave a ready unit available to intercept. Stasis stops actions and suppresses traits while pausing Poison; Poison resumes afterwards. Silence suppresses card traits and relevant triggered abilities."
     ],
     [
       "Entry, Second Chance and Last Word",

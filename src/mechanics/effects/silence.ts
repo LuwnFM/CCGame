@@ -1,4 +1,4 @@
-import {mayTargetWithEffect} from '../traits/majestic.ts';
+import {mayChooseEffectTarget} from '../traits/majestic.ts';
 import {RuleError} from '../../errors.ts';
 import type {PlayerId} from '../../model/index.ts';
 import {registerEffect} from '../effects-registry.ts';
@@ -12,6 +12,6 @@ function requireRule(ok:unknown,message:string):asserts ok{if(!ok)throw new Rule
 registerEffect('technique','silence',({game,actor,amount,targetId})=>{
  requireRule(valid(amount!),'Неверная Техника');
  const p=game.players[(1-actor) as PlayerId],target=[...p.main,...p.auxiliary,...p.legends].find(u=>u.objectId===targetId);
- requireRule(target && mayTargetWithEffect(target),'Выберите допустимое Существо');
+ requireRule(target && mayChooseEffectTarget(target),'Выберите допустимое Существо');
  target.silenced=true;
 });
