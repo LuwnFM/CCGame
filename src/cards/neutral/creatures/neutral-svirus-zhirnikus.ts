@@ -11,6 +11,7 @@ export default {
   "attack": 6,
   "health": 5,
   "piercing": true,
+  "majestic": true,
   "lore": {
     "state": "Межгосударственный орден",
     "organization": "Новые хранители",

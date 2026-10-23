@@ -1,3 +1,4 @@
+import {mayChooseEffectTarget} from '../traits/majestic.ts';
 import {RuleError} from '../../errors.ts';
 import type {PlayerId} from '../../model/index.ts';
 import {registerEffect} from '../effects-registry.ts';
@@ -11,7 +12,7 @@ function requireRule(ok:unknown,message:string):asserts ok{if(!ok)throw new Rule
 registerEffect('technique','bind',({game,actor,amount,targetId})=>{
  requireRule(valid(amount!),'Неверная Техника');
  const p=game.players[(1-actor) as PlayerId],target=[...p.main,...p.auxiliary].find(u=>u.objectId===targetId&&u.card.kind==='creature');
- requireRule(target,'Выберите допустимое Существо');
+ requireRule(target && mayChooseEffectTarget(target),'Выберите допустимое Существо');
  if(target.stunned||target.stasis){target.stunned=false;target.stasis=amount;}
  else target.stunned=true;
 });

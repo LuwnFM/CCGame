@@ -1,3 +1,4 @@
+import {canBeDisplaced} from '../traits/majestic.ts';
 import {registerCommand} from '../command-router.ts';
 import {requireRule} from './shared.ts';
 import {RuleError} from '../../errors.ts';
@@ -35,13 +36,14 @@ registerCommand('playCreature',(next,command)=>{const p=next.players[command.act
       if(duplicate){
         requireRule(typeof command.keepExisting==='boolean','Выберите, какую Уникальную оставить');
         if(command.keepExisting){p.energy=payForCard(p,card.cost,command.domainIds);takeCard(p,'hand',command.handIndex,next,command.actor);discardDetached(next,command.actor,card,!!card.ritualReward);return;}
+        requireRule(canBeDisplaced(duplicate),'Величественного нельзя вытеснить');
         departPermanent(next,command.actor,duplicate.objectId);
       }
       const zone = card.createdToken ? p.auxiliary : p.main;
       const limit = card.createdToken ? 4 : 8;
       if (zone.length >= limit) {
         if (!card.createdToken) throw new RuleError('Основная зона заполнена');
-        const replaced = zone.find(unit => unit.objectId === command.replaceId && !unit.card.majestic);
+        const replaced = zone.find(unit => unit.objectId === command.replaceId && canBeDisplaced(unit));
         requireRule(replaced, 'Выберите допустимый объект для Вытеснения токеном');
         // Displacement is a departure, not a death. Never trigger onDeath.
         departPermanent(next,command.actor,replaced.objectId);
@@ -61,7 +63,7 @@ registerCommand('playArtifact',(next,command)=>{const p=next.players[command.act
       const sameItem = p.auxiliary.find(unit => unit.card.name === card.name);
       requireRule(!sameItem || typeof command.keepExisting === 'boolean', 'Выберите, какой одноимённый предмет оставить');
       if (!sameItem && p.auxiliary.length >= 4) {
-        const replaced = p.auxiliary.find(unit => unit.objectId === command.replaceId && !unit.card.majestic);
+        const replaced = p.auxiliary.find(unit => unit.objectId === command.replaceId && canBeDisplaced(unit));
         requireRule(replaced, 'Выберите допустимый предмет или токен для Вытеснения');
         departPermanent(next,command.actor,replaced.objectId,['auxiliary']);
       }
@@ -69,6 +71,7 @@ registerCommand('playArtifact',(next,command)=>{const p=next.players[command.act
       takeCard(p,'hand',command.handIndex,next,command.actor);
       if (sameItem) {
         if (command.keepExisting) { discardDetached(next,command.actor,card); return; }
+        requireRule(canBeDisplaced(sameItem),'Величественного нельзя вытеснить');
         departPermanent(next,command.actor,sameItem.objectId,['auxiliary']);
       }
       placePermanent(next,command.actor,'auxiliary',card,{exhausted:false,shield:0});
