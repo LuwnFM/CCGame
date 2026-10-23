@@ -5,6 +5,7 @@ import {createMatchDialogs} from './ui/dialogs.js';
 import {createBattlefieldUI} from './ui/battlefield.js';
 import {createChatUI} from './ui/chat.js';
 import {createApi} from './ui/api.js';
+import {isOngoingGame,lobbyMatchIsActive} from './ui/match-lifecycle.js';
 import {createCardUI} from './ui/cards.js';
 import { locale, setLocale, cardName, archetypeName, translate, observeLocalization, localize } from './i18n.js';
 import { renderPublicRules } from './rules.js';
@@ -28,6 +29,8 @@ let selectedLegendId = null, defenderChoice = null, attackAlertKey = null;
 let autoDomainPayment=localStorage.getItem('firewell_auto_domain_payment')!=='false';
 let chatAvailableAt=0,olderMessages=[],chatMore=true,spectating=null;
 let matchNoticeFadeTimer, matchNoticeClearTimer;
+const resumeMessage='Матч продолжается. Вернитесь через «Продолжить» в лобби.';
+let resumeNoticeRoom='';
 function clearMatchNotice() {
   clearTimeout(matchNoticeFadeTimer);
   clearTimeout(matchNoticeClearTimer);
@@ -37,6 +40,7 @@ function clearMatchNotice() {
   notice.removeAttribute('title');
 }
 function status(value) {
+  if(value!==resumeMessage)resumeNoticeRoom='';
   const message=translate(value||'');
   if(document.body.dataset.screen==='match'&&!$('match').classList.contains('hidden')) {
     clearMatchNotice();
@@ -181,6 +185,13 @@ function renderLeaderboard(board){
     new Date(board.updatedAt).toLocaleString(locale()==='en'?'en-US':'ru-RU');
 }
 function renderLobby(data) {
+  if(minimizedRoom&&!lobbyMatchIsActive(data,minimizedRoom)){
+    minimizedRoom='';localStorage.removeItem(minimizedKey);
+  }
+  if(resumeNoticeRoom&&!lobbyMatchIsActive(data,resumeNoticeRoom)){
+    resumeNoticeRoom='';
+    status('');
+  }
   renderLeaderboard(data.leaderboard);
   $('presence').textContent='Онлайн: '+data.online+' · в поиске: '+data.searching+' · в матчах: '+(data.inMatches??0);
   $('activeMatches').replaceChildren(...(data.activeMatches?.length?data.activeMatches.map(m=>{
@@ -193,7 +204,7 @@ function renderLobby(data) {
   $('queueStatus').textContent=data.searchingSelf?'Поиск идёт. Подбираем другого игрока…':'';
   $('search').disabled=data.searchingSelf;
   $('cancelSearch').classList.toggle('hidden',!data.searchingSelf);
-  if(data.room && !room && data.room!==minimizedRoom)enterRoom(data.room);
+  if(data.room && !room && data.room!==minimizedRoom && lobbyMatchIsActive(data,data.room))enterRoom(data.room);
 }
 async function refresh() {
   if (!token || loading || !$('rulesPage').classList.contains('hidden')) return;
@@ -204,7 +215,9 @@ async function refresh() {
       renderSpectator(snapshot);
       const lobby=await api('/api/lobby');renderSharedChat(lobby);
     } else if (room) {
-      const data=await api('/api/rooms/'+room);
+      const requestedRoom=room;
+      const data=await api('/api/rooms/'+requestedRoom);
+      if(room!==requestedRoom)return;
       game=data.game;show('match');renderGame(data.ready);if(data.bot)$('roomLabel').textContent='Тестовый матч против бота · '+room;
       renderSharedChat(await api('/api/lobby'));
     } else if (!$('builder').classList.contains('hidden')) {
@@ -231,7 +244,7 @@ function renderSpectator(g){
  }
  }
 }
-function enterRoom(value) {$('friendDialog').close();spectating=null;room=value;minimizedRoom='';localStorage.removeItem(minimizedKey);localStorage.setItem(roomKey,room);game=null;show('match');refresh(); }
+function enterRoom(value) {$('friendDialog').close();spectating=null;room=value;minimizedRoom='';localStorage.removeItem(minimizedKey);localStorage.setItem(roomKey,room);game=null;status('');show('match');refresh(); }
 async function send(command) {
   if (busy || !game) return;
   if(['playCreature','playTechnique','playLegend','playArtifact'].includes(command.type)&&command.domainIds===undefined&&!autoDomainPayment){
@@ -480,7 +493,28 @@ $('cancelSearch').onclick=async()=>{try{await api('/api/queue',undefined,'DELETE
 $('playBot').onclick=async()=>{try{const result=await api('/api/bot',{deckId:$('deck').value});enterRoom(result.code)}catch(e){status(e.message)}};
 $('createRoom').onclick=async()=>{try{enterRoom((await api('/api/rooms',{deckId:$('deck').value})).code)}catch(e){status(e.message)}};
 $('joinRoom').onclick=async()=>{try{const code=$('code').value.trim().toUpperCase();await api('/api/rooms/'+code+'/join',{deckId:$('deck').value});enterRoom(code)}catch(e){status(e.message)}};
-$('leaveMatch').onclick=async()=>{minimizedRoom=room;localStorage.setItem(minimizedKey,room);room='';game=null;localStorage.removeItem(roomKey);show('home');await refresh();status('Матч продолжается. Вернитесь через «Продолжить» в лобби.')};
+$('leaveMatch').onclick=async()=>{
+ const leavingRoom=room,wasActive=isOngoingGame(game);
+ room='';game=null;minimizedRoom='';resumeNoticeRoom='';
+ localStorage.removeItem(roomKey);localStorage.removeItem(minimizedKey);
+ show('home');
+ try{
+  const lobby=await api('/api/lobby');
+  const stillActive=wasActive&&lobbyMatchIsActive(lobby,leavingRoom);
+  if(stillActive){
+   minimizedRoom=leavingRoom;
+   localStorage.setItem(minimizedKey,leavingRoom);
+  }
+  renderLobby(lobby);
+  if(stillActive){
+   resumeNoticeRoom=leavingRoom;
+   status(resumeMessage);
+  }else status('');
+ }catch(error){
+  await refresh();
+  status(error.message);
+ }
+};
 $('surrenderMatch').onclick=async()=>{
  if(!room||!game||game.phase==='finished'||game.phase==='paused')return;
  if(!await requestAction({title:'Сдаться в этом матче?',message:'Сопернику будет засчитана победа. Если хочешь только вернуться в лобби, используй «Свернуть матч».',confirmText:'Сдаться',danger:true}))return;
