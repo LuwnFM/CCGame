@@ -16,12 +16,15 @@
   <section id="auth" class="panel">
     <h1>Войти в игру</h1>
     <p class="muted">Создай профиль с постоянным ID или войди под своим логином.</p>
-    <label>Адрес игрового сервера <input id="apiUrl" type="url" placeholder="Для локальной игры оставить пустым" autocomplete="url"></label>
-    <p id="apiHint" class="hint">Локально сервер и страница работают по одному адресу. Для клиента Vercel нужен HTTPS-адрес игрового сервера.</p>
     <label>Логин <input id="login" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="20" pattern="[A-Za-z0-9_]{3,20}" placeholder="3–20 латинских букв, цифр или _"></label>
     <label>Пароль профиля <input id="password" type="password" autocomplete="current-password" minlength="10" maxlength="128" placeholder="10–128 символов, буква и цифра"></label>
     <label id="accessWrap">Пароль доступа к альфе <input id="accessPassword" type="password" autocomplete="off"></label>
     <p id="authMessage" role="alert"></p><div class="actions"><button id="register">Зарегистрироваться</button><button id="signIn" class="secondary">Войти</button></div>
+    <details id="serverSettings" class="local-server-settings">
+      <summary>Дополнительные настройки соединения (локальный режим)</summary>
+      <label>Адрес игрового сервера <input id="apiUrl" type="url" placeholder="Оставьте пустым для текущего сервера" autocomplete="url"></label>
+      <p id="apiHint" class="hint">Используйте только если клиент и сервер запущены на разных локальных адресах.</p>
+    </details>
   </section>
 <section id="home" class="hidden"><div class="lobby-heading"><div><p class="eyebrow">FIREWELL CCG · АЛЬФА</p><h1>Время разыграть карты</h1><p class="muted">Выбери колоду и найди своего соперника.</p></div><button id="profileOpen" class="secondary"><span id="profileName"></span> · Профиль ⚙</button></div><nav class="lobby-nav" aria-label="Разделы лобби"><a href="#lobbyPlay">Играть</a><a href="#lobbyDecks">Мои колоды</a><button id="homeRulesOpen" class="ghost">Правила</button><a href="#lobbyRanking">Рейтинг</a><a href="#lobbyHelp">Помощь</a><a href="#lobbyChat">Чат</a></nav><div class="lobby-play-grid"><section class="panel lobby-hero" id="lobbyPlay"><h2>Сразись с другим Владетелем</h2><p class="lobby-intro">Управляй Владениями, призывай Существ и меняй ход боя способностями Легенд.</p><p class="muted" id="presence">Онлайн: — · в поиске: — · в матчах: —</p>
 

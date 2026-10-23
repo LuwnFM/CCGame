@@ -265,6 +265,7 @@ try {
     const crossPage=await browser.newPage();pages.push(crossPage);crossPage.setDefaultTimeout(12000);
     crossPage.on('pageerror',error=>errors.push(error.message));
     await crossPage.goto(externalOrigin);
+    await crossPage.locator('#serverSettings summary').click();
     await crossPage.locator('#apiUrl').fill(backend);
     await crossPage.locator('#login').fill('CrossOriginTester');
     await crossPage.locator('#password').fill('cross-origin-password-123');

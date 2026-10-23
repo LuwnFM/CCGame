@@ -13,7 +13,8 @@ applySavedLayout();
 window.addEventListener('storage',event=>{if(event.key===layoutStorageKey)applySavedLayout()});
 const $ = id => document.getElementById(id);
 const sessionKey = 'firewell_session', serverKey = 'firewell_server', roomKey = 'firewell_room', minimizedKey='firewell_minimized_room';
-const hostedClient = location.hostname.endsWith('.vercel.app');
+// Public HTTPS installations use the current origin for their /api endpoints.
+const hostedClient = location.protocol === 'https:' && !['localhost','127.0.0.1'].includes(location.hostname);
 let token = localStorage.getItem(sessionKey) || '';
 let apiBase = hostedClient ? '' : (localStorage.getItem(serverKey) || '');
 let room = localStorage.getItem(roomKey) || '';
@@ -59,7 +60,7 @@ function show(id) {
   for(const pane of ['auth','home','builder','match','spectator','rulesPage'])$(pane).classList.toggle('hidden',pane!==id);
 }
 function serverAddress() {
-  if (hostedClient) return ''; // Vercel proxies /api/* to the configured game server.
+  if (hostedClient) return ''; // Same-origin /api; Vercel may proxy it.
   const entered = $('apiUrl').value.trim().replace(/\/$/,'');
   if (!entered) return '';
   const url = new URL(entered);
@@ -490,9 +491,10 @@ $('end').onclick=()=>send({type:'endTurn'});
 function tick(){if(!game?.deadlineAt){$('timer').textContent='';return}const left=Math.max(0,Math.ceil((game.deadlineAt-Date.now())/1000));$('timer').textContent='⏱ '+Math.floor(left/60)+':'+String(left%60).padStart(2,'0')}
 $('apiUrl').value=apiBase;
 if (hostedClient) {
-  $('apiUrl').closest('label').style.display='none';
-  $('apiHint').style.display='none';
-  localStorage.removeItem(serverKey); // Ignore any obsolete manually entered tunnel URL.
+  $('serverSettings').hidden = true;
+  localStorage.removeItem(serverKey); // Ignore obsolete manual URLs on hosted pages.
+} else if (apiBase) {
+  $('serverSettings').open = true;
 }
 show('auth');
 checkGameServer();
