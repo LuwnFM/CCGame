@@ -10,7 +10,7 @@ permissions:
 
 # Supersede only obsolete CI on the exact same ref.
 concurrency:
-  group: firewell-alpha-\${{ github.workflow }}-\${{ github.ref }}
+  group: firewell-alpha-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
