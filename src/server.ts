@@ -3,7 +3,7 @@ import { randomBytes, createHash, timingSafeEqual } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { existsSync, statSync, mkdirSync, readdirSync, unlinkSync } from 'node:fs';
 import { dirname, join, basename } from 'node:path';
-import { DatabaseSync } from 'node:sqlite';
+import { openStorage, isPostgresStorage } from './storage.ts';
 import { apply, openingGame, RULES_VERSION, RuleError, type Command, type Game, type PlayerId } from './core.ts';
 import {chooseBotCommand} from './bots/opponent.ts';
 export function applyForMatch(game: Game, command: Command): Game {
@@ -126,8 +126,9 @@ function view(game: Game, seat: PlayerId, row?: Room) {
 }
 export function createApp(options: { databasePath: string; accessPassword: string; clientOrigin?: string }) {
   if (!options.accessPassword || options.accessPassword.length < 10) throw new Error('FIREWELL_ALPHA_PASSWORD должен содержать не менее 10 символов');
-  const existingFile = options.databasePath !== ':memory:' && existsSync(options.databasePath) && statSync(options.databasePath).size > 0;
-  const db = new DatabaseSync(options.databasePath);
+  const postgres = isPostgresStorage();
+  const existingFile = !postgres && options.databasePath !== ':memory:' && existsSync(options.databasePath) && statSync(options.databasePath).size > 0;
+  const db = openStorage(options.databasePath);
   // SQLite VACUUM INTO produces a transactionally consistent backup, including
   // writes held in the WAL. Keep seven snapshots before applying migrations.
   if (existingFile) {
@@ -152,7 +153,7 @@ export function createApp(options: { databasePath: string; accessPassword: strin
   const sessionColumns = new Set((db.prepare('PRAGMA table_info(sessions)').all() as {name:string}[]).map(c=>c.name));
   if (!sessionColumns.has('user_id')) db.exec('ALTER TABLE sessions ADD COLUMN user_id TEXT');
   const social = new Social(db);
-  const history = new MatchHistory(db, options.databasePath);
+  const history = new MatchHistory(db, postgres ? ':memory:' : options.databasePath);
   function archiveSafely() {
     try { history.archiveCompleted(); }
     catch(error) { console.error('Match archive failed; SQLite journal remains intact for retry:', error); }
@@ -247,6 +248,7 @@ export function createApp(options: { databasePath: string; accessPassword: strin
         return;
       }
       if (url.pathname === '/api/health' && req.method === 'GET') {
+        db.prepare('SELECT 1 AS alive').get();
         res.setHeader('cache-control','no-store');
         return json(res,200,{ok:true,service:'firewell-ccg'});
       }
