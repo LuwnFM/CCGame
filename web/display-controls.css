@@ -30,3 +30,45 @@ body[data-screen="match"] #displayControls { display:flex }
 @media (orientation:landscape) and (max-height:520px) {
   #displayControls button { min-height:24px; padding:2px 6px; font-size:.67rem }
 }
+
+
+/* In-game feedback belongs to the hand title, not a fixed banner over actions.
+   This sheet loads after all phone portrait/landscape design variants. */
+body[data-screen="match"] main > #status { display:none!important }
+#match>.playarea:last-child>h2,
+body[data-design] #match>.playarea:last-child>h2 {
+  display:flex;align-items:center;gap:8px;min-width:0;max-width:100%;
+  overflow:hidden;white-space:nowrap;line-height:1.2;
+}
+#matchStatus {
+  display:inline-block;flex:0 1 auto;min-width:0;max-width:100%;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  padding:2px 7px;margin:0;
+  border:1px solid #c5a5657a;border-radius:5px;
+  background:#14211fea;color:#f1d99c;
+  font-family:system-ui,sans-serif;font-size:clamp(10px,1.1vw,13px);
+  font-weight:600;line-height:1.1;letter-spacing:0;text-transform:none;
+  opacity:1;transform:translateY(0);
+  transition:opacity .5s ease,transform .5s ease;
+  pointer-events:none;
+}
+#matchStatus:empty { display:none }
+#matchStatus.match-notice-fading { opacity:0;transform:translateY(-4px) }
+@media (orientation:portrait) and (max-width:750px) {
+  body[data-design] #match>.playarea:last-child {
+    grid-template-rows:18px minmax(0,1fr) 28px;
+  }
+  #match>.playarea:last-child>h2,
+  body[data-design] #match>.playarea:last-child>h2 {
+    gap:5px;min-height:16px;margin:0;font-size:9px;
+  }
+  #matchStatus {padding:1px 5px;font-size:10px;line-height:1.15}
+}
+@media (orientation:landscape) and (max-height:520px) {
+  body[data-design] #match>.playarea:last-child {
+    grid-template-rows:16px minmax(0,1fr);
+  }
+  #match>.playarea:last-child>h2,
+  body[data-design] #match>.playarea:last-child>h2 {gap:4px;min-height:13px;margin:0}
+  #matchStatus {padding:1px 4px;font-size:9px}
+}
