@@ -112,14 +112,14 @@ try {
   await b.locator('#presence').waitFor();
   await b.screenshot({ path: join(artifacts, 'alpha-lobby-mobile.png'), fullPage: true });
 
-  await a.locator('summary').first().click();
+  await a.locator('summary:visible').first().click();
   checkpoint("both players registered");
   await a.locator('#friendOpen').click();
   await a.locator('#createRoom').click();
   await a.locator('#match').waitFor({ state: 'visible' });
   await a.waitForFunction(() => /^Комната [A-F0-9]{8}$/.test(document.querySelector('#roomLabel')?.textContent ?? ''));
   const code = (await a.locator('#roomLabel').innerText()).match(/[A-F0-9]{8}/)[0];
-  await b.locator('summary').first().click();
+  await b.locator('summary:visible').first().click();
   await b.locator('#friendOpen').click();
   await b.locator('#code').fill(code);
   checkpoint("room created, invite sent");
@@ -265,6 +265,7 @@ try {
     const crossPage=await browser.newPage();pages.push(crossPage);crossPage.setDefaultTimeout(12000);
     crossPage.on('pageerror',error=>errors.push(error.message));
     await crossPage.goto(externalOrigin);
+    await crossPage.locator('#serverSettings summary').click();
     await crossPage.locator('#apiUrl').fill(backend);
     await crossPage.locator('#login').fill('CrossOriginTester');
     await crossPage.locator('#password').fill('cross-origin-password-123');

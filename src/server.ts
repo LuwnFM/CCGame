@@ -125,7 +125,11 @@ function view(game: Game, seat: PlayerId, row?: Room) {
   };
 }
 export function createApp(options: { databasePath: string; accessPassword: string; clientOrigin?: string }) {
-  if (!options.accessPassword || options.accessPassword.length < 10) throw new Error('FIREWELL_ALPHA_PASSWORD должен содержать не менее 10 символов');
+  // Weak shared alpha passwords are explicitly opt-in for disposable test servers.
+  // Personal player passwords still require 10+ characters in Social.register().
+  const minimumAlphaLength = process.env.FIREWELL_ALLOW_SHORT_ALPHA_PASSWORD === 'true' ? 3 : 10;
+  if (!options.accessPassword || options.accessPassword.length < minimumAlphaLength)
+    throw new Error('FIREWELL_ALPHA_PASSWORD должен содержать не менее ' + minimumAlphaLength + ' символов');
   const postgres = isPostgresStorage();
   const existingFile = !postgres && options.databasePath !== ':memory:' && existsSync(options.databasePath) && statSync(options.databasePath).size > 0;
   const db = openStorage(options.databasePath);
