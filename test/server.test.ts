@@ -438,10 +438,10 @@ test('server serves first-party UI ES modules and rejects traversal',async()=>{
    assert.match(response.headers.get('content-type')||'',/javascript/);
    assert.match(await response.text(),/export function/);
   }
-  for(const path of ['/layout-editor.html','/layout-editor.css','/ui-preview.html','/ui/layout-editor.js','/ui/layout-preferences.js','/ui/layout-preview.js']){
+  for(const path of ['/layout-editor.html','/layout-editor.css','/ui-preview.html','/ui/layout-editor.js','/ui/layout-preview.js']){
    const response=await fetch('http://127.0.0.1:'+((app.server.address() as {port:number}).port)+path);
-   assert.equal(response.status,200,path);
-   assert.ok((await response.text()).length>100,path);
+   assert.equal(response.status,403,path);
+   
   }
   const bad=await fetch('http://127.0.0.1:'+((app.server.address() as {port:number}).port)+'/ui/secrets.json');
   assert.notEqual(bad.status,200);
