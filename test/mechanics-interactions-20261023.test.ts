@@ -189,3 +189,26 @@ test('printed Majestic cannot be displaced through Unique duplicate resolution',
  assert.equal(kept.players[0].hand.length,0);
  assert.equal(kept.players[0].discard.length,1);
 });
+
+test('Silence suppresses Cannot Attack without bypassing readiness or Stasis',()=>{
+ const cannot:Card={id:'cannot-attack-test',name:'Unable',kind:'creature',
+  attack:3,health:5,cannotAttack:true,cost:{colored:{},generic:0}};
+ const source=initialGame(player(),player());source.turn=2;
+ source.players[0].main=[make(77,cannot,{enteredTurn:1})];
+ const attack=(g:typeof source,key:string)=>apply(g,{
+  type:'attack',actor:0,attackerId:77,target:{kind:'player'},expectedRevision:g.revision,key
+ } as Command);
+ assert.throws(()=>attack(source,'blocked'),/Атакующий не готов/);
+ const silenced=structuredClone(source);silenced.players[0].main[0].silenced=true;
+ assert.equal(ability(silenced.players[0].main[0],'cannotAttack'),undefined);
+ const declared=attack(silenced,'silence-enabled');
+ assert.equal(declared.phase,'intercept');
+ const exhausted=structuredClone(silenced);exhausted.players[0].main[0].exhausted=true;
+ assert.throws(()=>attack(exhausted,'silenced-exhausted'),/Атакующий не готов/);
+ const stunned=structuredClone(silenced);stunned.players[0].main[0].stunned=true;
+ assert.throws(()=>attack(stunned,'silenced-stunned'),/Атакующий не готов/);
+ const stasis=structuredClone(silenced);stasis.players[0].main[0].stasis=1;
+ assert.throws(()=>attack(stasis,'silenced-stasis'),/Атакующий не готов/);
+ const newArrival=structuredClone(silenced);newArrival.players[0].main[0].enteredTurn=2;
+ assert.throws(()=>attack(newArrival,'silenced-entry'),/Атакующий не готов/);
+});
