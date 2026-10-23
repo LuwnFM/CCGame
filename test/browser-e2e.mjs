@@ -176,6 +176,19 @@ try {
     return button && !button.disabled && !document.querySelector('#match').classList.contains('hidden');
   }, null, { timeout: 12000 });
   await b.locator('#hand .card').filter({ hasText: /владение/i }).first().click();
+  await b.waitForFunction(()=>!!document.querySelector('#matchStatus')?.textContent,{timeout:6000});
+  const matchToastBounds=await b.evaluate(()=>{
+    const notice=document.querySelector('#matchStatus').getBoundingClientRect();
+    const actions=document.querySelector('#match>.playarea:last-child>.actions').getBoundingClientRect();
+    return {
+      overlaps:notice.left<actions.right&&notice.right>actions.left&&notice.top<actions.bottom&&notice.bottom>actions.top,
+      inHandHeading:document.querySelector('#matchStatus').closest('h2')?.textContent.startsWith('Рука'),
+      noticeRight:notice.right,actionsLeft:actions.left
+    };
+  });
+  assert.equal(matchToastBounds.inHandHeading,true,JSON.stringify(matchToastBounds));
+  assert.equal(matchToastBounds.overlaps,false,JSON.stringify(matchToastBounds));
+  await b.waitForFunction(()=>document.querySelector('#matchStatus')?.textContent==='',null,{timeout:6500});
   await b.locator('#myBasicDomains .card').first().waitFor({ state: 'visible' });
   assert.match(await b.locator('#domainSummary').innerText(),/\d+ · готовы \d+/i);
   await b.locator('#myBasicDomains .inspect-card').first().click();
