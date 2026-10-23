@@ -3,7 +3,7 @@ import {strict as assert} from 'node:assert';
 import {mkdtemp,mkdir,rm,writeFile} from 'node:fs/promises';import {tmpdir} from 'node:os';import {join} from 'node:path';
 import {chromium} from 'playwright';import {createApp} from '../src/server.ts';import {catalog} from '../src/social.ts';
 const temp=await mkdtemp(join(tmpdir(),'firewell-dialogs-')),out=join(process.cwd(),'artifacts/browser/dialogs');await mkdir(out,{recursive:true});
-const app=createApp({databasePath:join(temp,'test.sqlite'),accessPassword:'dialog-access-test-123'});await new Promise(r=>app.server.listen(0,'127.0.0.1',r));const url='http://127.0.0.1:'+app.server.address().port;
+const app=createApp({databasePath:join(temp,'test.sqlite'),accessPassword:'dialog-access-test-123',editorPassword:'dialog-editor-test-2026'});await new Promise(r=>app.server.listen(0,'127.0.0.1',r));const url='http://127.0.0.1:'+app.server.address().port;
 const api=async(path,token,data)=>{const r=await fetch(url+path,{method:data?'POST':'GET',headers:{'content-type':'application/json',...(token?{authorization:'Bearer '+token}:{})},...(data?{body:JSON.stringify(data)}:{})});const body=await r.json();assert.ok(r.ok,JSON.stringify(body));return body};
 const reg=login=>api('/api/register',null,{login,password:'dialog-profile-test-123',accessPassword:'dialog-access-test-123'});
 const owner=await reg('DialogPlayer'),other=await reg('DialogOpponent'),observer=await reg('DialogObserver');const {code}=await api('/api/rooms',owner.token,{deckId:'violet'});await api('/api/rooms/'+code+'/join',other.token,{deckId:'green'});
@@ -36,7 +36,15 @@ try{
   await ready();await page.locator('#chatOpen').click();await shot('12-chat');await page.locator('#chatClose').click();
   await page.locator('#surrenderMatch').click();const rev=state().revision;await shot('13-surrender');await page.locator('#actionDialog').getByRole('button',{name:'Отмена',exact:true}).click();assert.equal(state().revision,rev);await page.locator('#surrenderMatch').click();await page.locator('#actionDialog button[type=submit]').click();await page.locator('#matchOutcome h2').getByText('Поражение',{exact:true}).waitFor();await shot('14-result');
   fixture();await load(observer.token,null);await page.locator('#activeMatches .spectator-entry').filter({hasText:'DialogOpponent'}).getByRole('button',{name:'Смотреть'}).click();await page.locator('#spectator .spectator-zone').first().waitFor();await shot('15-spectator',true);
-  await page.goto(url+'/layout-editor.html');await page.locator('#resetProfile').click();await page.locator('#actionDialog').waitFor({state:'visible'});await shot('16-editor-confirm');await page.locator('#actionDialog').getByRole('button',{name:'Отмена',exact:true}).click();await ctx.close();console.log('DIALOG FLOWS PASS',device);
+  const adminUnlock=await fetch(url+'/api/admin/editor/unlock',{
+    method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+observer.token},
+    body:JSON.stringify({password:'dialog-editor-test-2026'})
+   });
+   assert.equal(adminUnlock.status,200);
+   const editorCookie=adminUnlock.headers.get('set-cookie')?.split(';')[0].split('=');
+   assert.equal(editorCookie?.[0],'firewell_editor');
+   await ctx.addCookies([{name:editorCookie[0],value:editorCookie[1],url}]);
+   await page.goto(url+'/layout-editor.html');await page.locator('#resetProfile').click();await page.locator('#actionDialog').waitFor({state:'visible'});await shot('16-editor-confirm');await page.locator('#actionDialog').getByRole('button',{name:'Отмена',exact:true}).click();await ctx.close();console.log('DIALOG FLOWS PASS',device);
  }
  assert.deepEqual(native,[]);assert.deepEqual(errors,[]);
  await writeFile(join(out,'manifest.json'),JSON.stringify({shots,errors,native},null,2));
