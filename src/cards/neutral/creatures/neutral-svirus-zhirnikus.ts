@@ -8,13 +8,13 @@ export default {
     "colored": {},
     "generic": 6
   },
-  "attack": 6,
-  "health": 5,
-  "piercing": true,
+  "attack": 3,
+  "health": 8,
   "majestic": true,
   "lore": {
     "state": "Межгосударственный орден",
     "organization": "Новые хранители",
     "summary": "Свирус Жирникус выступает на стороне Новые хранители."
-  }
+  },
+  "guard": true
 };

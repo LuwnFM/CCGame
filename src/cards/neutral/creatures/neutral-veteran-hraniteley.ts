@@ -6,13 +6,14 @@ export default {
   "aspects": [],
   "cost": {
     "colored": {},
-    "generic": 5
+    "generic": 6
   },
-  "attack": 5,
-  "health": 5,
+  "attack": 3,
+  "health": 7,
   "lore": {
     "state": "Межгосударственный орден",
     "organization": "Новые хранители",
     "summary": "Ветеран Хранителей выступает на стороне Новые хранители."
-  }
+  },
+  "majestic": true
 };

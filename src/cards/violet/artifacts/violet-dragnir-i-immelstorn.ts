@@ -11,12 +11,15 @@ export default {
     "colored": {
       "violet": 1
     },
-    "generic": 2
+    "generic": 4
   },
-  "auraAttack": 1,
   "lore": {
     "state": "Сепер (игровая привязка альфы)",
     "organization": "Ван Троупы",
     "summary": "Драгнир и Иммельсторн укрепляет бойцов Ван Троупы."
+  },
+  "turnStartEffect": {
+    "kind": "drawWithPain",
+    "amount": 2
   }
 };

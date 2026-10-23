@@ -17,7 +17,7 @@ export type {DeathEffect,EntryEffect,LoyaltyEffect,TechniqueEffect,RitualEffect,
 export type {Command} from './mechanics/command-contracts.ts';
 
 export function player(deck: Card[] = [], hand: Card[] = []): Player {
-  return { hp: STARTING_RULER_HP, deck: [...deck], hand: [...hand], discard: [], erased: [], domains: [], main: [], auxiliary: [], legends: [], energy: emptyEnergy(), domainsPlayed: 0, rituals: [] };
+  return { startingDeckHasColored: [...deck,...hand].some(c=>c.kind!=='domain'&&!!c.aspects?.length), hp: STARTING_RULER_HP, deck: [...deck], hand: [...hand], discard: [], erased: [], domains: [], main: [], auxiliary: [], legends: [], energy: emptyEnergy(), domainsPlayed: 0, rituals: [] };
 }
 /** A ritual reward or created token can never enter the discard zone. */
 export function sendToDiscard(owner:Player,card:Card,ritualReward=false):void{

@@ -6,15 +6,19 @@ export default {
   "aspects": [],
   "cost": {
     "colored": {},
-    "generic": 3
+    "generic": 4
   },
   "techniqueEffect": {
-    "kind": "silence",
+    "kind": "stasisEnemy",
     "amount": 1
   },
   "lore": {
     "state": "Межгосударственный орден",
     "organization": "Новые хранители",
     "summary": "Указ Хранителей помогает Новые хранители удержать инициативу."
+  },
+  "neutralAffinity": {
+    "zone": "hand",
+    "bonus": 1
   }
 };

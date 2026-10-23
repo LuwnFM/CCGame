@@ -293,7 +293,7 @@ function kindName(kind){
 }
 function cardLabel(p) {
   if (p.card.kind==='legend') return 'Лояльность '+p.loyalty;
-  if (p.card.kind==='artifact') return 'Предмет · +'+(p.card.auraAttack??0)+' атаки';
+  if (p.card.kind==='artifact') return p.card.auraAttack?'Предмет · +'+p.card.auraAttack+' атаки':'Предмет · эффект в начале вашего хода';
   const stats=(p.card.attack??0)+'/'+Math.max(0,(p.card.health??0)-p.damage);
   return stats+(p.shield?' · Щит '+p.shield:'')+(p.exhausted?' · истощено':'');
 }

@@ -11,6 +11,7 @@ export default {
     "generic": 5
   },
   "loyalty": 4,
+  "neutralAffinity": {"zone":"battlefield","bonus":1},
   "loyaltyAbilities": [
     {
       "delta": 1,
@@ -19,14 +20,14 @@ export default {
     },
     {
       "delta": -2,
-      "kind": "healRuler",
-      "amount": 4
+      "kind": "mendTeam",
+      "amount": 2
     }
   ],
   "loyaltyAbility": {
     "delta": -2,
-    "kind": "healRuler",
-    "amount": 4
+    "kind": "mendTeam",
+    "amount": 2
   },
   "lore": {
     "state": "Межгосударственный орден",

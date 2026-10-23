@@ -1,3 +1,4 @@
+import {neutralAffinityActive} from './rules/neutral-affinity.ts';
 import {RuleError} from '../errors.ts';
 import type {Game,PlayerId,Card} from '../model/index.ts';
 import {EffectLimitError,MAX_EFFECT_OPERATIONS} from './limits.ts';
@@ -21,5 +22,8 @@ export function invokeEffect(channel:EffectChannel,kind:string,context:EffectCon
   if(!handler)throw new RuleError('Неизвестный эффект '+channel+':'+kind);
   if((context.game.operationsUsed=(context.game.operationsUsed??0)+1)>MAX_EFFECT_OPERATIONS)
     throw new EffectLimitError('Превышен бюджет игровых эффектов');
+  const bonus=context.source.neutralAffinity;
+  if(bonus&&context.amount!==undefined&&neutralAffinityActive(context.game.players[context.actor],context.source))
+    context={...context,amount:context.amount+bonus.bonus};
   handler(context);
 }

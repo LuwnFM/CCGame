@@ -13,8 +13,8 @@ export default {
     "generic": 2
   },
   "techniqueEffect": {
-    "kind": "healRuler",
-    "amount": 4
+    "kind": "shieldTeam",
+    "amount": 2
   },
   "lore": {
     "state": "Королевство Ивелтин",

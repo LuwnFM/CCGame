@@ -13,8 +13,8 @@ export default {
     "generic": 2
   },
   "techniqueEffect": {
-    "kind": "cleanse",
-    "amount": 1
+    "kind": "mendTeam",
+    "amount": 2
   },
   "lore": {
     "state": "Королевство Ивелтин",

@@ -8,12 +8,15 @@ export default {
     "colored": {},
     "generic": 3
   },
-  "attack": 3,
-  "health": 2,
-  "firstStrike": true,
+  "attack": 2,
+  "health": 4,
   "lore": {
     "state": "Межгосударственный орден",
     "organization": "Новые хранители",
     "summary": "Инквизитор дозора выступает на стороне Новые хранители."
+  },
+  "onEntry": {
+    "kind": "stunEnemy",
+    "amount": 1
   }
 };

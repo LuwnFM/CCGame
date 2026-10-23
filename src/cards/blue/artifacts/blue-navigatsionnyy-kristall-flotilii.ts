@@ -11,12 +11,15 @@ export default {
     "colored": {
       "blue": 1
     },
-    "generic": 2
+    "generic": 4
   },
-  "auraAttack": 1,
   "lore": {
     "state": "Талдрейк",
     "organization": "Воздушная флотилия",
     "summary": "Навигационный кристалл флотилии укрепляет бойцов Воздушная флотилия."
+  },
+  "turnStartEffect": {
+    "kind": "drawIfLowHand",
+    "amount": 1
   }
 };

@@ -1,3 +1,8 @@
+import './shieldTeam.ts';
+import './mendTeam.ts';
+import './drawWithPain.ts';
+import './damageCreature.ts';
+import './drawIfLowHand.ts';
 import './bind.ts';
 import './cleanse.ts';
 import './damageAllCreatures.ts';

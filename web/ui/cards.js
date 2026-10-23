@@ -6,12 +6,18 @@ function abilityText(ability) {
   if(ability.kind==='summon')return (ability.delta>0?'+':'')+ability.delta+' лояльности · Призвать: '+ability.cards.map(c=>c.name+' '+c.attack+'/'+c.health).join(', ');
   const effects={healRuler:'Восстановить '+ability.amount+' HP Владетелю',
     damageOpponent:'Нанести '+ability.amount+' урона Владетелю противника',
-    draw:'Взять карт: '+ability.amount, recoverCreature:'Вернуть Существо из сброса в руку',
+    draw:'Взять карт: '+ability.amount, shieldTeam:'Довести Щит каждого союзного Существа минимум до '+ability.amount, mendTeam:'Убрать до '+ability.amount+' ранений с каждого союзного Существа', drawWithPain:'Взять '+ability.amount+' карт за столько же HP', recoverCreature:'Вернуть Существо из сброса в руку',
     raiseSacrifice:'Создать Жертву 2/2 во вспомогательной зоне',
     summonSignature:'Призвать сигнатурного бойца во вспомогательную зону'};
   return (ability.delta>0?'+':'')+ability.delta+' лояльности · '+(effects[ability.kind]||ability.kind);
 }
 function effectText(e) {
+  if(e.kind==='drawIfLowHand')return 'Взять '+e.amount+' карт, только если в руке не больше 3 карт';
+  if(e.kind==='shieldTeam')return 'Довести Щит каждого союзного Существа минимум до '+e.amount+' (не складывается)';
+  if(e.kind==='mendTeam')return 'Убрать до '+e.amount+' ранений с каждого союзного Существа';
+  if(e.kind==='drawWithPain')return 'Взять '+e.amount+' карт за '+e.amount+' HP (только если HP больше цены)';
+  if(e.kind==='damageCreature')return 'Нанести '+e.amount+' урона выбранному вражескому Существу';
+  if(e.kind==='bind')return 'Ошеломить Существо; если уже Ошеломлено или в Стазисе — Стазис '+e.amount;
   if(e.kind==='summon')return 'Призвать: '+e.cards.map(c=>c.name+' '+c.attack+'/'+c.health).join(', ');
   const descriptions={summonSkeleton:'Призвать скелетов 1/1 с Жертвой: ',stunEnemy:'Ошеломить Существо противника: ',stasisEnemy:'Наложить Стазис на Существо противника: ',healRuler:'Восстановить HP Владетелю: ',draw:'Взять карт: ',damageOpponent:'Урон Владетелю соперника: ',damageController:'Урон своему Владетелю: ',damageAllCreatures:'Урон всем Существам: ',reanimate:'Вернуть Существо из своего сброса на поле: ',cleanse:'Снять отрицательные статусы: ',silence:'Подавить способности: ',bind:'Сковывание: '};
   return (descriptions[e.kind]||e.kind+' ')+e.amount;
@@ -46,9 +52,9 @@ function playTechnique(card,index,me,enemy) {
   const e=card.techniqueEffect;
   if(e?.kind==='reanimate') {
     chooseCards('Вернуть Существо на поле',(me.discard||[]).flatMap((c,i)=>c.kind==='creature'?[{card:c,label:'Воскресить',choose:()=>send({type:'playTechnique',handIndex:index,discardIndex:i})}]:[]));
-  } else if(['cleanse','silence','bind'].includes(e?.kind)) {
+  } else if(['cleanse','silence','bind','stasisEnemy','damageCreature'].includes(e?.kind)) {
     const side=e.kind==='cleanse'?me:enemy;
-    chooseCards('Выбери цель Техники',[...side.main,...side.auxiliary,...side.legends].filter(p=>!p.card.majestic&&(e.kind==='bind'?p.card.kind==='creature':true)).map(p=>({card:p.card,label:cardLabel(p),choose:()=>send({type:'playTechnique',handIndex:index,targetId:p.objectId})})));
+    chooseCards('Выбери цель Техники',[...side.main,...side.auxiliary,...side.legends].filter(p=>!p.card.majestic&&(['bind','stasisEnemy','damageCreature'].includes(e.kind)?p.card.kind==='creature':true)&&!(e.kind==='stasisEnemy'&&p.stasis)).map(p=>({card:p.card,label:cardLabel(p),choose:()=>send({type:'playTechnique',handIndex:index,targetId:p.objectId})})));
   } else send({type:'playTechnique',handIndex:index});
 }
 function detailsText(card,p) {
@@ -81,6 +87,9 @@ function traitDescriptions(card) {
     ['sacrifice','Жертва: подходит для ритуального принесения в жертву'],
     ['majestic','Величественный: нельзя выбрать целью прицельной Техники или способности; атаки Существ, массовый или случайный урон и эффекты боевого попадания действуют. Нельзя вытеснить из зоны или принести в Жертву']];
   const result=traits.filter(([k])=>card[k]).map(([,txt])=>txt);
+  if(card.auraAttack)result.push('Аура: союзные Существа получают +'+card.auraAttack+' атаки, пока Предмет во вспомогательной зоне и не под Немотой или Стазисом');
+  if(card.turnStartEffect)result.push('В начале вашего хода, до добора: '+effectText(card.turnStartEffect)+'. Немота и Стазис отключают Предмет');
+  if(card.neutralAffinity){const zones={deck:'исходной колоде',hand:'руке после розыгрыша',battlefield:'ваших зонах Существ, Предметов и Легенд'};result.push('Усиление: +'+card.neutralAffinity.bonus+' к числу эффекта, если нет цветных карт в '+zones[card.neutralAffinity.zone]+'. Владения не учитываются; без условия действует базовый эффект');}
   if(card.shield)result.push('Щит '+card.shield+': поглощает урон');
   if(card.cannotAttack)result.push('Не может объявлять атаки (но может быть Стражем)');
   if(card.poisonHit)result.push('Отрава '+card.poisonHit.strength+' / '+card.poisonHit.ticks);

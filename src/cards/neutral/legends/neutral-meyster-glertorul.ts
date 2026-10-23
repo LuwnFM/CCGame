@@ -12,24 +12,28 @@ export default {
   "loyalty": 5,
   "loyaltyAbilities": [
     {
-      "delta": 1,
       "kind": "healRuler",
-      "amount": 1
+      "amount": 1,
+      "delta": 1
     },
     {
-      "delta": -2,
-      "kind": "damageOpponent",
-      "amount": 2
+      "kind": "draw",
+      "amount": 1,
+      "delta": -2
     }
   ],
   "loyaltyAbility": {
-    "delta": -2,
-    "kind": "damageOpponent",
-    "amount": 2
+    "kind": "draw",
+    "amount": 1,
+    "delta": -2
   },
   "lore": {
     "state": "Межгосударственный орден",
     "organization": "Новые хранители",
     "summary": "Мейстер Глерторул ведёт Новые хранители в сражении."
+  },
+  "neutralAffinity": {
+    "zone": "deck",
+    "bonus": 1
   }
 };
