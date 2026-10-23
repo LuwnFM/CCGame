@@ -10,8 +10,8 @@ export function createBattlefieldUI({$,button,textElement,cardButton,cardLabel,s
   for(const [id,zone] of [['myBoard',me.main],['myAux',me.auxiliary]]) {
     $(id).replaceChildren(...zone.map(p=>cardButton(p.card,cardLabel(p),()=>{
       if(defense){onDefenderChoice(p.objectId);rerender()}
-      else{onSelected(p.card.cannotAttack?null:p.objectId);rerender()}
-    },p.card.kind!=='creature'||(!defense&&!mine)||!!p.stasis||(!defense&&!!p.stunned)||p.exhausted||(!defense&&!!p.card.cannotAttack)||
+      else{onSelected(p.card.cannotAttack&&!p.silenced&&!p.stasis?null:p.objectId);rerender()}
+    },p.card.kind!=='creature'||(!defense&&!mine)||!!p.stasis||(!defense&&!!p.stunned)||p.exhausted||(!defense&&!!p.card.cannotAttack&&!p.silenced&&!p.stasis)||
       (defense&&(p.interceptions>0||(attack?.target?.kind==='creature'&&(!p.card.guard||p.silenced))||
         (incoming?.card.flying&&!incoming.silenced&&(!p.card.flying||p.silenced)))),selected===p.objectId||defenderChoice===p.objectId,p)));
   }
