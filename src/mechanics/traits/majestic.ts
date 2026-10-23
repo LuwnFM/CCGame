@@ -13,3 +13,8 @@ registerTrait('majestic',printedTrait('majestic'));
 export function mayChooseEffectTarget(unit:import('../../model/index.ts').Permanent):boolean {
  return !unit.card.majestic;
 }
+
+/** Printed Majestic cannot be displaced, including Unique-name replacement. */
+export function canBeDisplaced(unit:import('../../model/index.ts').Permanent):boolean {
+ return !unit.card.majestic;
+}

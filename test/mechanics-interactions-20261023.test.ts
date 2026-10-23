@@ -170,3 +170,20 @@ test('Majestic remains vulnerable to non-targeted AoE, random selection and crea
  damage(pool[nextRandom(seed,2).value],1);
  assert.equal(combat.players[1].main[0].damage,5,'Random damage selection must keep Majestic eligible');
 });
+
+
+test('printed Majestic cannot be displaced through Unique duplicate resolution',()=>{
+ const unique:Card={id:'majestic-unique',name:'Majestic duplicate',kind:'creature',
+   attack:2,health:3,unique:true,majestic:true,cost:{colored:{},generic:0}};
+ let g=initialGame(player([],[unique]),player());g.turn=1;
+ g.players[0].main=[make(33,unique)];
+ const before=structuredClone(g);
+ const command={type:'playCreature',actor:0,handIndex:0,keepExisting:false,
+  expectedRevision:g.revision,key:'unique-force-replace'} as Command;
+ assert.throws(()=>apply(g,command),/Величественного нельзя вытеснить/);
+ assert.deepEqual(g,before,'An invalid replacement does not consume card or mana');
+ const kept=apply(g,{...command,keepExisting:true,key:'unique-keep-existing'});
+ assert.equal(kept.players[0].main[0].objectId,33);
+ assert.equal(kept.players[0].hand.length,0);
+ assert.equal(kept.players[0].discard.length,1);
+});

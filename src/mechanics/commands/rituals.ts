@@ -1,3 +1,4 @@
+import {canBeDisplaced} from '../traits/majestic.ts';
 import {registerCommand} from '../command-router.ts';
 import {requireRule} from './shared.ts';
 import {RuleError} from '../../errors.ts';
@@ -50,10 +51,11 @@ registerCommand('chooseReward',(next,command)=>{const p=next.players[command.act
           next.pendingReward = null; next.phase = 'main';
           return;
         }
+        requireRule(canBeDisplaced(sameUnique),'Величественного нельзя вытеснить');
         departPermanent(next,command.actor,sameUnique.objectId);
       }
       if (zone.length >= limit) {
-        const replacement = zone.find(unit => unit.objectId === command.replaceId && !unit.card.majestic);
+        const replacement = zone.find(unit => unit.objectId === command.replaceId && canBeDisplaced(unit));
         if (replacement) {
           const removed = removePermanents(p, [replacement.objectId]);
           if (reward.createdToken) {
@@ -63,7 +65,7 @@ registerCommand('chooseReward',(next,command)=>{const p=next.players[command.act
               emitGameEvent(next,{type:'zoneMoved',owner:command.actor,cardId:unit.card.id,objectId:unit.objectId,from:'detached',to:target});
             }
           } else resolveDeaths(next, removed.map(unit => ({ unit, owner: command.actor })));
-        } else if (zone.some(unit => !unit.card.majestic)) throw new RuleError('Выберите заменяемое Существо');
+        } else if (zone.some(unit => canBeDisplaced(unit))) throw new RuleError('Выберите заменяемое Существо');
       }
       if (finishIfLethal(next)) { next.pendingReward = null; return; }
       if (zone.length >= limit) {
