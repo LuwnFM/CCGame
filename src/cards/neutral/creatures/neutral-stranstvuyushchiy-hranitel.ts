@@ -6,13 +6,21 @@ export default {
   "aspects": [],
   "cost": {
     "colored": {},
-    "generic": 3
+    "generic": 4
   },
-  "attack": 3,
-  "health": 3,
+  "attack": 1,
+  "health": 4,
   "lore": {
     "state": "Межгосударственный орден",
     "organization": "Новые хранители",
     "summary": "Странствующий хранитель выступает на стороне Новые хранители."
+  },
+  "onEntry": {
+    "kind": "stasisEnemy",
+    "amount": 1
+  },
+  "neutralAffinity": {
+    "zone": "battlefield",
+    "bonus": 1
   }
 };

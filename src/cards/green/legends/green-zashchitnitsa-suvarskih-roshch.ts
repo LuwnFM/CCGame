@@ -16,20 +16,20 @@ export default {
   "loyalty": 5,
   "loyaltyAbilities": [
     {
-      "delta": 1,
-      "kind": "healRuler",
-      "amount": 1
+      "kind": "mendTeam",
+      "amount": 1,
+      "delta": 1
     },
     {
-      "delta": -2,
-      "kind": "damageOpponent",
-      "amount": 2
+      "kind": "recoverCreature",
+      "amount": 1,
+      "delta": -2
     }
   ],
   "loyaltyAbility": {
-    "delta": -2,
-    "kind": "damageOpponent",
-    "amount": 2
+    "kind": "recoverCreature",
+    "amount": 1,
+    "delta": -2
   },
   "lore": {
     "state": "Королевство Сувар",

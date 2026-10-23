@@ -334,7 +334,8 @@
       "kind": "stasisEnemy",
       "type": "effect",
       "channels": [
-        "entry"
+        "entry",
+        "technique"
       ],
       "params": [
         "amount"
@@ -964,6 +965,178 @@
         ]
       },
       "ruleModule": "src/mechanics/traits/untiring.ts"
+    },
+    {
+      "kind": "damageCreature",
+      "type": "effect",
+      "channels": [
+        "technique"
+      ],
+      "params": [
+        "amount"
+      ],
+      "targetRules": "rules/targets.ts; Majestic excluded",
+      "timing": [
+        "technique"
+      ],
+      "implemented": true,
+      "ui": "Урон Существу",
+      "testIds": [
+        "test/balance-rework.test.ts"
+      ],
+      "ru": "Урон Существу",
+      "en": "damageCreature",
+      "introducedIn": "balance-alpha-2026-10-23",
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "target": "chosenEnemyCreature",
+        "interactions": [
+          "majestic"
+        ]
+      },
+      "ruleModule": "src/mechanics/effects/draw.ts"
+    },
+    {
+      "kind": "drawIfLowHand",
+      "type": "effect",
+      "channels": [
+        "entry",
+        "loyalty"
+      ],
+      "params": [
+        "amount"
+      ],
+      "targetRules": "No chosen target; automatic team effects include Majestic",
+      "timing": [
+        "entry",
+        "loyalty"
+      ],
+      "implemented": true,
+      "ui": "Добор при малой руке",
+      "testIds": [
+        "test/balance-rework.test.ts"
+      ],
+      "ru": "Добор при малой руке",
+      "en": "drawIfLowHand",
+      "introducedIn": "balance-alpha-2026-10-23",
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "target": "automaticNoManualTarget",
+        "interactions": [
+          "neutralAffinity",
+          "silence",
+          "stasis"
+        ]
+      },
+      "ruleModule": "src/mechanics/effects/draw.ts"
+    },
+    {
+      "kind": "drawWithPain",
+      "type": "effect",
+      "channels": [
+        "entry",
+        "technique",
+        "loyalty"
+      ],
+      "params": [
+        "amount"
+      ],
+      "targetRules": "No chosen target; automatic team effects include Majestic",
+      "timing": [
+        "entry",
+        "technique",
+        "loyalty"
+      ],
+      "implemented": true,
+      "ui": "Добор за HP",
+      "testIds": [
+        "test/balance-rework.test.ts"
+      ],
+      "ru": "Добор за HP",
+      "en": "drawWithPain",
+      "introducedIn": "balance-alpha-2026-10-23",
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "target": "automaticNoManualTarget",
+        "interactions": [
+          "neutralAffinity",
+          "silence",
+          "stasis"
+        ]
+      },
+      "ruleModule": "src/mechanics/effects/draw.ts"
+    },
+    {
+      "kind": "mendTeam",
+      "type": "effect",
+      "channels": [
+        "entry",
+        "technique",
+        "loyalty"
+      ],
+      "params": [
+        "amount"
+      ],
+      "targetRules": "No chosen target; automatic team effects include Majestic",
+      "timing": [
+        "entry",
+        "technique",
+        "loyalty"
+      ],
+      "implemented": true,
+      "ui": "Лечение союзных Существ",
+      "testIds": [
+        "test/balance-rework.test.ts"
+      ],
+      "ru": "Лечение союзных Существ",
+      "en": "mendTeam",
+      "introducedIn": "balance-alpha-2026-10-23",
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "target": "automaticNoManualTarget",
+        "interactions": [
+          "neutralAffinity",
+          "silence",
+          "stasis"
+        ]
+      },
+      "ruleModule": "src/mechanics/effects/draw.ts"
+    },
+    {
+      "kind": "shieldTeam",
+      "type": "effect",
+      "channels": [
+        "entry",
+        "technique",
+        "loyalty"
+      ],
+      "params": [
+        "amount"
+      ],
+      "targetRules": "No chosen target; automatic team effects include Majestic",
+      "timing": [
+        "entry",
+        "technique",
+        "loyalty"
+      ],
+      "implemented": true,
+      "ui": "Общий Щит",
+      "testIds": [
+        "test/balance-rework.test.ts"
+      ],
+      "ru": "Общий Щит",
+      "en": "shieldTeam",
+      "introducedIn": "balance-alpha-2026-10-23",
+      "deprecatedAlias": false,
+      "interactionPolicy": {
+        "target": "automaticNoManualTarget",
+        "interactions": [
+          "neutralAffinity",
+          "silence",
+          "stasis"
+        ]
+      },
+      "ruleModule": "src/mechanics/effects/draw.ts"
     }
   ],
   "statusPolicies": {

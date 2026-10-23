@@ -11,12 +11,15 @@ export default {
     "colored": {
       "gold": 1
     },
-    "generic": 2
+    "generic": 3
   },
-  "auraAttack": 1,
   "lore": {
     "state": "Королевство Ивелтин",
     "organization": "Королевские рыцари",
     "summary": "Штандарт королевских рыцарей укрепляет бойцов Королевские рыцари."
+  },
+  "turnStartEffect": {
+    "kind": "shieldTeam",
+    "amount": 1
   }
 };

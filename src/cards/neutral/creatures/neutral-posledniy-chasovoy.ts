@@ -8,16 +8,13 @@ export default {
     "colored": {},
     "generic": 4
   },
-  "attack": 3,
-  "health": 4,
+  "attack": 2,
+  "health": 5,
   "majestic": true,
-  "onDeath": {
-    "kind": "damageOpponent",
-    "amount": 1
-  },
   "lore": {
     "state": "Межгосударственный орден",
     "organization": "Новые хранители",
     "summary": "Последний часовой выступает на стороне Новые хранители."
-  }
+  },
+  "guard": true
 };

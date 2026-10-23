@@ -281,7 +281,7 @@ test('extra domains are in combined catalog but never modify preset ratios or ba
   }
   const neutral=data.presets.find((p:any)=>p.id==='neutral');
   const creature=neutral.cards.map((id:string)=>data.cards.find((c:any)=>c.id===id)).filter((c:any)=>c.name==='Свирус Жирникус');
-  assert.equal(creature.length,2);assert.equal(creature[0].attack,6);assert.equal(creature[0].health,5);
+  assert.equal(creature.length,2);assert.equal(creature[0].attack,3);assert.equal(creature[0].health,8);
   const red=data.presets.find((p:any)=>p.id==='red');
   const mixed=red.cards.slice();
   const slot=mixed.findIndex((id:string)=>data.cards.find((c:any)=>c.id===id)?.kind==='domain');

@@ -9,10 +9,17 @@ export default {
     "colored": {},
     "generic": 3
   },
-  "auraAttack": 1,
   "lore": {
     "state": "Межгосударственный орден",
     "organization": "Новые хранители",
     "summary": "Полевое знамя Ордена укрепляет бойцов Новые хранители."
+  },
+  "turnStartEffect": {
+    "kind": "healRuler",
+    "amount": 1
+  },
+  "neutralAffinity": {
+    "zone": "battlefield",
+    "bonus": 1
   }
 };

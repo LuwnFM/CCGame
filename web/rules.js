@@ -2,6 +2,7 @@ import { locale } from './i18n.js';
 // Player-facing rules are based on the current gameplay kernel and the starter catalog.
 const content = {
   "ru": [
+    ["Предметы и восстановление", "Предметы занимают вспомогательную зону. Их эффекты начала вашего хода срабатывают до обычного добора; Немота и Стазис отключают их. Общий Щит доводит текущий Щит Существ до указанного значения, а не складывается каждый ход. Лечение Существ убирает ранения без увеличения здоровья. Лечение Владетеля и Похищение жизни восстанавливают HP до 40 и никогда не уменьшают уже имеющиеся HP."],
     [
       "Цель игры и здоровье",
       "Два Владетеля начинают матч с 40 HP. Побеждает игрок, оставшийся в игре после снижения HP противника до нуля или меньше; одновременная гибель обоих — ничья. Начальные 40 HP относятся к новым матчам."
@@ -60,7 +61,7 @@ const content = {
     ],
     [
       "Легенды и Лояльность",
-      "Легенды находятся в отдельной зоне и вместо здоровья используют Лояльность. Каждая стартовая Легенда имеет два выбора: первый даёт +1 Лояльность и небольшой эффект, второй тратит 2 Лояльности ради более сильного эффекта. Можно использовать одну способность каждой Легенды за свой ход, включая ход выхода. При нуле Лояльности Легенда уходит; одноимённые Уникальные Легенды требуют выбрать, какая останется. Легенда может быть целью атаки и теряет Лояльность от урона по правилам боя."
+      "Легенды находятся в отдельной зоне и вместо здоровья используют Лояльность. Каждая стартовая Легенда имеет два выбора: первый даёт +1 Лояльность и небольшой эффект, второй тратит указанное на карте количество Лояльности ради более сильного эффекта. Можно использовать одну способность каждой Легенды за свой ход, включая ход выхода. При нуле Лояльности Легенда уходит; одноимённые Уникальные Легенды требуют выбрать, какая останется. Легенда может быть целью атаки и теряет Лояльность от урона по правилам боя."
     ],
     [
       "Способность Владетеля",
@@ -76,7 +77,7 @@ const content = {
     ],
     [
       "Особенности цветовых колод",
-      "**Красный — Стальное королевство / Горная стража:** быстрые атаки, Мгновенная атака, Рвение, Пробивание, Первый удар, «Ещё удар!», прямой урон и аура атаки. Рвение и Пробивание распределены между разными существами. **Синий — Талдрейк / Воздушная флотилия:** Полёт, контроль темпа, Ошеломление и отдельные Существа с «Ещё удар!». **Зелёный — Сувар / Дом Кайров:** живучие Существа, Страж, Щиты, лечение и усиление устойчивости. **Золотой — Ивелтин / Королевские рыцари:** Страж, Щиты, защита и поддержка; некоторые защитники обладают Неутомимостью. **Фиолетовый — Ван Троупы / Искажение:** Жертвы, Ритуалы, призыв, возвращение и награды. **Нейтральный — Орден Хранителей:** универсальные Существа и доступные без жёсткой привязки к одному цвету инструменты. Это стили стартовых колод, а не запреты смешивать цвета."
+      "**Красный — Стальное королевство / Горная стража:** быстрые атаки, Мгновенная атака, Рвение, Пробивание, Первый удар, «Ещё удар!», прямой урон и аура атаки. Рвение и Пробивание распределены между разными существами. **Синий — Талдрейк / Воздушная флотилия:** Полёт, контроль темпа, Ошеломление и отдельные Существа с «Ещё удар!». **Зелёный — Сувар / Дом Кайров:** живучие Существа, Страж, Щиты, лечение и усиление устойчивости. **Золотой — Ивелтин / Королевские рыцари:** Страж, Щиты, защита и поддержка; некоторые защитники обладают Неутомимостью. **Фиолетовый — Ван Троупы / Искажение:** Жертвы, Ритуалы, призыв, возвращение и награды. **Нейтральный — Орден Хранителей:** медленный контроль, защитные Существа и Величественные; без прямого урона. Некоторые эффекты усиливаются при отсутствии цветных карт в указанной зоне. Для исходной колоды учитывается состав до первого добора; для руки — карты после розыгрыша; для поля — ваши Существа, Предметы и Легенды, включая цветные токены. Владения не учитываются; Немота не меняет цвет. Без условия действует базовый эффект. Это стили стартовых колод, а не запреты смешивать цвета."
     ],
     [
       "Пока не введённые механики",
@@ -84,6 +85,7 @@ const content = {
     ]
   ],
   "en": [
+    ["Items and healing", "Items occupy the auxiliary zone. Start-of-turn effects resolve before the normal draw; Silence and Stasis disable them. Team Shield raises current Creature shields to the printed floor without stacking. Mending removes damage without raising maximum Health. Ruler healing and Lifesteal restore up to 40 HP and never lower existing HP."],
     [
       "Victory and starting Health",
       "Two Rulers start at 40 HP each. A Ruler at zero HP or lower loses; simultaneous defeats are draws. Existing saved games retain their recorded state."
@@ -142,7 +144,7 @@ const content = {
     ],
     [
       "Legends and Loyalty",
-      "Legends have their own zone and Loyalty instead of Health. Each starter Legend has two choices: a modest +1 Loyalty ability and a stronger -2 Loyalty ability. Each Legend can activate one ability per own turn, including its entry turn. At zero Loyalty it leaves play; duplicate-name Unique Legends require a survivor choice. Attacks can target Legends and reduce Loyalty."
+      "Legends have their own zone and Loyalty instead of Health. Each starter Legend has two choices: a modest +1 Loyalty ability and a stronger ability with its printed Loyalty cost. Each Legend can activate one ability per own turn, including its entry turn. At zero Loyalty it leaves play; duplicate-name Unique Legends require a survivor choice. Attacks can target Legends and reduce Loyalty."
     ],
     [
       "Ruler draw ability",
@@ -158,7 +160,7 @@ const content = {
     ],
     [
       "Color archetypes",
-      "Red (Steel Kingdom / Mountain Guard): aggression, Haste, Zeal, Piercing, First Strike, Extra Attack, direct damage and Attack Aura; Zeal and Piercing sit on different Creatures. Blue (Taldreik / Air Flotilla): Flying, Stun, tempo control and Extra Attack. Green (Suvar / Kayr house): resilient Creatures, Guard, Shield and healing. Gold (Iveltin / Royal Knights): Guard, Shield, support and some Untiring defenders. Violet (Van Troupe / Distortion): Sacrifice, Rituals, summon, recovery and rewards. Neutral (Keepers' Order): flexible general-purpose tools. These describe starter playstyles; deck building can mix colors."
+      "Red (Steel Kingdom / Mountain Guard): aggression, Haste, Zeal, Piercing, First Strike, Extra Attack, direct damage and Attack Aura; Zeal and Piercing sit on different Creatures. Blue (Taldreik / Air Flotilla): Flying, Stun, tempo control and Extra Attack. Green (Suvar / Kayr house): resilient Creatures, Guard, Shield and healing. Gold (Iveltin / Royal Knights): Guard, Shield, support and some Untiring defenders. Violet (Van Troupe / Distortion): Sacrifice, Rituals, summon, recovery and rewards. Neutral (Keepers' Order): slow control, defensive Majestic Creatures, no direct damage. Conditional bonuses check the original deck, hand after play, or your battlefield (including colored tokens). Domains are exempt; Silence does not remove color. Base effects work without the bonus. These describe starter playstyles; deck building can mix colors."
     ],
     [
       "Not yet implemented",

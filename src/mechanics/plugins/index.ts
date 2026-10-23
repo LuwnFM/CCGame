@@ -4,4 +4,5 @@
  * registerEffect / registerCommand / registerCombatHook / onGameEvent.
  * Never eval arbitrary card files, user-authored JavaScript or downloaded plugins.
  */
+import '../artifact-triggers.ts';
 export {};

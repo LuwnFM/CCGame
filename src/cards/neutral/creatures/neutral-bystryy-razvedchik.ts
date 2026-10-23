@@ -9,11 +9,11 @@ export default {
     "generic": 1
   },
   "attack": 1,
-  "health": 1,
-  "haste": true,
+  "health": 3,
   "lore": {
     "state": "Межгосударственный орден",
     "organization": "Новые хранители",
     "summary": "Быстрый разведчик выступает на стороне Новые хранители."
-  }
+  },
+  "guard": true
 };

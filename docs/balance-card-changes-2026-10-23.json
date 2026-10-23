@@ -1,0 +1,1288 @@
+[
+  {
+    "id": "red-хранитель-горного-прохода",
+    "name": "Хранитель горного прохода",
+    "before": {
+      "id": "red-хранитель-горного-прохода",
+      "name": "Хранитель горного прохода",
+      "kind": "legend",
+      "aspects": [
+        "red"
+      ],
+      "unique": true,
+      "cost": {
+        "colored": {
+          "red": 1
+        },
+        "generic": 5
+      },
+      "loyalty": 5,
+      "loyaltyAbilities": [
+        {
+          "delta": 1,
+          "kind": "healRuler",
+          "amount": 1
+        },
+        {
+          "delta": -2,
+          "kind": "damageOpponent",
+          "amount": 2
+        }
+      ],
+      "loyaltyAbility": {
+        "delta": -2,
+        "kind": "damageOpponent",
+        "amount": 2
+      },
+      "lore": {
+        "state": "Стальное королевство",
+        "organization": "Горная стража",
+        "summary": "Хранитель горного прохода ведёт Горная стража в сражении."
+      }
+    },
+    "after": {
+      "id": "red-хранитель-горного-прохода",
+      "name": "Хранитель горного прохода",
+      "kind": "legend",
+      "aspects": [
+        "red"
+      ],
+      "unique": true,
+      "cost": {
+        "colored": {
+          "red": 1
+        },
+        "generic": 5
+      },
+      "loyalty": 5,
+      "loyaltyAbilities": [
+        {
+          "kind": "damageOpponent",
+          "amount": 1,
+          "delta": 1
+        },
+        {
+          "kind": "damageOpponent",
+          "amount": 4,
+          "delta": -3
+        }
+      ],
+      "loyaltyAbility": {
+        "kind": "damageOpponent",
+        "amount": 4,
+        "delta": -3
+      },
+      "lore": {
+        "state": "Стальное королевство",
+        "organization": "Горная стража",
+        "summary": "Хранитель горного прохода ведёт Горная стража в сражении."
+      }
+    }
+  },
+  {
+    "id": "blue-мастер-воздушных-путей",
+    "name": "Мастер воздушных путей",
+    "before": {
+      "id": "blue-мастер-воздушных-путей",
+      "name": "Мастер воздушных путей",
+      "kind": "legend",
+      "aspects": [
+        "blue"
+      ],
+      "unique": true,
+      "cost": {
+        "colored": {
+          "blue": 1
+        },
+        "generic": 5
+      },
+      "loyalty": 5,
+      "loyaltyAbilities": [
+        {
+          "delta": 1,
+          "kind": "healRuler",
+          "amount": 1
+        },
+        {
+          "delta": -2,
+          "kind": "damageOpponent",
+          "amount": 2
+        }
+      ],
+      "loyaltyAbility": {
+        "delta": -2,
+        "kind": "damageOpponent",
+        "amount": 2
+      },
+      "lore": {
+        "state": "Талдрейк",
+        "organization": "Воздушная флотилия",
+        "summary": "Мастер воздушных путей ведёт Воздушная флотилия в сражении."
+      }
+    },
+    "after": {
+      "id": "blue-мастер-воздушных-путей",
+      "name": "Мастер воздушных путей",
+      "kind": "legend",
+      "aspects": [
+        "blue"
+      ],
+      "unique": true,
+      "cost": {
+        "colored": {
+          "blue": 1
+        },
+        "generic": 5
+      },
+      "loyalty": 5,
+      "loyaltyAbilities": [
+        {
+          "kind": "draw",
+          "amount": 1,
+          "delta": 1
+        },
+        {
+          "kind": "draw",
+          "amount": 3,
+          "delta": -3
+        }
+      ],
+      "loyaltyAbility": {
+        "kind": "draw",
+        "amount": 3,
+        "delta": -3
+      },
+      "lore": {
+        "state": "Талдрейк",
+        "organization": "Воздушная флотилия",
+        "summary": "Мастер воздушных путей ведёт Воздушная флотилия в сражении."
+      }
+    }
+  },
+  {
+    "id": "green-защитница-суварских-рощ",
+    "name": "Защитница суварских рощ",
+    "before": {
+      "id": "green-защитница-суварских-рощ",
+      "name": "Защитница суварских рощ",
+      "kind": "legend",
+      "aspects": [
+        "green"
+      ],
+      "unique": true,
+      "cost": {
+        "colored": {
+          "green": 1
+        },
+        "generic": 5
+      },
+      "loyalty": 5,
+      "loyaltyAbilities": [
+        {
+          "delta": 1,
+          "kind": "healRuler",
+          "amount": 1
+        },
+        {
+          "delta": -2,
+          "kind": "damageOpponent",
+          "amount": 2
+        }
+      ],
+      "loyaltyAbility": {
+        "delta": -2,
+        "kind": "damageOpponent",
+        "amount": 2
+      },
+      "lore": {
+        "state": "Королевство Сувар",
+        "organization": "Дом Кайров",
+        "summary": "Защитница суварских рощ ведёт Дом Кайров в сражении."
+      }
+    },
+    "after": {
+      "id": "green-защитница-суварских-рощ",
+      "name": "Защитница суварских рощ",
+      "kind": "legend",
+      "aspects": [
+        "green"
+      ],
+      "unique": true,
+      "cost": {
+        "colored": {
+          "green": 1
+        },
+        "generic": 5
+      },
+      "loyalty": 5,
+      "loyaltyAbilities": [
+        {
+          "kind": "mendTeam",
+          "amount": 1,
+          "delta": 1
+        },
+        {
+          "kind": "recoverCreature",
+          "amount": 1,
+          "delta": -2
+        }
+      ],
+      "loyaltyAbility": {
+        "kind": "recoverCreature",
+        "amount": 1,
+        "delta": -2
+      },
+      "lore": {
+        "state": "Королевство Сувар",
+        "organization": "Дом Кайров",
+        "summary": "Защитница суварских рощ ведёт Дом Кайров в сражении."
+      }
+    }
+  },
+  {
+    "id": "gold-андриан-аур-медлир",
+    "name": "Андриан аур Медлир",
+    "before": {
+      "id": "gold-андриан-аур-медлир",
+      "name": "Андриан аур Медлир",
+      "kind": "legend",
+      "aspects": [
+        "gold"
+      ],
+      "unique": true,
+      "cost": {
+        "colored": {
+          "gold": 1
+        },
+        "generic": 5
+      },
+      "loyalty": 5,
+      "loyaltyAbilities": [
+        {
+          "delta": 1,
+          "kind": "healRuler",
+          "amount": 1
+        },
+        {
+          "delta": -2,
+          "kind": "damageOpponent",
+          "amount": 2
+        }
+      ],
+      "loyaltyAbility": {
+        "delta": -2,
+        "kind": "damageOpponent",
+        "amount": 2
+      },
+      "lore": {
+        "state": "Королевство Ивелтин",
+        "organization": "Королевские рыцари",
+        "summary": "Андриан аур Медлир ведёт Королевские рыцари в сражении."
+      }
+    },
+    "after": {
+      "id": "gold-андриан-аур-медлир",
+      "name": "Андриан аур Медлир",
+      "kind": "legend",
+      "aspects": [
+        "gold"
+      ],
+      "unique": true,
+      "cost": {
+        "colored": {
+          "gold": 1
+        },
+        "generic": 5
+      },
+      "loyalty": 5,
+      "loyaltyAbilities": [
+        {
+          "kind": "shieldTeam",
+          "amount": 1,
+          "delta": 1
+        },
+        {
+          "kind": "healRuler",
+          "amount": 6,
+          "delta": -3
+        }
+      ],
+      "loyaltyAbility": {
+        "kind": "healRuler",
+        "amount": 6,
+        "delta": -3
+      },
+      "lore": {
+        "state": "Королевство Ивелтин",
+        "organization": "Королевские рыцари",
+        "summary": "Андриан аур Медлир ведёт Королевские рыцари в сражении."
+      }
+    }
+  },
+  {
+    "id": "neutral-мейстер-глерторул",
+    "name": "Мейстер Глерторул",
+    "before": {
+      "id": "neutral-мейстер-глерторул",
+      "name": "Мейстер Глерторул",
+      "kind": "legend",
+      "aspects": [],
+      "unique": true,
+      "cost": {
+        "colored": {},
+        "generic": 6
+      },
+      "loyalty": 5,
+      "loyaltyAbilities": [
+        {
+          "delta": 1,
+          "kind": "healRuler",
+          "amount": 1
+        },
+        {
+          "delta": -2,
+          "kind": "damageOpponent",
+          "amount": 2
+        }
+      ],
+      "loyaltyAbility": {
+        "delta": -2,
+        "kind": "damageOpponent",
+        "amount": 2
+      },
+      "lore": {
+        "state": "Межгосударственный орден",
+        "organization": "Новые хранители",
+        "summary": "Мейстер Глерторул ведёт Новые хранители в сражении."
+      }
+    },
+    "after": {
+      "id": "neutral-мейстер-глерторул",
+      "name": "Мейстер Глерторул",
+      "kind": "legend",
+      "aspects": [],
+      "unique": true,
+      "cost": {
+        "colored": {},
+        "generic": 6
+      },
+      "loyalty": 5,
+      "loyaltyAbilities": [
+        {
+          "kind": "healRuler",
+          "amount": 1,
+          "delta": 1
+        },
+        {
+          "kind": "draw",
+          "amount": 1,
+          "delta": -2
+        }
+      ],
+      "loyaltyAbility": {
+        "kind": "draw",
+        "amount": 1,
+        "delta": -2
+      },
+      "lore": {
+        "state": "Межгосударственный орден",
+        "organization": "Новые хранители",
+        "summary": "Мейстер Глерторул ведёт Новые хранители в сражении."
+      },
+      "neutralAffinity": {
+        "zone": "deck",
+        "bonus": 1
+      }
+    }
+  },
+  {
+    "id": "blue-навигационный-кристалл-флотилии",
+    "name": "Навигационный кристалл флотилии",
+    "before": {
+      "id": "blue-навигационный-кристалл-флотилии",
+      "name": "Навигационный кристалл флотилии",
+      "kind": "artifact",
+      "aspects": [
+        "blue"
+      ],
+      "unique": true,
+      "cost": {
+        "colored": {
+          "blue": 1
+        },
+        "generic": 2
+      },
+      "auraAttack": 1,
+      "lore": {
+        "state": "Талдрейк",
+        "organization": "Воздушная флотилия",
+        "summary": "Навигационный кристалл флотилии укрепляет бойцов Воздушная флотилия."
+      }
+    },
+    "after": {
+      "id": "blue-навигационный-кристалл-флотилии",
+      "name": "Навигационный кристалл флотилии",
+      "kind": "artifact",
+      "aspects": [
+        "blue"
+      ],
+      "unique": true,
+      "cost": {
+        "colored": {
+          "blue": 1
+        },
+        "generic": 4
+      },
+      "lore": {
+        "state": "Талдрейк",
+        "organization": "Воздушная флотилия",
+        "summary": "Навигационный кристалл флотилии укрепляет бойцов Воздушная флотилия."
+      },
+      "turnStartEffect": {
+        "kind": "drawIfLowHand",
+        "amount": 1
+      }
+    }
+  },
+  {
+    "id": "green-знамя-дома-кайров",
+    "name": "Знамя дома Кайров",
+    "before": {
+      "id": "green-знамя-дома-кайров",
+      "name": "Знамя дома Кайров",
+      "kind": "artifact",
+      "aspects": [
+        "green"
+      ],
+      "unique": true,
+      "cost": {
+        "colored": {
+          "green": 1
+        },
+        "generic": 2
+      },
+      "auraAttack": 1,
+      "lore": {
+        "state": "Королевство Сувар",
+        "organization": "Дом Кайров",
+        "summary": "Знамя дома Кайров укрепляет бойцов Дом Кайров."
+      }
+    },
+    "after": {
+      "id": "green-знамя-дома-кайров",
+      "name": "Знамя дома Кайров",
+      "kind": "artifact",
+      "aspects": [
+        "green"
+      ],
+      "unique": true,
+      "cost": {
+        "colored": {
+          "green": 1
+        },
+        "generic": 2
+      },
+      "lore": {
+        "state": "Королевство Сувар",
+        "organization": "Дом Кайров",
+        "summary": "Знамя дома Кайров укрепляет бойцов Дом Кайров."
+      },
+      "turnStartEffect": {
+        "kind": "mendTeam",
+        "amount": 1
+      }
+    }
+  },
+  {
+    "id": "gold-штандарт-королевских-рыцарей",
+    "name": "Штандарт королевских рыцарей",
+    "before": {
+      "id": "gold-штандарт-королевских-рыцарей",
+      "name": "Штандарт королевских рыцарей",
+      "kind": "artifact",
+      "aspects": [
+        "gold"
+      ],
+      "unique": true,
+      "cost": {
+        "colored": {
+          "gold": 1
+        },
+        "generic": 2
+      },
+      "auraAttack": 1,
+      "lore": {
+        "state": "Королевство Ивелтин",
+        "organization": "Королевские рыцари",
+        "summary": "Штандарт королевских рыцарей укрепляет бойцов Королевские рыцари."
+      }
+    },
+    "after": {
+      "id": "gold-штандарт-королевских-рыцарей",
+      "name": "Штандарт королевских рыцарей",
+      "kind": "artifact",
+      "aspects": [
+        "gold"
+      ],
+      "unique": true,
+      "cost": {
+        "colored": {
+          "gold": 1
+        },
+        "generic": 3
+      },
+      "lore": {
+        "state": "Королевство Ивелтин",
+        "organization": "Королевские рыцари",
+        "summary": "Штандарт королевских рыцарей укрепляет бойцов Королевские рыцари."
+      },
+      "turnStartEffect": {
+        "kind": "shieldTeam",
+        "amount": 1
+      }
+    }
+  },
+  {
+    "id": "violet-драгнир-и-иммельсторн",
+    "name": "Драгнир и Иммельсторн",
+    "before": {
+      "id": "violet-драгнир-и-иммельсторн",
+      "name": "Драгнир и Иммельсторн",
+      "kind": "artifact",
+      "aspects": [
+        "violet"
+      ],
+      "unique": true,
+      "cost": {
+        "colored": {
+          "violet": 1
+        },
+        "generic": 2
+      },
+      "auraAttack": 1,
+      "lore": {
+        "state": "Сепер (игровая привязка альфы)",
+        "organization": "Ван Троупы",
+        "summary": "Драгнир и Иммельсторн укрепляет бойцов Ван Троупы."
+      }
+    },
+    "after": {
+      "id": "violet-драгнир-и-иммельсторн",
+      "name": "Драгнир и Иммельсторн",
+      "kind": "artifact",
+      "aspects": [
+        "violet"
+      ],
+      "unique": true,
+      "cost": {
+        "colored": {
+          "violet": 1
+        },
+        "generic": 4
+      },
+      "lore": {
+        "state": "Сепер (игровая привязка альфы)",
+        "organization": "Ван Троупы",
+        "summary": "Драгнир и Иммельсторн укрепляет бойцов Ван Троупы."
+      },
+      "turnStartEffect": {
+        "kind": "drawWithPain",
+        "amount": 2
+      }
+    }
+  },
+  {
+    "id": "neutral-полевое-знамя-ордена",
+    "name": "Полевое знамя Ордена",
+    "before": {
+      "id": "neutral-полевое-знамя-ордена",
+      "name": "Полевое знамя Ордена",
+      "kind": "artifact",
+      "aspects": [],
+      "unique": true,
+      "cost": {
+        "colored": {},
+        "generic": 3
+      },
+      "auraAttack": 1,
+      "lore": {
+        "state": "Межгосударственный орден",
+        "organization": "Новые хранители",
+        "summary": "Полевое знамя Ордена укрепляет бойцов Новые хранители."
+      }
+    },
+    "after": {
+      "id": "neutral-полевое-знамя-ордена",
+      "name": "Полевое знамя Ордена",
+      "kind": "artifact",
+      "aspects": [],
+      "unique": true,
+      "cost": {
+        "colored": {},
+        "generic": 3
+      },
+      "lore": {
+        "state": "Межгосударственный орден",
+        "organization": "Новые хранители",
+        "summary": "Полевое знамя Ордена укрепляет бойцов Новые хранители."
+      },
+      "turnStartEffect": {
+        "kind": "healRuler",
+        "amount": 1
+      },
+      "neutralAffinity": {
+        "zone": "battlefield",
+        "bonus": 1
+      }
+    }
+  },
+  {
+    "id": "neutral-полевое-снабжение",
+    "name": "Полевое снабжение",
+    "before": {
+      "id": "neutral-полевое-снабжение",
+      "name": "Полевое снабжение",
+      "kind": "technique",
+      "aspects": [],
+      "cost": {
+        "colored": {},
+        "generic": 3
+      },
+      "techniqueEffect": {
+        "kind": "draw",
+        "amount": 2
+      },
+      "lore": {
+        "state": "Межгосударственный орден",
+        "organization": "Новые хранители",
+        "summary": "Полевое снабжение помогает Новые хранители переломить ход боя."
+      }
+    },
+    "after": {
+      "id": "neutral-полевое-снабжение",
+      "name": "Полевое снабжение",
+      "kind": "technique",
+      "aspects": [],
+      "cost": {
+        "colored": {},
+        "generic": 3
+      },
+      "techniqueEffect": {
+        "kind": "draw",
+        "amount": 1
+      },
+      "lore": {
+        "state": "Межгосударственный орден",
+        "organization": "Новые хранители",
+        "summary": "Полевое снабжение помогает Новые хранители переломить ход боя."
+      },
+      "neutralAffinity": {
+        "zone": "deck",
+        "bonus": 1
+      }
+    }
+  },
+  {
+    "id": "neutral-указ-хранителей",
+    "name": "Указ Хранителей",
+    "before": {
+      "id": "neutral-указ-хранителей",
+      "name": "Указ Хранителей",
+      "kind": "technique",
+      "aspects": [],
+      "cost": {
+        "colored": {},
+        "generic": 3
+      },
+      "techniqueEffect": {
+        "kind": "silence",
+        "amount": 1
+      },
+      "lore": {
+        "state": "Межгосударственный орден",
+        "organization": "Новые хранители",
+        "summary": "Указ Хранителей помогает Новые хранители удержать инициативу."
+      }
+    },
+    "after": {
+      "id": "neutral-указ-хранителей",
+      "name": "Указ Хранителей",
+      "kind": "technique",
+      "aspects": [],
+      "cost": {
+        "colored": {},
+        "generic": 4
+      },
+      "techniqueEffect": {
+        "kind": "stasisEnemy",
+        "amount": 1
+      },
+      "lore": {
+        "state": "Межгосударственный орден",
+        "organization": "Новые хранители",
+        "summary": "Указ Хранителей помогает Новые хранители удержать инициативу."
+      },
+      "neutralAffinity": {
+        "zone": "hand",
+        "bonus": 1
+      }
+    }
+  },
+  {
+    "id": "neutral-последний-часовой",
+    "name": "Последний часовой",
+    "before": {
+      "id": "neutral-последний-часовой",
+      "name": "Последний часовой",
+      "kind": "creature",
+      "aspects": [],
+      "cost": {
+        "colored": {},
+        "generic": 4
+      },
+      "attack": 3,
+      "health": 4,
+      "majestic": true,
+      "onDeath": {
+        "kind": "damageOpponent",
+        "amount": 1
+      },
+      "lore": {
+        "state": "Межгосударственный орден",
+        "organization": "Новые хранители",
+        "summary": "Последний часовой выступает на стороне Новые хранители."
+      }
+    },
+    "after": {
+      "id": "neutral-последний-часовой",
+      "name": "Последний часовой",
+      "kind": "creature",
+      "aspects": [],
+      "cost": {
+        "colored": {},
+        "generic": 4
+      },
+      "attack": 2,
+      "health": 5,
+      "majestic": true,
+      "lore": {
+        "state": "Межгосударственный орден",
+        "organization": "Новые хранители",
+        "summary": "Последний часовой выступает на стороне Новые хранители."
+      },
+      "guard": true
+    }
+  },
+  {
+    "id": "neutral-свирус-жирникус",
+    "name": "Свирус Жирникус",
+    "before": {
+      "id": "neutral-свирус-жирникус",
+      "name": "Свирус Жирникус",
+      "kind": "creature",
+      "aspects": [],
+      "cost": {
+        "colored": {},
+        "generic": 6
+      },
+      "attack": 6,
+      "health": 5,
+      "piercing": true,
+      "majestic": true,
+      "lore": {
+        "state": "Межгосударственный орден",
+        "organization": "Новые хранители",
+        "summary": "Свирус Жирникус выступает на стороне Новые хранители."
+      }
+    },
+    "after": {
+      "id": "neutral-свирус-жирникус",
+      "name": "Свирус Жирникус",
+      "kind": "creature",
+      "aspects": [],
+      "cost": {
+        "colored": {},
+        "generic": 6
+      },
+      "attack": 3,
+      "health": 8,
+      "majestic": true,
+      "lore": {
+        "state": "Межгосударственный орден",
+        "organization": "Новые хранители",
+        "summary": "Свирус Жирникус выступает на стороне Новые хранители."
+      },
+      "guard": true
+    }
+  },
+  {
+    "id": "neutral-быстрый-разведчик",
+    "name": "Быстрый разведчик",
+    "before": {
+      "id": "neutral-быстрый-разведчик",
+      "name": "Быстрый разведчик",
+      "kind": "creature",
+      "aspects": [],
+      "cost": {
+        "colored": {},
+        "generic": 1
+      },
+      "attack": 1,
+      "health": 1,
+      "haste": true,
+      "lore": {
+        "state": "Межгосударственный орден",
+        "organization": "Новые хранители",
+        "summary": "Быстрый разведчик выступает на стороне Новые хранители."
+      }
+    },
+    "after": {
+      "id": "neutral-быстрый-разведчик",
+      "name": "Быстрый разведчик",
+      "kind": "creature",
+      "aspects": [],
+      "cost": {
+        "colored": {},
+        "generic": 1
+      },
+      "attack": 1,
+      "health": 3,
+      "lore": {
+        "state": "Межгосударственный орден",
+        "organization": "Новые хранители",
+        "summary": "Быстрый разведчик выступает на стороне Новые хранители."
+      },
+      "guard": true
+    }
+  },
+  {
+    "id": "neutral-мастер-перехвата",
+    "name": "Мастер перехвата",
+    "before": {
+      "id": "neutral-мастер-перехвата",
+      "name": "Мастер перехвата",
+      "kind": "creature",
+      "aspects": [],
+      "cost": {
+        "colored": {},
+        "generic": 5
+      },
+      "attack": 4,
+      "health": 5,
+      "flying": true,
+      "guard": true,
+      "lore": {
+        "state": "Межгосударственный орден",
+        "organization": "Новые хранители",
+        "summary": "Мастер перехвата выступает на стороне Новые хранители."
+      }
+    },
+    "after": {
+      "id": "neutral-мастер-перехвата",
+      "name": "Мастер перехвата",
+      "kind": "creature",
+      "aspects": [],
+      "cost": {
+        "colored": {},
+        "generic": 6
+      },
+      "attack": 3,
+      "health": 6,
+      "flying": true,
+      "guard": true,
+      "lore": {
+        "state": "Межгосударственный орден",
+        "organization": "Новые хранители",
+        "summary": "Мастер перехвата выступает на стороне Новые хранители."
+      },
+      "majestic": true
+    }
+  },
+  {
+    "id": "neutral-ветеран-хранителей",
+    "name": "Ветеран Хранителей",
+    "before": {
+      "id": "neutral-ветеран-хранителей",
+      "name": "Ветеран Хранителей",
+      "kind": "creature",
+      "aspects": [],
+      "cost": {
+        "colored": {},
+        "generic": 5
+      },
+      "attack": 5,
+      "health": 5,
+      "lore": {
+        "state": "Межгосударственный орден",
+        "organization": "Новые хранители",
+        "summary": "Ветеран Хранителей выступает на стороне Новые хранители."
+      }
+    },
+    "after": {
+      "id": "neutral-ветеран-хранителей",
+      "name": "Ветеран Хранителей",
+      "kind": "creature",
+      "aspects": [],
+      "cost": {
+        "colored": {},
+        "generic": 6
+      },
+      "attack": 3,
+      "health": 7,
+      "lore": {
+        "state": "Межгосударственный орден",
+        "organization": "Новые хранители",
+        "summary": "Ветеран Хранителей выступает на стороне Новые хранители."
+      },
+      "majestic": true
+    }
+  },
+  {
+    "id": "neutral-писарь-утремера",
+    "name": "Писарь утремера",
+    "before": {
+      "id": "neutral-писарь-утремера",
+      "name": "Писарь утремера",
+      "kind": "creature",
+      "aspects": [],
+      "cost": {
+        "colored": {},
+        "generic": 2
+      },
+      "attack": 2,
+      "health": 3,
+      "lore": {
+        "state": "Межгосударственный орден",
+        "organization": "Новые хранители",
+        "summary": "Писарь утремера выступает на стороне Новые хранители."
+      }
+    },
+    "after": {
+      "id": "neutral-писарь-утремера",
+      "name": "Писарь утремера",
+      "kind": "creature",
+      "aspects": [],
+      "cost": {
+        "colored": {},
+        "generic": 2
+      },
+      "attack": 1,
+      "health": 3,
+      "lore": {
+        "state": "Межгосударственный орден",
+        "organization": "Новые хранители",
+        "summary": "Писарь утремера выступает на стороне Новые хранители."
+      },
+      "onEntry": {
+        "kind": "draw",
+        "amount": 0
+      },
+      "neutralAffinity": {
+        "zone": "hand",
+        "bonus": 1
+      }
+    }
+  },
+  {
+    "id": "red-залп-горной-стражи-резервы",
+    "name": "Огонь прикрытия",
+    "before": {
+      "id": "red-залп-горной-стражи-резервы",
+      "name": "Залп горной стражи · Резервы",
+      "kind": "technique",
+      "aspects": [
+        "red"
+      ],
+      "cost": {
+        "colored": {
+          "red": 1
+        },
+        "generic": 2
+      },
+      "techniqueEffect": {
+        "kind": "damageOpponent",
+        "amount": 2
+      },
+      "lore": {
+        "state": "Стальное королевство",
+        "organization": "Горная стража",
+        "summary": "Залп горной стражи · Резервы помогает Горная стража удержать инициативу."
+      }
+    },
+    "after": {
+      "id": "red-залп-горной-стражи-резервы",
+      "name": "Огонь прикрытия",
+      "kind": "technique",
+      "aspects": [
+        "red"
+      ],
+      "cost": {
+        "colored": {
+          "red": 1
+        },
+        "generic": 2
+      },
+      "techniqueEffect": {
+        "kind": "damageCreature",
+        "amount": 4
+      },
+      "lore": {
+        "state": "Стальное королевство",
+        "organization": "Горная стража",
+        "summary": "Залп горной стражи · Резервы помогает Горная стража удержать инициативу."
+      }
+    }
+  },
+  {
+    "id": "gold-помощь-госпитальеров",
+    "name": "Помощь госпитальеров",
+    "before": {
+      "id": "gold-помощь-госпитальеров",
+      "name": "Помощь госпитальеров",
+      "kind": "technique",
+      "aspects": [
+        "gold"
+      ],
+      "cost": {
+        "colored": {
+          "gold": 1
+        },
+        "generic": 2
+      },
+      "techniqueEffect": {
+        "kind": "healRuler",
+        "amount": 4
+      },
+      "lore": {
+        "state": "Королевство Ивелтин",
+        "organization": "Королевские рыцари",
+        "summary": "Помощь госпитальеров помогает Королевские рыцари переломить ход боя."
+      }
+    },
+    "after": {
+      "id": "gold-помощь-госпитальеров",
+      "name": "Помощь госпитальеров",
+      "kind": "technique",
+      "aspects": [
+        "gold"
+      ],
+      "cost": {
+        "colored": {
+          "gold": 1
+        },
+        "generic": 2
+      },
+      "techniqueEffect": {
+        "kind": "shieldTeam",
+        "amount": 2
+      },
+      "lore": {
+        "state": "Королевство Ивелтин",
+        "organization": "Королевские рыцари",
+        "summary": "Помощь госпитальеров помогает Королевские рыцари переломить ход боя."
+      }
+    }
+  },
+  {
+    "id": "gold-приют-госпитальеров",
+    "name": "Приют госпитальеров",
+    "before": {
+      "id": "gold-приют-госпитальеров",
+      "name": "Приют госпитальеров",
+      "kind": "technique",
+      "aspects": [
+        "gold"
+      ],
+      "cost": {
+        "colored": {
+          "gold": 1
+        },
+        "generic": 2
+      },
+      "techniqueEffect": {
+        "kind": "cleanse",
+        "amount": 1
+      },
+      "lore": {
+        "state": "Королевство Ивелтин",
+        "organization": "Королевские рыцари",
+        "summary": "Приют госпитальеров помогает Королевские рыцари удержать инициативу."
+      }
+    },
+    "after": {
+      "id": "gold-приют-госпитальеров",
+      "name": "Приют госпитальеров",
+      "kind": "technique",
+      "aspects": [
+        "gold"
+      ],
+      "cost": {
+        "colored": {
+          "gold": 1
+        },
+        "generic": 2
+      },
+      "techniqueEffect": {
+        "kind": "mendTeam",
+        "amount": 2
+      },
+      "lore": {
+        "state": "Королевство Ивелтин",
+        "organization": "Королевские рыцари",
+        "summary": "Приют госпитальеров помогает Королевские рыцари удержать инициативу."
+      }
+    }
+  },
+  {
+    "name": "Командор стального рубежа",
+    "file": "src/cards/red/legends/red-komandor-stalnogo-rubezha.ts",
+    "beforeModule": "import SCOUT from '../../tokens/red-scout.ts';\n/** Immutable card identity: red-командор-стального-рубежа. Edit stats and effect data here. */\nexport default {\n  \"id\": \"red-командор-стального-рубежа\",\n  \"name\": \"Командор стального рубежа\",\n  \"kind\": \"legend\",\n  \"aspects\": [\n    \"red\"\n  ],\n  \"unique\": true,\n  \"cost\": {\n    \"colored\": {\n      \"red\": 1\n    },\n    \"generic\": 4\n  },\n  \"loyalty\": 4,\n  \"loyaltyAbilities\": [\n    {\n      \"delta\": 1,\n      \"kind\": \"summon\",\n      \"cards\": [SCOUT]\n    },\n    {\n      \"delta\": -2,\n      \"kind\": \"healRuler\",\n      \"amount\": 4\n    }\n  ],\n  \"loyaltyAbility\": {\n    \"delta\": -2,\n    \"kind\": \"healRuler\",\n    \"amount\": 4\n  },\n  \"lore\": {\n    \"state\": \"Стальное королевство\",\n    \"organization\": \"Горная стража\",\n    \"summary\": \"Командор стального рубежа ведёт Горная стража в сражении.\"\n  }\n};\n",
+    "afterModule": "import SCOUT from '../../tokens/red-scout.ts';\n/** Immutable card identity: red-командор-стального-рубежа. Edit stats and effect data here. */\nexport default {\n  \"id\": \"red-командор-стального-рубежа\",\n  \"name\": \"Командор стального рубежа\",\n  \"kind\": \"legend\",\n  \"aspects\": [\n    \"red\"\n  ],\n  \"unique\": true,\n  \"cost\": {\n    \"colored\": {\n      \"red\": 1\n    },\n    \"generic\": 4\n  },\n  \"loyalty\": 4,\n  \"loyaltyAbilities\": [\n    {\n      \"delta\": 1,\n      \"kind\": \"summon\",\n      \"cards\": [SCOUT]\n    },\n    {\n      \"delta\": -2,\n      \"kind\": \"damageOpponent\",\n      \"amount\": 2\n    }\n  ],\n  \"loyaltyAbility\": {\n    \"delta\": -2,\n    \"kind\": \"damageOpponent\",\n    \"amount\": 2\n  },\n  \"lore\": {\n    \"state\": \"Стальное королевство\",\n    \"organization\": \"Горная стража\",\n    \"summary\": \"Командор стального рубежа ведёт Горная стража в сражении.\"\n  }\n};\n"
+  },
+  {
+    "name": "Адмирал талдрейкского неба",
+    "file": "src/cards/blue/legends/blue-admiral-taldreykskogo-neba.ts",
+    "beforeModule": "import WING from '../../tokens/blue-wing.ts';\n/** Immutable card identity: blue-адмирал-талдрейкского-неба. Edit stats and effect data here. */\nexport default {\n  \"id\": \"blue-адмирал-талдрейкского-неба\",\n  \"name\": \"Адмирал талдрейкского неба\",\n  \"kind\": \"legend\",\n  \"aspects\": [\n    \"blue\"\n  ],\n  \"unique\": true,\n  \"cost\": {\n    \"colored\": {\n      \"blue\": 1\n    },\n    \"generic\": 4\n  },\n  \"loyalty\": 4,\n  \"loyaltyAbilities\": [\n    {\n      \"delta\": 1,\n      \"kind\": \"summon\",\n      \"cards\": [WING]\n    },\n    {\n      \"delta\": -2,\n      \"kind\": \"healRuler\",\n      \"amount\": 4\n    }\n  ],\n  \"loyaltyAbility\": {\n    \"delta\": -2,\n    \"kind\": \"healRuler\",\n    \"amount\": 4\n  },\n  \"lore\": {\n    \"state\": \"Талдрейк\",\n    \"organization\": \"Воздушная флотилия\",\n    \"summary\": \"Адмирал талдрейкского неба ведёт Воздушная флотилия в сражении.\"\n  }\n};\n",
+    "afterModule": "import WING from '../../tokens/blue-wing.ts';\n/** Immutable card identity: blue-адмирал-талдрейкского-неба. Edit stats and effect data here. */\nexport default {\n  \"id\": \"blue-адмирал-талдрейкского-неба\",\n  \"name\": \"Адмирал талдрейкского неба\",\n  \"kind\": \"legend\",\n  \"aspects\": [\n    \"blue\"\n  ],\n  \"unique\": true,\n  \"cost\": {\n    \"colored\": {\n      \"blue\": 1\n    },\n    \"generic\": 4\n  },\n  \"loyalty\": 4,\n  \"loyaltyAbilities\": [\n    {\n      \"delta\": 1,\n      \"kind\": \"summon\",\n      \"cards\": [WING]\n    },\n    {\n      \"delta\": -2,\n      \"kind\": \"draw\",\n      \"amount\": 2\n    }\n  ],\n  \"loyaltyAbility\": {\n    \"delta\": -2,\n    \"kind\": \"draw\",\n    \"amount\": 2\n  },\n  \"lore\": {\n    \"state\": \"Талдрейк\",\n    \"organization\": \"Воздушная флотилия\",\n    \"summary\": \"Адмирал талдрейкского неба ведёт Воздушная флотилия в сражении.\"\n  }\n};\n"
+  },
+  {
+    "name": "Артур II вир Ивелтин",
+    "file": "src/cards/gold/legends/gold-artur-ii-vir-iveltin.ts",
+    "beforeModule": "import SHIELD from '../../tokens/gold-shield.ts';\n/** Immutable card identity: gold-артур-ii-вир-ивелтин. Edit stats and effect data here. */\nexport default {\n  \"id\": \"gold-артур-ii-вир-ивелтин\",\n  \"name\": \"Артур II вир Ивелтин\",\n  \"kind\": \"legend\",\n  \"aspects\": [\n    \"gold\"\n  ],\n  \"unique\": true,\n  \"cost\": {\n    \"colored\": {\n      \"gold\": 1\n    },\n    \"generic\": 4\n  },\n  \"loyalty\": 4,\n  \"loyaltyAbilities\": [\n    {\n      \"delta\": 1,\n      \"kind\": \"summon\",\n      \"cards\": [SHIELD]\n    },\n    {\n      \"delta\": -2,\n      \"kind\": \"healRuler\",\n      \"amount\": 4\n    }\n  ],\n  \"loyaltyAbility\": {\n    \"delta\": -2,\n    \"kind\": \"healRuler\",\n    \"amount\": 4\n  },\n  \"lore\": {\n    \"state\": \"Королевство Ивелтин\",\n    \"organization\": \"Королевские рыцари\",\n    \"summary\": \"Артур II вир Ивелтин ведёт Королевские рыцари в сражении.\"\n  }\n};\n",
+    "afterModule": "import SHIELD from '../../tokens/gold-shield.ts';\n/** Immutable card identity: gold-артур-ii-вир-ивелтин. Edit stats and effect data here. */\nexport default {\n  \"id\": \"gold-артур-ii-вир-ивелтин\",\n  \"name\": \"Артур II вир Ивелтин\",\n  \"kind\": \"legend\",\n  \"aspects\": [\n    \"gold\"\n  ],\n  \"unique\": true,\n  \"cost\": {\n    \"colored\": {\n      \"gold\": 1\n    },\n    \"generic\": 4\n  },\n  \"loyalty\": 4,\n  \"loyaltyAbilities\": [\n    {\n      \"delta\": 1,\n      \"kind\": \"summon\",\n      \"cards\": [SHIELD]\n    },\n    {\n      \"delta\": -2,\n      \"kind\": \"shieldTeam\",\n      \"amount\": 2\n    }\n  ],\n  \"loyaltyAbility\": {\n    \"delta\": -2,\n    \"kind\": \"shieldTeam\",\n    \"amount\": 2\n  },\n  \"lore\": {\n    \"state\": \"Королевство Ивелтин\",\n    \"organization\": \"Королевские рыцари\",\n    \"summary\": \"Артур II вир Ивелтин ведёт Королевские рыцари в сражении.\"\n  }\n};\n"
+  },
+  {
+    "name": "Верховный хранитель Данте",
+    "file": "src/cards/neutral/legends/neutral-verhovnyy-hranitel-dante.ts",
+    "beforeModule": "import WATCH from '../../tokens/neutral-watch.ts';\n/** Immutable card identity: neutral-верховный-хранитель-данте. Edit stats and effect data here. */\nexport default {\n  \"id\": \"neutral-верховный-хранитель-данте\",\n  \"name\": \"Верховный хранитель Данте\",\n  \"kind\": \"legend\",\n  \"aspects\": [],\n  \"unique\": true,\n  \"cost\": {\n    \"colored\": {},\n    \"generic\": 5\n  },\n  \"loyalty\": 4,\n  \"loyaltyAbilities\": [\n    {\n      \"delta\": 1,\n      \"kind\": \"summon\",\n      \"cards\": [WATCH]\n    },\n    {\n      \"delta\": -2,\n      \"kind\": \"healRuler\",\n      \"amount\": 4\n    }\n  ],\n  \"loyaltyAbility\": {\n    \"delta\": -2,\n    \"kind\": \"healRuler\",\n    \"amount\": 4\n  },\n  \"lore\": {\n    \"state\": \"Межгосударственный орден\",\n    \"organization\": \"Новые хранители\",\n    \"summary\": \"Верховный хранитель Данте ведёт Новые хранители в сражении.\"\n  }\n};\n",
+    "afterModule": "import WATCH from '../../tokens/neutral-watch.ts';\n/** Immutable card identity: neutral-верховный-хранитель-данте. Edit stats and effect data here. */\nexport default {\n  \"id\": \"neutral-верховный-хранитель-данте\",\n  \"name\": \"Верховный хранитель Данте\",\n  \"kind\": \"legend\",\n  \"aspects\": [],\n  \"unique\": true,\n  \"cost\": {\n    \"colored\": {},\n    \"generic\": 5\n  },\n  \"loyalty\": 4,\n  \"neutralAffinity\": {\"zone\":\"battlefield\",\"bonus\":1},\n  \"loyaltyAbilities\": [\n    {\n      \"delta\": 1,\n      \"kind\": \"summon\",\n      \"cards\": [WATCH]\n    },\n    {\n      \"delta\": -2,\n      \"kind\": \"mendTeam\",\n      \"amount\": 2\n    }\n  ],\n  \"loyaltyAbility\": {\n    \"delta\": -2,\n    \"kind\": \"mendTeam\",\n    \"amount\": 2\n  },\n  \"lore\": {\n    \"state\": \"Межгосударственный орден\",\n    \"organization\": \"Новые хранители\",\n    \"summary\": \"Верховный хранитель Данте ведёт Новые хранители в сражении.\"\n  }\n};\n"
+  },
+  {
+    "name": "Инквизитор дозора",
+    "before": {
+      "id": "neutral-инквизитор-дозора",
+      "name": "Инквизитор дозора",
+      "kind": "creature",
+      "aspects": [],
+      "cost": {
+        "colored": {},
+        "generic": 3
+      },
+      "attack": 3,
+      "health": 2,
+      "firstStrike": true,
+      "lore": {
+        "state": "Межгосударственный орден",
+        "organization": "Новые хранители",
+        "summary": "Инквизитор дозора выступает на стороне Новые хранители."
+      }
+    },
+    "after": {
+      "id": "neutral-инквизитор-дозора",
+      "name": "Инквизитор дозора",
+      "kind": "creature",
+      "aspects": [],
+      "cost": {
+        "colored": {},
+        "generic": 3
+      },
+      "attack": 2,
+      "health": 4,
+      "lore": {
+        "state": "Межгосударственный орден",
+        "organization": "Новые хранители",
+        "summary": "Инквизитор дозора выступает на стороне Новые хранители."
+      },
+      "onEntry": {
+        "kind": "stunEnemy",
+        "amount": 1
+      }
+    }
+  },
+  {
+    "name": "Странствующий хранитель",
+    "before": {
+      "id": "neutral-странствующий-хранитель",
+      "name": "Странствующий хранитель",
+      "kind": "creature",
+      "aspects": [],
+      "cost": {
+        "colored": {},
+        "generic": 3
+      },
+      "attack": 3,
+      "health": 3,
+      "lore": {
+        "state": "Межгосударственный орден",
+        "organization": "Новые хранители",
+        "summary": "Странствующий хранитель выступает на стороне Новые хранители."
+      }
+    },
+    "after": {
+      "id": "neutral-странствующий-хранитель",
+      "name": "Странствующий хранитель",
+      "kind": "creature",
+      "aspects": [],
+      "cost": {
+        "colored": {},
+        "generic": 4
+      },
+      "attack": 1,
+      "health": 4,
+      "lore": {
+        "state": "Межгосударственный орден",
+        "organization": "Новые хранители",
+        "summary": "Странствующий хранитель выступает на стороне Новые хранители."
+      },
+      "onEntry": {
+        "kind": "stasisEnemy",
+        "amount": 1
+      },
+      "neutralAffinity": {
+        "zone": "battlefield",
+        "bonus": 1
+      }
+    }
+  },
+  {
+    "name": "Архивный смотритель",
+    "before": {
+      "id": "neutral-архивный-смотритель",
+      "name": "Архивный смотритель",
+      "kind": "creature",
+      "aspects": [],
+      "cost": {
+        "colored": {},
+        "generic": 2
+      },
+      "attack": 2,
+      "health": 3,
+      "lore": {
+        "state": "Межгосударственный орден",
+        "organization": "Новые хранители",
+        "summary": "Архивный смотритель выступает на стороне Новые хранители."
+      }
+    },
+    "after": {
+      "id": "neutral-архивный-смотритель",
+      "name": "Архивный смотритель",
+      "kind": "creature",
+      "aspects": [],
+      "cost": {
+        "colored": {},
+        "generic": 2
+      },
+      "attack": 1,
+      "health": 3,
+      "lore": {
+        "state": "Межгосударственный орден",
+        "organization": "Новые хранители",
+        "summary": "Архивный смотритель выступает на стороне Новые хранители."
+      },
+      "onEntry": {
+        "kind": "stunEnemy",
+        "amount": 1
+      }
+    }
+  }
+]

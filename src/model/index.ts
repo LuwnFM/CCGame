@@ -8,13 +8,17 @@ export type Cost = { colored: Partial<Record<Aspect, number>>; generic: number }
 export type RitualColor = Aspect | 'neutral';
 export type RitualSpec = { color: RitualColor; threshold: number; duration: number; rewardPool: [Card, Card, Card, Card, Card] };
 export interface EntryEffectSpecs {
+  shieldTeam:{amount:number}; mendTeam:{amount:number}; drawWithPain:{amount:number}; drawIfLowHand:{amount:number};
   summon:{cards:Card[]}; healRuler:{amount:number}; draw:{amount:number}; stunEnemy:{amount:number}; stasisEnemy:{amount:number};
 }
 export interface TechniqueEffectSpecs {
+  damageCreature:{amount:number}; drawWithPain:{amount:number};
+  shieldTeam:{amount:number}; mendTeam:{amount:number}; stasisEnemy:{amount:number};
   reanimate:{amount:number}; damageOpponent:{amount:number}; healRuler:{amount:number}; draw:{amount:number};
   cleanse:{amount:number}; ward:{amount:number}; silence:{amount:number}; bind:{amount:number};
 }
 export interface LoyaltyEffectSpecs {
+  shieldTeam:{amount:number}; mendTeam:{amount:number}; drawWithPain:{amount:number}; drawIfLowHand:{amount:number};
   healRuler:{amount:number}; damageOpponent:{amount:number}; draw:{amount:number}; recoverCreature:{amount:number};
   summon:{cards:Card[];completeRitual?:boolean};
 }
@@ -40,6 +44,8 @@ export interface Card {
   ritualReward?:boolean; createdToken?:boolean; sacrifice?:boolean; ritual?:RitualSpec; ritualDrawBonus?:number;
   onDeath?:DeathEffect; onEntry?:EntryEffect; secondChance?:EntryEffect; techniqueEffect?:TechniqueEffect;
   loyalty?:number; loyaltyAbility?:LoyaltyEffect; loyaltyAbilities?:readonly LoyaltyEffect[]; auraAttack?:number;
+  turnStartEffect?:EntryEffect;
+  neutralAffinity?:{zone:'deck'|'hand'|'battlefield';bonus:number};
   lore?:{state:string;organization:string;summary?:string;note?:string};
   abilities?:readonly string[];
 }
@@ -49,6 +55,7 @@ export interface Permanent {
   attacksMade?:number; silenced?:boolean; poison?:{strength:number;ticks:number};
 }
 export interface Player {
+  startingDeckHasColored?:boolean;
   hp:number; deck:Card[]; hand:Card[]; discard:Card[]; erased:Card[];
   domains:Permanent[]; main:Permanent[]; auxiliary:Permanent[]; legends:Permanent[];
   energy:Record<Energy,number>; domainsPlayed:number; rituals:(RitualEffect&{remainingStarts:number})[];

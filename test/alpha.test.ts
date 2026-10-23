@@ -23,7 +23,7 @@ test('all six alpha decks are legal, with a playable violet Technique', () => {
     assert.equal(cards.length, 70);
     assert.deepEqual(validateDeck(cards), []);
     assert.equal(cards.filter(c => c.kind === 'domain').length, 26);
-    assert.equal(cards.filter(c => c.kind === 'creature' && !c.guard && !c.flying && !c.firstStrike && !c.piercing && !c.lifesteal && !c.haste && !c.zeal && !c.extraAttacks && !c.stealth && !c.poisonHit && !c.shield && !c.sacrifice && !c.onDeath && !c.onEntry && !c.secondChance).length, archetype.id === 'red' ? 14 : 18);
+    assert.equal(cards.filter(c => c.kind === 'creature' && !c.guard && !c.flying && !c.firstStrike && !c.piercing && !c.lifesteal && !c.haste && !c.zeal && !c.extraAttacks && !c.stealth && !c.poisonHit && !c.shield && !c.sacrifice && !c.onDeath && !c.onEntry && !c.secondChance).length, archetype.id === 'red' ? 14 : archetype.id === 'neutral' ? 12 : 18);
     assert.equal(cards.filter(c => c.kind === 'legend').length, 2);
     assert.equal(cards.filter(c => c.kind === 'artifact' && c.unique).length, 1);
     assert.ok(cards.every(c => c.lore?.organization === archetype.organization));
@@ -78,15 +78,15 @@ test('blue Flying attacker requires a Flying interceptor',()=>{
   assert.equal(g.players[1].hp,40);
   assert.equal(g.players[1].main[0].interceptions,1);
 });
-test('every starter Legend offers balanced +1 and -2 choices, exclusive each turn',()=>{
+test('every starter Legend offers a gain and a paid choice, exclusive each turn',()=>{
   const fallen:Card={id:'fallen',name:'Павший страж',kind:'creature',attack:2,health:2};
   for(const archetype of ARCHETYPES)for(const legend of testDeck(archetype.id).filter(card=>card.kind==='legend')){
     const [small,strong]=legend.loyaltyAbilities!;
     assert.equal(small.delta,1,legend.name);
-    assert.equal(strong.delta,-2,legend.name);
+    assert.ok(strong.delta<=-2,legend.name);
     assert.ok((legend.loyalty??0)>=2,legend.name);
     assert.ok((small.kind==='summon' ? small.cards.length===1 : small.amount<=1) &&
-      (strong.kind==='summon' ? strong.cards.length<=4 : strong.amount<=4),legend.name);
+      (strong.kind==='summon' ? strong.cards.length<=4 : strong.amount<=6),legend.name);
     for(const abilityIndex of [0,1]){
       let g=step(initialGame(player(),player()),{type:'startTurn',actor:0},legend.id+'-start-'+abilityIndex);
       g.players[0].hp=20;
@@ -94,7 +94,7 @@ test('every starter Legend offers balanced +1 and -2 choices, exclusive each tur
       g.players[0].legends.push({objectId:1,card:legend,loyalty:legend.loyalty,
         exhausted:false,damage:0,shield:0,enteredTurn:g.turn,interceptions:0});
       g=step(g,{type:'activateLegend',actor:0,objectId:1,abilityIndex,discardIndex:0},legend.id+'-activate-'+abilityIndex);
-      assert.equal(g.players[0].legends[0].loyalty,legend.loyalty!+(abilityIndex===0?1:-2),legend.name);
+      assert.equal(g.players[0].legends[0].loyalty,legend.loyalty!+legend.loyaltyAbilities![abilityIndex].delta,legend.name);
       assert.throws(()=>step(g,{type:'activateLegend',actor:0,objectId:1,abilityIndex:1-abilityIndex,discardIndex:0},legend.id+'-repeat-'+abilityIndex),/недоступна/);
     }
   }

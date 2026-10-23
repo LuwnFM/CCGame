@@ -1,7 +1,7 @@
 /** Immutable card identity: red-залп-горной-стражи-резервы. Edit stats and effect data here. */
 export default {
   "id": "red-залп-горной-стражи-резервы",
-  "name": "Залп горной стражи · Резервы",
+  "name": "Огонь прикрытия",
   "kind": "technique",
   "aspects": [
     "red"
@@ -13,8 +13,8 @@ export default {
     "generic": 2
   },
   "techniqueEffect": {
-    "kind": "damageOpponent",
-    "amount": 2
+    "kind": "damageCreature",
+    "amount": 4
   },
   "lore": {
     "state": "Стальное королевство",

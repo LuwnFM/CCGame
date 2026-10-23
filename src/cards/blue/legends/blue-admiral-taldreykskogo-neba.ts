@@ -23,14 +23,14 @@ export default {
     },
     {
       "delta": -2,
-      "kind": "healRuler",
-      "amount": 4
+      "kind": "draw",
+      "amount": 2
     }
   ],
   "loyaltyAbility": {
     "delta": -2,
-    "kind": "healRuler",
-    "amount": 4
+    "kind": "draw",
+    "amount": 2
   },
   "lore": {
     "state": "Талдрейк",

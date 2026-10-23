@@ -8,11 +8,15 @@ export default {
     "colored": {},
     "generic": 2
   },
-  "attack": 2,
+  "attack": 1,
   "health": 3,
   "lore": {
     "state": "Межгосударственный орден",
     "organization": "Новые хранители",
     "summary": "Архивный смотритель выступает на стороне Новые хранители."
+  },
+  "onEntry": {
+    "kind": "stunEnemy",
+    "amount": 1
   }
 };

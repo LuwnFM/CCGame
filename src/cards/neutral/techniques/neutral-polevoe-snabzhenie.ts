@@ -10,11 +10,15 @@ export default {
   },
   "techniqueEffect": {
     "kind": "draw",
-    "amount": 2
+    "amount": 1
   },
   "lore": {
     "state": "Межгосударственный орден",
     "organization": "Новые хранители",
     "summary": "Полевое снабжение помогает Новые хранители переломить ход боя."
+  },
+  "neutralAffinity": {
+    "zone": "deck",
+    "bonus": 1
   }
 };

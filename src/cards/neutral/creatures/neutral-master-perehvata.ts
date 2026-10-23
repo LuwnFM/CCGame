@@ -6,15 +6,16 @@ export default {
   "aspects": [],
   "cost": {
     "colored": {},
-    "generic": 5
+    "generic": 6
   },
-  "attack": 4,
-  "health": 5,
+  "attack": 3,
+  "health": 6,
   "flying": true,
   "guard": true,
   "lore": {
     "state": "Межгосударственный орден",
     "organization": "Новые хранители",
     "summary": "Мастер перехвата выступает на стороне Новые хранители."
-  }
+  },
+  "majestic": true
 };

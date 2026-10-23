@@ -16,20 +16,20 @@ export default {
   "loyalty": 5,
   "loyaltyAbilities": [
     {
-      "delta": 1,
-      "kind": "healRuler",
-      "amount": 1
+      "kind": "draw",
+      "amount": 1,
+      "delta": 1
     },
     {
-      "delta": -2,
-      "kind": "damageOpponent",
-      "amount": 2
+      "kind": "draw",
+      "amount": 3,
+      "delta": -3
     }
   ],
   "loyaltyAbility": {
-    "delta": -2,
-    "kind": "damageOpponent",
-    "amount": 2
+    "kind": "draw",
+    "amount": 3,
+    "delta": -3
   },
   "lore": {
     "state": "Талдрейк",

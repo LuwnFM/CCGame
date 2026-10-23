@@ -16,20 +16,20 @@ export default {
   "loyalty": 5,
   "loyaltyAbilities": [
     {
-      "delta": 1,
-      "kind": "healRuler",
-      "amount": 1
+      "kind": "shieldTeam",
+      "amount": 1,
+      "delta": 1
     },
     {
-      "delta": -2,
-      "kind": "damageOpponent",
-      "amount": 2
+      "kind": "healRuler",
+      "amount": 6,
+      "delta": -3
     }
   ],
   "loyaltyAbility": {
-    "delta": -2,
-    "kind": "damageOpponent",
-    "amount": 2
+    "kind": "healRuler",
+    "amount": 6,
+    "delta": -3
   },
   "lore": {
     "state": "Королевство Ивелтин",

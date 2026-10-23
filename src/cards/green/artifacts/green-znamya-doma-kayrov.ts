@@ -13,10 +13,13 @@ export default {
     },
     "generic": 2
   },
-  "auraAttack": 1,
   "lore": {
     "state": "Королевство Сувар",
     "organization": "Дом Кайров",
     "summary": "Знамя дома Кайров укрепляет бойцов Дом Кайров."
+  },
+  "turnStartEffect": {
+    "kind": "mendTeam",
+    "amount": 1
   }
 };

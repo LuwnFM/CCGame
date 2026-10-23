@@ -76,7 +76,7 @@ function handValue(card:Card):number{
  return Math.min(5.2,raw+Number(!!card.onEntry)*0.6+Number(!!card.techniqueEffect)*0.6);
 }
 function hpValue(hp:number):number{
- return Math.min(30,hp)*0.22-Math.max(0,24-hp)*0.32-Math.max(0,12-hp)*2.4;
+ return Math.min(40,hp)*0.22-Math.max(0,24-hp)*0.32-Math.max(0,12-hp)*2.4;
 }
 /** Scores only public opponent state; hidden enemy hand and deck identities are never inspected. */
 function scoreOwn(p:Player):number{
@@ -161,7 +161,7 @@ function targetIdsFor(card:Card,g:Game):Array<number|undefined>{
  const own=g.players[1],enemy=g.players[0];
  const effect=card.onEntry??card.techniqueEffect;
  switch(effect?.kind){
-  case 'stunEnemy':case 'stasisEnemy':case 'bind':
+  case 'stunEnemy':case 'stasisEnemy':case 'bind':case 'damageCreature':
    return [...enemy.main,...enemy.auxiliary].filter(u=>u.card.kind==='creature').map(u=>u.objectId);
   case 'silence':return [...enemy.main,...enemy.auxiliary,...enemy.legends].map(u=>u.objectId);
   case 'cleanse':return [...own.main,...own.auxiliary,...own.legends].map(u=>u.objectId);
