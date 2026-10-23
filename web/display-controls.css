@@ -1,0 +1,32 @@
+
+/* Compact controls shared by lobby and live match; hidden from authentication. */
+#displayControls { display:none; align-items:center; gap:5px; flex-wrap:nowrap }
+body[data-screen="home"] #displayControls,
+body[data-screen="match"] #displayControls { display:flex }
+#displayControls button { display:inline-flex; align-items:center; justify-content:center; gap:5px;
+  white-space:nowrap; min-height:32px; padding:5px 9px; border-radius:8px; font-size:.75rem }
+#displayControls button:focus-visible,.lobby-admin-footer button:focus-visible { outline:2px solid #d6bd86; outline-offset:3px }
+:root:fullscreen { height:100%; width:100%; overflow:auto; background:#101b21 }
+.lobby-admin-footer { display:flex; justify-content:flex-end; margin:22px 0 6px;
+  padding:12px 0; border-top:1px solid #a5ac7c28 }
+.lobby-admin-footer button { border:1px solid #bda76b40; background:transparent;
+  color:#b8beab; font-size:.79rem; min-height:36px }
+.editor-auth-dialog { width:min(440px,calc(100vw - 24px)); max-height:min(90dvh,650px);
+  border:1px solid #9b956d; border-radius:12px; background:#18252a; color:#eee8cf; padding:20px }
+.editor-auth-dialog::backdrop { background:#061116bd }
+.editor-auth-dialog form { display:grid; gap:12px }
+.editor-auth-dialog h2 { margin:0 }
+.editor-auth-dialog label { display:grid; gap:6px }
+.editor-auth-dialog input { width:100%; min-height:42px }
+.editor-auth-dialog [role="alert"] { color:#f2a5a5; min-height:1em }
+.editor-auth-dialog .actions { display:flex; flex-wrap:wrap; gap:8px }
+@media(max-width:750px) {
+  #displayControls { gap:3px }
+  #displayControls button { min-height:30px; padding:4px 7px; font-size:.7rem }
+  #displayControls button span { display:none }
+  .header-actions { gap:4px }
+  .lobby-admin-footer { justify-content:center }
+}
+@media (orientation:landscape) and (max-height:520px) {
+  #displayControls button { min-height:24px; padding:2px 6px; font-size:.67rem }
+}
